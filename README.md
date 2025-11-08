@@ -26,12 +26,13 @@ Application web de création et génération de procédures techniques en PDF.
 - ✅ Interface responsive
 - ✅ Sidebar avec navigation
 
-#### Base de Données Locale
-- ✅ Stockage local avec IndexedDB (Dexie.js)
-- ✅ Aucune connexion internet requise
-- ✅ Export/Import des données en JSON
-- ✅ Réinitialisation de la base de données
+#### Base de Données
+- ✅ Stockage en ligne avec Firebase Firestore
+- ✅ Synchronisation en temps réel
+- ✅ Stockage des images avec Firebase Storage
+- ✅ Accessible depuis n'importe où
 - ✅ Catégories prédéfinies
+- ✅ Configuration facile
 
 #### Gestion des Outils et Matériaux
 - ✅ Modèles de données pour outils et matériaux
@@ -91,7 +92,8 @@ Application web de création et génération de procédures techniques en PDF.
 
 ### État et Données
 - **Zustand** - State management
-- **Dexie.js** - Wrapper IndexedDB
+- **Firebase Firestore** - Base de données NoSQL
+- **Firebase Storage** - Stockage des images
 - **React Hooks** - Gestion des effets
 
 ### Utilitaires
@@ -111,28 +113,53 @@ Application web de création et génération de procédures techniques en PDF.
 ### Prérequis
 - Node.js 18+
 - npm ou yarn
+- Compte Firebase (gratuit)
 
-### Installation
+### Installation Complète
 
 ```bash
-# Cloner le projet (si Git initialisé)
-git clone <url>
+# Cloner le projet depuis GitHub
+git clone https://github.com/Labelh/FichesTechniques.git
 cd FichesTechniques
 
 # Installer les dépendances
 npm install
+
+# Configurer Firebase
+# 1. Créez un projet sur https://console.firebase.google.com/
+# 2. Activez Firestore et Storage
+# 3. Copiez .env.example vers .env
+cp .env.example .env
+# 4. Remplissez le fichier .env avec vos credentials Firebase
+# Voir FIREBASE_SETUP.md pour le guide détaillé
 
 # Lancer en développement
 npm run dev
 
 # Build pour production
 npm run build
-
-# Prévisualiser le build
-npm run preview
 ```
 
 L'application sera accessible sur `http://localhost:5173`
+
+### Installation Rapide (Sans Serveur)
+
+Si vous voulez juste utiliser l'application sans serveur de dev :
+
+```bash
+# Cloner le projet
+git clone https://github.com/Labelh/FichesTechniques.git
+cd FichesTechniques
+
+# Installer et builder
+npm install
+npm run build
+
+# Ouvrir directement dans le navigateur
+# Double-cliquez sur dist/index.html
+```
+
+**Note** : Vous devez quand même configurer Firebase (fichier .env) pour que les données fonctionnent.
 
 ## 📁 Structure du Projet
 
@@ -211,33 +238,42 @@ Basculez entre 3 modes :
 - **Sombre** : Fond noir
 - **Auto** : Suit les préférences système
 
-### Export/Import
+### Données
 
-**Export** :
-- Paramètres → "Exporter"
-- Sauvegarde toutes les données en JSON
+Vos données sont automatiquement sauvegardées dans Firebase en temps réel.
 
-**Import** :
-- À venir dans la prochaine version
+**Fonctionnalités** :
+- ✅ Sauvegarde automatique à chaque modification
+- ✅ Synchronisation en temps réel
+- ✅ Accessible depuis n'importe quel appareil (avec le même compte Firebase)
+- ✅ Pas besoin d'export/import manuel
+
+**Backup** :
+Pour une sécurité maximale, vous pouvez exporter vos données depuis Firebase Console.
 
 ## 🗄️ Données
 
-### Stockage Local
+### Stockage Cloud avec Firebase
 
-Toutes les données sont stockées localement dans votre navigateur via **IndexedDB**.
+Toutes les données sont stockées en ligne via **Firebase Firestore** et **Firebase Storage**.
 
 **Avantages** :
-- ✅ Aucune connexion internet requise
-- ✅ Données privées (ne quittent jamais votre ordinateur)
-- ✅ Rapide et performant
-- ✅ Capacité de stockage importante
+- ✅ Accessible depuis n'importe où
+- ✅ Synchronisation en temps réel
+- ✅ Sauvegarde automatique
+- ✅ Gratuit jusqu'à 50k lectures/jour
+- ✅ Stockage sécurisé
+- ✅ Pas de perte de données
 
-**Limitations** :
-- ⚠️ Les données sont liées au navigateur
-- ⚠️ Effacer les données du navigateur supprime tout
-- ⚠️ Non synchronisé entre appareils
+**Configuration** :
+1. Créez un compte Firebase (gratuit)
+2. Suivez le guide détaillé dans `FIREBASE_SETUP.md`
+3. Configurez vos credentials dans `.env`
 
-**Recommandation** : Exportez régulièrement vos données en JSON comme sauvegarde !
+**Sécurité** :
+- 🔒 Règles de sécurité configurables
+- 🔐 Possibilité d'ajouter l'authentification
+- 🛡️ Données chiffrées en transit
 
 ### Catégories Prédéfinies
 
@@ -275,21 +311,26 @@ npm run lint
 4. **Nouveau composant** : Créer dans `src/components/`
 5. **Nouvelle page** : Créer dans `src/pages/` et ajouter route dans `App.tsx`
 
-### Base de Données
+### Base de Données Firebase
 
-Pour modifier le schéma :
+Pour modifier le schéma Firestore :
 
-1. Éditer `src/db/database.ts`
-2. Incrémenter le numéro de version
-3. Ajouter une migration si nécessaire
+1. Mettre à jour les types dans `src/types/index.ts`
+2. Modifier les fonctions CRUD dans `src/lib/firestore.ts`
+3. Mettre à jour les hooks dans `src/hooks/useFirebase.ts`
 
-```typescript
-this.version(2).stores({
-  // Nouveau schéma
-}).upgrade(tx => {
-  // Migration depuis v1
-});
-```
+**Collections Firestore** :
+- `procedures` - Procédures techniques
+- `phases` - Phases des procédures
+- `tools` - Bibliothèque d'outils
+- `materials` - Matériaux
+- `categories` - Catégories
+- `tags` - Tags
+- `templates` - Templates de procédures
+- `preferences` - Préférences utilisateur
+
+**Firebase Storage** :
+- `/images/{procedureId}/{imageId}` - Images des procédures
 
 ## 🎯 Roadmap
 
