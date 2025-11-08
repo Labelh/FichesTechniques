@@ -13,7 +13,6 @@ import { db } from '@/lib/firebase';
 import { collections, convertTimestamps } from '@/lib/firestore';
 import type {
   Procedure,
-  Phase,
   Tool,
   Material,
   Category,

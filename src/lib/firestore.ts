@@ -9,9 +9,7 @@ import {
   query,
   where,
   orderBy,
-  limit,
   Timestamp,
-  QueryConstraint,
   writeBatch,
   serverTimestamp,
 } from 'firebase/firestore';
@@ -25,7 +23,6 @@ import type {
   Tag,
   UserPreferences,
   ProcedureTemplate,
-  HistoryEntry,
 } from '@/types';
 
 // ==========================================
