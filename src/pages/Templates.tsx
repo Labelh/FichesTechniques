@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FolderKanban, Trash2, Edit, FileText, Clock, Wrench, Search } from 'lucide-react';
+import { FolderKanban, Trash2, FileText, Clock, Wrench, Search } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/db/database';
 import { deletePhaseTemplate } from '@/services/templateService';
