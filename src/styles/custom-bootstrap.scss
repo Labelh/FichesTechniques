@@ -1,4 +1,10 @@
-// 1. Personnalisation des variables Bootstrap
+// ==========================================
+// DESIGN SYSTEM - UNTITLED UI STYLE
+// Clean, Modern, Professional
+// ==========================================
+
+// 1. VARIABLES BOOTSTRAP PERSONNALISÉES
+// Couleur principale
 $primary: #ff6b35;
 $secondary: #6c757d;
 $success: #10b981;
@@ -6,92 +12,168 @@ $danger: #ef4444;
 $warning: #f59e0b;
 $info: #3b82f6;
 
-// Couleurs sombres pour le thème
+// Palette de gris (style Untitled UI)
+$gray-50: #f9fafb;
+$gray-100: #f3f4f6;
+$gray-200: #e5e7eb;
+$gray-300: #d1d5db;
+$gray-400: #9ca3af;
+$gray-500: #6b7280;
+$gray-600: #4b5563;
+$gray-700: #374151;
+$gray-800: #1f2937;
+$gray-900: #111827;
+
+// Thème sombre
 $body-bg: #0a0a0a;
-$body-color: #f5f5f5;
+$body-color: #f9fafb;
 
-// Composants
-$card-bg: rgba(23, 23, 23, 0.3);
-$card-border-color: rgba(64, 64, 64, 0.5);
-$border-color: rgba(64, 64, 64, 0.5);
+// BORDURES (carrées avec coins arrondis)
+$border-radius: 8px;
+$border-radius-sm: 6px;
+$border-radius-lg: 10px;
+$border-width: 1px;
 
-$input-bg: rgba(23, 23, 23, 0.5);
-$input-border-color: #404040;
-$input-color: #f5f5f5;
-$input-placeholder-color: #737373;
+// Couleurs des composants
+$input-bg: rgba(31, 41, 55, 0.5);
+$input-border-color: rgba(75, 85, 99, 0.5);
+$input-color: #f9fafb;
+$input-placeholder-color: #6b7280;
 $input-focus-border-color: $primary;
-$input-focus-box-shadow: 0 0 0 0.25rem rgba(255, 107, 53, 0.25);
+$input-focus-box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+$input-border-radius: $border-radius;
 
-// Bordures arrondies
-$border-radius: 0.5rem;
-$border-radius-lg: 0.75rem;
-$border-radius-sm: 0.375rem;
+$card-bg: rgba(31, 41, 55, 0.3);
+$card-border-color: rgba(75, 85, 99, 0.3);
+$card-border-radius: $border-radius;
 
-// Boutons
 $btn-border-radius: $border-radius;
+$btn-border-width: 1px;
 $btn-font-weight: 500;
+$btn-padding-y: 0.625rem;
+$btn-padding-x: 1rem;
+$btn-padding-y-sm: 0.5rem;
+$btn-padding-x-sm: 0.875rem;
+$btn-padding-y-lg: 0.75rem;
+$btn-padding-x-lg: 1.25rem;
 
 // Modal
-$modal-content-bg: #121212;
-$modal-content-border-color: rgba(64, 64, 64, 0.5);
+$modal-content-bg: #1f2937;
+$modal-content-border-color: rgba(75, 85, 99, 0.3);
 $modal-backdrop-bg: #000000;
-$modal-backdrop-opacity: 0.5;
+$modal-backdrop-opacity: 0.75;
 
 // Dropdown
-$dropdown-bg: #1e1e1e;
-$dropdown-border-color: rgba(64, 64, 64, 0.5);
-$dropdown-link-color: #f5f5f5;
+$dropdown-bg: #1f2937;
+$dropdown-border-color: rgba(75, 85, 99, 0.3);
+$dropdown-link-color: #f9fafb;
 $dropdown-link-hover-bg: rgba(255, 107, 53, 0.1);
-$dropdown-link-hover-color: #f5f5f5;
+$dropdown-link-hover-color: #f9fafb;
 
 // Table
 $table-bg: transparent;
-$table-striped-bg: rgba(23, 23, 23, 0.3);
-$table-hover-bg: rgba(64, 64, 64, 0.2);
-$table-border-color: rgba(64, 64, 64, 0.5);
-$table-color: #f5f5f5;
+$table-striped-bg: rgba(31, 41, 55, 0.3);
+$table-hover-bg: rgba(75, 85, 99, 0.2);
+$table-border-color: rgba(75, 85, 99, 0.3);
+$table-color: #f9fafb;
 
 // Badge
 $badge-font-weight: 500;
-$badge-border-radius: 0.375rem;
+$badge-border-radius: $border-radius-sm;
+$badge-padding-y: 0.25rem;
+$badge-padding-x: 0.625rem;
 
-// 2. Import Bootstrap
+// 2. IMPORT BOOTSTRAP
 @import "bootstrap/scss/bootstrap";
 
-// 3. Styles personnalisés additionnels
+// 3. STYLES PERSONNALISÉS
+
+// ===== RESET & BASE =====
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-size: 0.9375rem;
+  line-height: 1.5;
 }
 
-// Amélioration des boutons
-.btn-outline-primary {
+* {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+// ===== BOUTONS (Style Untitled UI) =====
+.btn {
+  border-width: 1px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+  }
+}
+
+.btn-primary {
+  background-color: $primary;
+  border-color: $primary;
+  color: white;
+
+  &:hover {
+    background-color: #f44f1b;
+    border-color: #f44f1b;
+  }
+
+  &:focus {
+    background-color: $primary;
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2);
+  }
+}
+
+.btn-outline-primary,
+.btn-outline-secondary,
+.btn-outline-danger {
   background-color: transparent;
-  border-color: rgba(255, 107, 53, 0.3);
-  color: #ff6b35;
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.btn-outline-primary {
+  border-color: rgba(255, 107, 53, 0.5);
+  color: $primary;
 
   &:hover {
     background-color: rgba(255, 107, 53, 0.1);
-    border-color: #ff6b35;
-    color: #ff6b35;
+    border-color: $primary;
+    color: $primary;
   }
 }
 
 .btn-outline-secondary {
-  background-color: transparent;
-  border-color: #404040;
-  color: #d4d4d4;
+  border-color: rgba(75, 85, 99, 0.5);
+  color: #d1d5db;
 
   &:hover {
-    background-color: transparent;
-    border-color: #525252;
-    color: #f5f5f5;
+    background-color: rgba(75, 85, 99, 0.1);
+    border-color: rgba(75, 85, 99, 0.7);
+    color: #f3f4f6;
   }
 }
 
 .btn-outline-danger {
-  background-color: transparent;
-  border-color: rgba(239, 68, 68, 0.3);
+  border-color: rgba(239, 68, 68, 0.5);
   color: #ef4444;
 
   &:hover {
@@ -101,37 +183,113 @@ body {
   }
 }
 
-// Cards élégantes
-.card {
-  backdrop-filter: blur(10px);
-  transition: all 0.2s ease;
+.btn-ghost {
+  background-color: transparent;
+  border-color: transparent;
+  color: #9ca3af;
 
   &:hover {
-    border-color: rgba(64, 64, 64, 0.7);
+    background-color: rgba(75, 85, 99, 0.1);
+    color: #d1d5db;
   }
 }
 
-// Inputs améliorés
+// ===== INPUTS & SELECTS (Style Untitled UI) =====
 .form-control,
 .form-select {
-  &:hover {
-    border-color: #525252;
+  border-width: 1px;
+  border-radius: $border-radius;
+  transition: all 0.2s ease;
+  font-size: 0.9375rem;
+
+  &:hover:not(:focus) {
+    border-color: rgba(75, 85, 99, 0.7);
   }
 
   &:focus {
-    background-color: rgba(23, 23, 23, 0.5);
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+    background-color: rgba(31, 41, 55, 0.7);
   }
 }
 
-// Tables améliorées
+// ===== CARDS (Style Untitled UI) =====
+.card {
+  border-width: 1px;
+  border-radius: $border-radius;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.card-header {
+  background-color: rgba(31, 41, 55, 0.5);
+  border-bottom: 1px solid rgba(75, 85, 99, 0.3);
+}
+
+.card-footer {
+  background-color: transparent;
+  border-top: 1px solid rgba(75, 85, 99, 0.3);
+}
+
+// ===== BADGES (Style Untitled UI) =====
+.badge {
+  font-weight: 500;
+  border-radius: $border-radius-sm;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  border: 1px solid transparent;
+}
+
+.badge.bg-primary {
+  background-color: rgba(255, 107, 53, 0.1) !important;
+  color: #ff6b35;
+  border-color: rgba(255, 107, 53, 0.2);
+}
+
+.badge.bg-secondary {
+  background-color: rgba(107, 114, 128, 0.1) !important;
+  color: #9ca3af;
+  border-color: rgba(107, 114, 128, 0.2);
+}
+
+.badge.bg-success {
+  background-color: rgba(16, 185, 129, 0.1) !important;
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.badge.bg-danger {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+// ===== NAVBAR =====
+.navbar {
+  border-bottom: 1px solid rgba(75, 85, 99, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+// ===== TABLES =====
 .table {
+  border-color: rgba(75, 85, 99, 0.3);
+
   th {
     font-weight: 600;
-    color: #f5f5f5;
+    color: #f3f4f6;
+    border-color: rgba(75, 85, 99, 0.3);
+  }
+
+  td {
+    border-color: rgba(75, 85, 99, 0.2);
   }
 }
 
-// Scrollbar personnalisée
+// ===== SCROLLBAR =====
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -142,47 +300,41 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #404040;
+  background: #374151;
   border-radius: 5px;
+
+  &:hover {
+    background: #4b5563;
+  }
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #525252;
+// ===== UTILITIES =====
+.text-muted {
+  color: #6b7280 !important;
+}
+
+.border-subtle {
+  border-color: rgba(75, 85, 99, 0.3) !important;
+}
+
+.shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+}
+
+.shadow {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+.shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1) !important;
 }
 
 // Hover utilities
-.hover-bg-secondary:hover {
-  background-color: rgba(108, 117, 125, 0.1) !important;
+.hover-bg-subtle:hover {
+  background-color: rgba(75, 85, 99, 0.1) !important;
 }
 
-.hover-shadow-lg {
-  transition: box-shadow 0.2s ease;
-}
-
-.hover-shadow-lg:hover {
-  box-shadow: 0 .5rem 1rem rgba(0,0,0,.5) !important;
-}
-
-// Text utilities
-.text-muted {
-  color: #737373 !important;
-}
-
-// Gap utilities (si pas disponible dans Bootstrap 5.3)
-.gap-1 {
-  gap: 0.25rem !important;
-}
-
-.gap-2 {
-  gap: 0.5rem !important;
-}
-
-.gap-3 {
-  gap: 1rem !important;
-}
-
-// Amélioration des cards
-.card {
+.hover-lift {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 
   &:hover {
@@ -190,36 +342,17 @@ body {
   }
 }
 
-// Background utilities
-.bg-dark {
-  background-color: #0a0a0a !important;
+// Gap utilities
+.gap-1 { gap: 0.25rem !important; }
+.gap-2 { gap: 0.5rem !important; }
+.gap-3 { gap: 1rem !important; }
+.gap-4 { gap: 1.5rem !important; }
+
+// Border radius utilities
+.rounded-lg {
+  border-radius: $border-radius !important;
 }
 
-// Button group improvements
-.btn-group .btn {
-  border-radius: 0 !important;
-
-  &:first-child {
-    border-top-left-radius: 0.5rem !important;
-    border-bottom-left-radius: 0.5rem !important;
-  }
-
-  &:last-child {
-    border-top-right-radius: 0.5rem !important;
-    border-bottom-right-radius: 0.5rem !important;
-  }
-}
-
-// Smooth transitions
-* {
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-// Shadow utilities
-.shadow-sm {
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.5), 0 1px 2px -1px rgba(0, 0, 0, 0.5) !important;
-}
-
-.shadow {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5) !important;
+.rounded-xl {
+  border-radius: $border-radius-lg !important;
 }

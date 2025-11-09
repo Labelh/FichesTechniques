@@ -18,7 +18,8 @@
       "Bash(where:*)",
       "Bash(choco install:*)",
       "Bash(find:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "WebFetch(domain:dribbble.com)"
     ],
     "deny": [],
     "ask": []

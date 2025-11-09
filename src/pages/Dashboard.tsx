@@ -40,13 +40,13 @@ export default function Dashboard() {
       </div>
 
       {/* Search & Filters Bar */}
-      <div className="card shadow-sm mb-4 border-0" style={{ backgroundColor: 'rgba(23, 23, 23, 0.5)' }}>
-        <div className="card-body p-4">
+      <div className="card mb-4">
+        <div className="card-body">
           <div className="row g-3 align-items-center">
             {/* Search */}
             <div className="col-12 col-lg-6">
               <div className="position-relative">
-                <Search className="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted" size={20} />
+                <Search className="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted" size={18} />
                 <Input
                   type="text"
                   placeholder="Rechercher une procédure..."
@@ -64,17 +64,18 @@ export default function Dashboard() {
                 <Button
                   variant={showFilters ? 'default' : 'outline'}
                   onClick={() => setShowFilters(!showFilters)}
+                  size="sm"
                 >
-                  <Filter className={showFilters ? 'me-2' : 'me-2 text-muted'} size={18} />
+                  <Filter className="me-2" size={16} />
                   Filtres
                 </Button>
-                <Button variant="outline">
-                  <SortAsc className="me-2 text-muted" size={18} />
+                <Button variant="outline" size="sm">
+                  <SortAsc className="me-2" size={16} />
                   Trier
                 </Button>
 
                 {/* Divider */}
-                <div className="vr d-none d-lg-block" style={{ height: '32px' }}></div>
+                <div className="vr d-none d-lg-block" style={{ height: '24px' }}></div>
 
                 {/* View Mode */}
                 <div className="btn-group" role="group">
@@ -84,7 +85,7 @@ export default function Dashboard() {
                     onClick={() => setViewMode('grid' as any)}
                     title="Vue grille"
                   >
-                    <Grid className={viewMode === 'grid' ? '' : 'text-muted'} size={18} />
+                    <Grid size={16} />
                   </Button>
                   <Button
                     variant={viewMode === 'list' ? 'default' : 'outline'}
@@ -92,7 +93,7 @@ export default function Dashboard() {
                     onClick={() => setViewMode('list' as any)}
                     title="Vue liste"
                   >
-                    <List className={viewMode === 'list' ? '' : 'text-muted'} size={18} />
+                    <List size={16} />
                   </Button>
                   <Button
                     variant={viewMode === 'kanban' ? 'default' : 'outline'}
@@ -100,7 +101,7 @@ export default function Dashboard() {
                     onClick={() => setViewMode('kanban' as any)}
                     title="Vue kanban"
                   >
-                    <Kanban className={viewMode === 'kanban' ? '' : 'text-muted'} size={18} />
+                    <Kanban size={16} />
                   </Button>
                 </div>
               </div>
@@ -109,7 +110,7 @@ export default function Dashboard() {
 
           {/* Filter Panel */}
           {showFilters && (
-            <div className="mt-4 pt-4 border-top border-secondary border-opacity-10">
+            <div className="mt-4 pt-4 border-top">
               <FilterPanel />
             </div>
           )}
