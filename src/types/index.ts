@@ -112,11 +112,12 @@ export interface Tool extends BaseEntity {
   name: string;
   description: string;
   category: string;
+  reference?: string; // Référence de l'outil
+  location?: string; // Emplacement de l'outil
   image?: Image;
   imageId?: string;
   price?: number;
   purchaseLink?: string;
-  owned: boolean;
   color?: string; // Couleur de code pour les trajectoires
   alternatives?: string[]; // IDs d'autres outils
   consumables?: string[]; // Consommables associés
@@ -147,6 +148,7 @@ export interface SubStep {
   images?: AnnotatedImage[];
   estimatedTime?: number; // en minutes
   tips?: string[];
+  safetyNotes?: SafetyNote[];
 }
 
 export interface Phase extends BaseEntity {

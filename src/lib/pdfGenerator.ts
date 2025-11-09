@@ -1,7 +1,5 @@
 import jsPDF from 'jspdf';
 import { Procedure, Phase } from '../types';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
 
 // Couleurs du thème
 const COLORS = {
@@ -27,6 +25,7 @@ export class PDFGenerator {
   private pageHeight: number = 0;
   private pageWidth: number = 0;
   private margin: number = 20;
+  private phasePages: Map<number, number> = new Map(); // Map phase index to page number
 
   constructor() {
     this.pdf = new jsPDF({
@@ -108,34 +107,15 @@ export class PDFGenerator {
       this.pdf.text(procedure.category, this.margin, infoY + 6);
     }
 
-    // Date de création
-    this.pdf.setFont('helvetica', 'bold');
-    this.pdf.text('DATE', this.pageWidth - this.margin - 40, infoY);
-    this.pdf.setFont('helvetica', 'normal');
-    const dateText = format(new Date(procedure.createdAt), 'dd MMMM yyyy', { locale: fr });
-    this.pdf.text(
-      dateText,
-      this.pageWidth - this.margin - 40,
-      infoY + 6
-    );
-
     // Version
     if (procedure.version) {
       this.pdf.setFont('helvetica', 'bold');
-      this.pdf.text('VERSION', this.pageWidth - this.margin - 40, infoY + 16);
+      this.pdf.text('VERSION', this.pageWidth - this.margin - 40, infoY);
       this.pdf.setFont('helvetica', 'normal');
-      this.pdf.text(String(procedure.version), this.pageWidth - this.margin - 40, infoY + 22);
+      this.pdf.text(String(procedure.version), this.pageWidth - this.margin - 40, infoY + 6);
     }
 
-    // Pied de page
-    this.pdf.setFontSize(8);
-    this.pdf.setTextColor(150, 150, 150);
-    this.pdf.text(
-      'Généré automatiquement par Fiches Techniques',
-      this.pageWidth / 2,
-      this.pageHeight - 15,
-      { align: 'center' }
-    );
+    // Pied de page - removed auto-generated text
   }
 
   /**
@@ -178,15 +158,7 @@ export class PDFGenerator {
     this.pdf.setLineWidth(0.5);
     this.pdf.line(this.margin, footerY - 3, this.pageWidth - this.margin, footerY - 3);
 
-    // Date de génération
-    this.pdf.setFontSize(8);
-    this.pdf.setTextColor(COLORS.textLight);
-    this.pdf.text(
-      `Généré le ${format(new Date(), 'dd/MM/yyyy à HH:mm', { locale: fr })}`,
-      this.pageWidth / 2,
-      footerY,
-      { align: 'center' }
-    );
+    // Date de génération removed
   }
 
   /**
@@ -202,50 +174,6 @@ export class PDFGenerator {
     return false;
   }
 
-  /**
-   * Génère la table des matières
-   */
-  private generateTableOfContents(phases: Phase[]) {
-    this.pdf.addPage();
-    this.currentY = this.margin;
-
-    // Titre
-    this.pdf.setFontSize(24);
-    this.pdf.setFont('helvetica', 'bold');
-    this.pdf.setTextColor(COLORS.primary);
-    this.pdf.text('TABLE DES MATIÈRES', this.margin, this.currentY);
-    this.currentY += 15;
-
-    // Liste des phases
-    phases.forEach((phase, index) => {
-      this.pdf.setFontSize(12);
-      this.pdf.setFont('helvetica', 'bold');
-      this.pdf.setTextColor(COLORS.text);
-
-      const phaseText = `${index + 1}. ${phase.title}`;
-      this.pdf.text(phaseText, this.margin + 5, this.currentY);
-      this.currentY += 8;
-
-      // Sous-étapes
-      if (phase.steps && phase.steps.length > 0) {
-        this.pdf.setFontSize(10);
-        this.pdf.setFont('helvetica', 'normal');
-        this.pdf.setTextColor(COLORS.textLight);
-
-        phase.steps.slice(0, 3).forEach((step) => {
-          this.pdf.text(`• ${step.title}`, this.margin + 10, this.currentY);
-          this.currentY += 6;
-        });
-
-        if (phase.steps.length > 3) {
-          this.pdf.text(`• ... et ${phase.steps.length - 3} autres étapes`, this.margin + 10, this.currentY);
-          this.currentY += 6;
-        }
-      }
-
-      this.currentY += 5;
-    });
-  }
 
   /**
    * Génère une phase
@@ -450,29 +378,100 @@ export class PDFGenerator {
       pageNumber++;
     }
 
-    // Table des matières
-    if (includeTableOfContents && phases.length > 0) {
-      this.generateTableOfContents(phases);
-      this.addPageFooter();
-      pageNumber++;
-    }
-
-    // Phases
+    // Générer d'abord les phases pour connaître leurs positions de page
     if (phases.length > 0) {
       this.pdf.addPage();
-      this.addPageHeader(procedure, pageNumber);
+      const phasesStartPage = pageNumber + (includeTableOfContents ? 1 : 0);
+      this.addPageHeader(procedure, phasesStartPage);
 
       phases.forEach((phase, index) => {
-        this.generatePhase(phase, index + 1, procedure, pageNumber);
+        // Enregistrer le numéro de page de cette phase
+        const currentPageNum = (this.pdf as any).internal.getCurrentPageInfo().pageNumber;
+        this.phasePages.set(index, currentPageNum);
+
+        this.generatePhase(phase, index + 1, procedure, phasesStartPage);
 
         // Ajouter une ligne de séparation entre les phases
         if (index < phases.length - 1) {
-          this.checkPageBreak(10, procedure, pageNumber);
+          this.checkPageBreak(10, procedure, phasesStartPage);
           this.pdf.setDrawColor(COLORS.textLight);
           this.pdf.setLineWidth(0.5);
           this.pdf.line(this.margin, this.currentY, this.pageWidth - this.margin, this.currentY);
           this.currentY += 10;
         }
+      });
+
+      this.addPageFooter();
+    }
+
+    // Maintenant générer la table des matières avec les liens vers les bonnes pages
+    // On va l'insérer en page 2 (après la couverture)
+    if (includeTableOfContents && phases.length > 0) {
+      // Insérer une nouvelle page pour la TOC
+      this.pdf.insertPage(includeCoverPage ? 2 : 1);
+      this.pdf.setPage(includeCoverPage ? 2 : 1);
+
+      this.currentY = this.margin;
+
+      // Titre
+      this.pdf.setFontSize(24);
+      this.pdf.setFont('helvetica', 'bold');
+      this.pdf.setTextColor(COLORS.primary);
+      this.pdf.text('TABLE DES MATIÈRES', this.margin, this.currentY);
+      this.currentY += 15;
+
+      // Liste des phases avec liens cliquables
+      phases.forEach((phase, index) => {
+        this.pdf.setFontSize(12);
+        this.pdf.setFont('helvetica', 'bold');
+        this.pdf.setTextColor(COLORS.primary);
+
+        const phaseText = `${index + 1}. ${phase.title}`;
+
+        // Récupérer la page de destination (ajustée car on a inséré la TOC)
+        let targetPage = this.phasePages.get(index);
+        if (targetPage) {
+          targetPage += 1; // Ajuster car on a inséré la TOC
+        }
+
+        // Ajouter le texte avec lien
+        if (targetPage) {
+          this.pdf.textWithLink(phaseText, this.margin + 5, this.currentY, {
+            pageNumber: targetPage
+          });
+        } else {
+          this.pdf.text(phaseText, this.margin + 5, this.currentY);
+        }
+
+        this.currentY += 8;
+
+        // Sous-étapes avec liens
+        if (phase.steps && phase.steps.length > 0) {
+          this.pdf.setFontSize(10);
+          this.pdf.setFont('helvetica', 'normal');
+          this.pdf.setTextColor(COLORS.textLight);
+
+          phase.steps.slice(0, 3).forEach((step) => {
+            const stepText = `• ${step.title}`;
+
+            if (targetPage) {
+              this.pdf.textWithLink(stepText, this.margin + 10, this.currentY, {
+                pageNumber: targetPage
+              });
+            } else {
+              this.pdf.text(stepText, this.margin + 10, this.currentY);
+            }
+
+            this.currentY += 6;
+          });
+
+          if (phase.steps.length > 3) {
+            this.pdf.text(`• ... et ${phase.steps.length - 3} autres étapes`, this.margin + 10, this.currentY);
+            this.currentY += 6;
+          }
+        }
+
+        this.currentY += 5;
       });
 
       this.addPageFooter();
@@ -487,7 +486,9 @@ export class PDFGenerator {
    */
   async download(procedure: Procedure, phases: Phase[], options?: PDFOptions) {
     const pdf = await this.generate(procedure, phases, options);
-    const fileName = `${procedure.title.replace(/[^a-z0-9]/gi, '_')}_${format(new Date(), 'yyyyMMdd')}.pdf`;
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+    const fileName = `${procedure.title.replace(/[^a-z0-9]/gi, '_')}_${dateStr}.pdf`;
     pdf.save(fileName);
   }
 }

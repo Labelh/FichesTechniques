@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Grid, List, Kanban, Filter, SortAsc, FileText } from 'lucide-react';
-import { useProcedures, useProcedureStats } from '@/hooks/useProcedures';
+import { useProcedures } from '@/hooks/useProcedures';
 import { useAppStore } from '@/store/useAppStore';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import ProcedureCard from '@/components/dashboard/ProcedureCard';
 import ProcedureList from '@/components/dashboard/ProcedureList';
 import ProcedureKanban from '@/components/dashboard/ProcedureKanban';
-import StatsOverview from '@/components/dashboard/StatsOverview';
 import FilterPanel from '@/components/dashboard/FilterPanel';
 
 export default function Dashboard() {
@@ -27,7 +26,6 @@ export default function Dashboard() {
     { ...searchFilters, query: searchQuery },
     sortOption
   );
-  const stats = useProcedureStats();
 
   return (
     <div className="space-y-6">
@@ -40,9 +38,6 @@ export default function Dashboard() {
           Gérez vos procédures techniques
         </p>
       </div>
-
-      {/* Statistics */}
-      <StatsOverview stats={stats} />
 
       {/* Search & Filters Bar */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">

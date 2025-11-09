@@ -7,7 +7,6 @@ import {
   Upload,
   Trash2,
   Edit,
-  Package,
   DollarSign,
   ExternalLink
 } from 'lucide-react';
@@ -22,7 +21,6 @@ import * as XLSX from 'xlsx';
 export default function ToolsLibrary() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [showOwnedOnly, setShowOwnedOnly] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingTool, setEditingTool] = useState<Tool | null>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -38,9 +36,8 @@ export default function ToolsLibrary() {
     const matchesSearch = tool.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          tool.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || tool.category === selectedCategory;
-    const matchesOwned = !showOwnedOnly || tool.owned;
 
-    return matchesSearch && matchesCategory && matchesOwned;
+    return matchesSearch && matchesCategory;
   }) || [];
 
   // Récupération des catégories uniques
@@ -58,15 +55,6 @@ export default function ToolsLibrary() {
     }
   };
 
-  const handleToggleOwned = async (tool: Tool) => {
-    try {
-      await db.tools.update(tool.id, { owned: !tool.owned });
-      toast.success(tool.owned ? 'Marqué comme non possédé' : 'Marqué comme possédé');
-    } catch (error) {
-      console.error('Error updating tool:', error);
-      toast.error('Erreur lors de la mise à jour');
-    }
-  };
 
   const handleImportJSON = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -85,7 +73,8 @@ export default function ToolsLibrary() {
           name: toolData.name || 'Outil sans nom',
           description: toolData.description || '',
           category: toolData.category || 'Autre',
-          owned: toolData.owned || false,
+          reference: toolData.reference,
+          location: toolData.location,
           price: toolData.price,
           purchaseLink: toolData.purchaseLink,
           alternatives: toolData.alternatives || [],
@@ -141,18 +130,13 @@ export default function ToolsLibrary() {
           continue;
         }
 
-        // Construire la description avec référence et emplacement
-        const descriptionParts = [];
-        if (reference) descriptionParts.push(`Réf: ${reference}`);
-        if (location) descriptionParts.push(`Emplacement: ${location}`);
-        const description = descriptionParts.join(' | ');
-
         await db.tools.add({
           id: crypto.randomUUID(),
           name: designation,
-          description: description,
+          description: '',
           category: category,
-          owned: false,
+          reference: reference,
+          location: location,
           alternatives: [],
           consumables: [],
           createdAt: new Date(),
@@ -229,7 +213,7 @@ export default function ToolsLibrary() {
 
       {/* Filters */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
@@ -250,18 +234,6 @@ export default function ToolsLibrary() {
               <option key={cat} value={cat}>{cat}</option>
             ))}
           </select>
-
-          <label className="flex items-center gap-2 px-3 py-2">
-            <input
-              type="checkbox"
-              checked={showOwnedOnly}
-              onChange={(e) => setShowOwnedOnly(e.target.checked)}
-              className="rounded text-primary focus:ring-primary"
-            />
-            <span className="text-sm text-gray-700 dark:text-gray-300">
-              Outils possédés uniquement
-            </span>
-          </label>
         </div>
       </div>
 
@@ -270,16 +242,16 @@ export default function ToolsLibrary() {
         <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
           <Wrench className="h-16 w-16 mx-auto text-gray-400 mb-4" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            {searchTerm || selectedCategory !== 'all' || showOwnedOnly
+            {searchTerm || selectedCategory !== 'all'
               ? 'Aucun outil trouvé'
               : 'Aucun outil dans votre bibliothèque'}
           </h3>
           <p className="text-gray-500 dark:text-gray-400 mb-4">
-            {searchTerm || selectedCategory !== 'all' || showOwnedOnly
+            {searchTerm || selectedCategory !== 'all'
               ? 'Essayez de modifier vos filtres'
               : 'Commencez par ajouter votre premier outil'}
           </p>
-          {!searchTerm && selectedCategory === 'all' && !showOwnedOnly && (
+          {!searchTerm && selectedCategory === 'all' && (
             <Button onClick={() => setIsAddDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Ajouter un outil
@@ -293,45 +265,53 @@ export default function ToolsLibrary() {
               key={tool.id}
               className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-lg transition-shadow"
             >
-              <div className="flex justify-between items-start mb-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-semibold text-gray-900 dark:text-white">
-                      {tool.name}
-                    </h3>
-                    {tool.owned && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                        Possédé
-                      </span>
-                    )}
-                  </div>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
-                    {tool.category}
-                  </span>
+              {/* Header: Référence (gauche) et Emplacement (droite) avec boutons d'action */}
+              <div className="flex justify-between items-start mb-2">
+                <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  {tool.reference || 'Sans référence'}
                 </div>
-                <div className="flex gap-1">
-                  <button
-                    onClick={() => {
-                      setEditingTool(tool);
-                      setIsAddDialogOpen(true);
-                    }}
-                    className="p-1 text-gray-400 hover:text-primary transition-colors"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteTool(tool.id)}
-                    className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                <div className="flex items-center gap-2">
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    {tool.location || ''}
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => {
+                        setEditingTool(tool);
+                        setIsAddDialogOpen(true);
+                      }}
+                      className="p-1 text-gray-400 hover:text-primary transition-colors"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteTool(tool.id)}
+                      className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">
-                {tool.description || 'Aucune description'}
-              </p>
+              {/* Désignation */}
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                {tool.name}
+              </h3>
 
+              {/* Catégorie */}
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 mb-3">
+                {tool.category}
+              </span>
+
+              {/* Description */}
+              {tool.description && (
+                <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2 mt-2">
+                  {tool.description}
+                </p>
+              )}
+
+              {/* Prix */}
               {tool.price && (
                 <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400 mb-2">
                   <DollarSign className="h-4 w-4" />
@@ -339,26 +319,20 @@ export default function ToolsLibrary() {
                 </div>
               )}
 
-              <div className="flex gap-2 mt-3">
-                <Button
-                  size="sm"
-                  variant={tool.owned ? 'outline' : 'default'}
-                  onClick={() => handleToggleOwned(tool)}
-                  className="flex-1"
-                >
-                  <Package className="h-4 w-4 mr-1" />
-                  {tool.owned ? 'Possédé' : 'Marquer comme possédé'}
-                </Button>
-                {tool.purchaseLink && (
+              {/* Lien d'achat */}
+              {tool.purchaseLink && (
+                <div className="mt-3">
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => window.open(tool.purchaseLink, '_blank')}
+                    className="w-full"
                   >
-                    <ExternalLink className="h-4 w-4" />
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Lien d'achat
                   </Button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -411,16 +385,16 @@ export default function ToolsLibrary() {
                   Depuis JSON
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Fichier JSON avec propriétés: name, description, category, owned, price, purchaseLink
+                  Fichier JSON avec propriétés: name, description, category, reference, location, price, purchaseLink
                 </p>
                 <div className="text-xs bg-gray-100 dark:bg-gray-700 p-3 rounded">
                   <strong>Exemple:</strong>
                   <pre className="mt-1 overflow-x-auto">
 {`[{
   "name": "Perceuse",
-  "description": "...",
+  "reference": "REF-001",
   "category": "Électro",
-  "owned": true
+  "location": "Atelier A"
 }]`}
                   </pre>
                 </div>
@@ -480,7 +454,8 @@ function AddEditToolDialog({
     name: tool?.name || '',
     description: tool?.description || '',
     category: tool?.category || '',
-    owned: tool?.owned || false,
+    reference: tool?.reference || '',
+    location: tool?.location || '',
     price: tool?.price || undefined,
     purchaseLink: tool?.purchaseLink || '',
     color: tool?.color || '#ff5722',
@@ -544,13 +519,46 @@ function AddEditToolDialog({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Nom de l'outil *
+              Référence
+            </label>
+            <Input
+              value={formData.reference}
+              onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
+              placeholder="Ex: REF-001"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Désignation (Nom de l'outil) *
             </label>
             <Input
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="Ex: Perceuse sans fil"
               required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Catégorie
+            </label>
+            <Input
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              placeholder="Ex: Électroportatif"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Emplacement
+            </label>
+            <Input
+              value={formData.location}
+              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+              placeholder="Ex: Atelier A - Étagère 2"
             />
           </div>
 
@@ -564,17 +572,6 @@ function AddEditToolDialog({
               placeholder="Description de l'outil..."
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Catégorie
-            </label>
-            <Input
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              placeholder="Ex: Électroportatif"
             />
           </div>
 
@@ -627,18 +624,6 @@ function AddEditToolDialog({
               Cette couleur sera utilisée pour tracer les trajectoires d'outil sur les photos
             </p>
           </div>
-
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={formData.owned}
-              onChange={(e) => setFormData({ ...formData, owned: e.target.checked })}
-              className="rounded text-primary focus:ring-primary"
-            />
-            <span className="text-sm text-gray-700 dark:text-gray-300">
-              Je possède cet outil
-            </span>
-          </label>
 
           <div className="flex gap-2 mt-6">
             <Button

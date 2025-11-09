@@ -28,11 +28,11 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
   const [estimatedTime, setEstimatedTime] = useState(phase.estimatedTime);
   const [selectedTools, setSelectedTools] = useState<Tool[]>(phase.tools || []);
   const [steps, setSteps] = useState<SubStep[]>(phase.steps || []);
-  const [safetyNotes, setSafetyNotes] = useState<SafetyNote[]>(phase.safetyNotes || []);
-  const [tips, setTips] = useState<string[]>(phase.tips || []);
   const [images, setImages] = useState<AnnotatedImage[]>(phase.images || []);
   const [editingImageId, setEditingImageId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'info' | 'tools' | 'steps'>('info');
+  const [safetyNotes, setSafetyNotes] = useState<SafetyNote[]>(phase.safetyNotes || []);
+  const [tips, setTips] = useState<string[]>(phase.tips || []);
 
   // Récupérer tous les outils disponibles
   const availableTools = useLiveQuery(() => db.tools.toArray(), []);
@@ -115,7 +115,9 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
       title: '',
       description: '',
       estimatedTime: 0,
-      images: []
+      images: [],
+      tips: [],
+      safetyNotes: []
     }]);
   };
 

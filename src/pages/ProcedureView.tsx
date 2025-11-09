@@ -51,18 +51,18 @@ export default function ProcedureView() {
   };
 
   const handleExportPDF = async () => {
+    const toastId = toast.loading('Génération du PDF en cours...');
     try {
-      toast.loading('Génération du PDF en cours...');
       await generatePDF(procedure, procedure.phases, {
         includeCoverPage: true,
         includeTableOfContents: true,
         includeToolList: true,
         includeMaterialList: true,
       });
-      toast.dismiss();
+      toast.dismiss(toastId);
       toast.success('PDF généré avec succès');
     } catch (error) {
-      toast.dismiss();
+      toast.dismiss(toastId);
       console.error('Error generating PDF:', error);
       toast.error('Erreur lors de la génération du PDF');
     }
