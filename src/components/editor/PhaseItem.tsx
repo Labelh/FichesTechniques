@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, Package, List, AlertTriangle, Lightbulb, Image as ImageIcon, Save } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, Package, List, AlertTriangle, Lightbulb, Save } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -9,7 +9,6 @@ import { db } from '@/db/database';
 import type { Phase, DifficultyLevel, Tool, SubStep, SafetyNote, AnnotatedImage, Annotation } from '@/types';
 import { toast } from 'sonner';
 import { useLiveQuery } from 'dexie-react-hooks';
-import ImageUploader from '@/components/phase/ImageUploader';
 import ImageAnnotator from '@/components/phase/ImageAnnotator';
 
 interface PhaseItemProps {
@@ -339,21 +338,6 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                   </div>
                 </div>
 
-                {/* Photo de couverture */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    <ImageIcon className="h-4 w-4 inline mr-1" />
-                    Photo de couverture
-                  </label>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                    Ajoutez des photos et annotez-les pour illustrer la phase (trajectoires d'outils, zones importantes, etc.)
-                  </p>
-                  <ImageUploader
-                    images={images}
-                    onImagesChange={setImages}
-                    onEditImage={setEditingImageId}
-                  />
-                </div>
               </>
             )}
 
@@ -366,7 +350,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                   </label>
                   <div className="space-y-6">
                     {steps.map((step, idx) => (
-                      <div key={step.id} className="p-6 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+                      <div key={step.id} className="p-6 bg-transparent rounded-xl border border-gray-700/30 hover:border-gray-600/50 transition-all">
                         <div className="flex items-center gap-3 mb-4">
                           <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-white text-sm font-bold">
                             {idx + 1}
@@ -391,7 +375,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                           onChange={(e) => updateStep(step.id, { description: e.target.value })}
                           placeholder="Description détaillée de cette sous-étape..."
                           rows={3}
-                          className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-sm text-gray-900 dark:text-white mb-4 focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                          className="w-full rounded-lg border border-gray-700/30 bg-transparent px-4 py-3 text-sm text-white mb-4 focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                         />
 
                         {/* Step Images */}
@@ -416,22 +400,19 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                               </div>
                             ))}
                           </div>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            onChange={async (e) => {
-                              const files = Array.from(e.target.files || []);
+                          <div
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={async (e) => {
+                              e.preventDefault();
+                              const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
                               const newImages: AnnotatedImage[] = await Promise.all(
                                 files.map(async (file) => {
                                   const img = new Image();
                                   const url = URL.createObjectURL(file);
-
                                   await new Promise((resolve) => {
                                     img.onload = resolve;
                                     img.src = url;
                                   });
-
                                   return {
                                     imageId: crypto.randomUUID(),
                                     image: {
@@ -451,10 +432,11 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                                 })
                               );
                               addStepImage(step.id, newImages);
-                              e.target.value = '';
                             }}
-                            className="text-xs"
-                          />
+                            className="border-2 border-dashed border-gray-700/30 rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer"
+                          >
+                            <p className="text-sm text-gray-400">Glissez-déposez des images ici</p>
+                          </div>
                         </div>
 
                         {/* Outil pour cette sous-étape */}
@@ -464,7 +446,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                             Outil requis (optionnel)
                           </label>
                           {step.tool ? (
-                            <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-700 rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm">
+                            <div className="flex items-center justify-between p-4 bg-transparent rounded-lg border border-gray-700/30">
                               <div className="flex items-center gap-3">
                                 <Wrench className="h-5 w-5 text-primary" />
                                 <div>
@@ -489,7 +471,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                                 const tool = availableTools?.find(t => t.id === toolId);
                                 updateStepTool(step.id, tool || null);
                               }}
-                              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                              className="w-full rounded-lg border border-gray-700/30 bg-transparent px-4 py-3 text-sm font-medium text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                             >
                               <option value="">Aucun outil</option>
                               {availableTools?.map(tool => (
@@ -543,12 +525,12 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                           </label>
                           <div className="space-y-3">
                             {(step.safetyNotes || []).map((note) => (
-                              <div key={note.id} className="p-4 bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-200 dark:border-orange-800 rounded-lg">
+                              <div key={note.id} className="p-4 bg-transparent border-2 border-orange-500/30 rounded-lg">
                                 <div className="flex gap-3 items-start mb-3">
                                   <select
                                     value={note.type}
                                     onChange={(e) => updateStepSafetyNote(step.id, note.id, { type: e.target.value as any })}
-                                    className="rounded-md border border-orange-300 dark:border-orange-700 bg-white dark:bg-gray-700 px-3 py-2 text-sm font-medium"
+                                    className="rounded-md border border-orange-500/30 bg-transparent px-3 py-2 text-sm font-medium text-white"
                                   >
                                     <option value="info">Information</option>
                                     <option value="warning">Attention</option>

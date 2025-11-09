@@ -24,9 +24,9 @@ export default function Header() {
         </Button>
 
         {/* Logo & Title */}
-        <Link to="/" className="flex items-center space-x-2 mr-8">
+        <Link to="/" className="flex items-center space-x-3 mr-8">
           <FileText className="h-6 w-6 text-primary" />
-          <span className="text-xl font-bold text-gray-900 dark:text-white">
+          <span className="text-xl font-bold text-white tracking-wide">
             Fiches Techniques
           </span>
         </Link>
