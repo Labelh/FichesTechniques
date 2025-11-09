@@ -75,7 +75,7 @@ export default function Sidebar() {
                       className={cn(
                         'px-2 py-0.5 rounded-full text-xs font-semibold',
                         isActive
-                          ? 'bg-white text-primary'
+                          ? 'bg-gray-800 text-primary'
                           : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
                       )}
                     >

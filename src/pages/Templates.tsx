@@ -50,7 +50,7 @@ export default function Templates() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+      <div className="bg-gray-900/30 rounded-lg border border-gray-700/50 p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Search */}
           <div className="relative">
@@ -84,7 +84,7 @@ export default function Templates() {
 
       {/* Templates Grid */}
       {filteredTemplates.length === 0 ? (
-        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="text-center py-12 bg-gray-900/30 rounded-lg border border-gray-700/50">
           <FolderKanban className="h-16 w-16 mx-auto text-gray-400 mb-4" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
             {searchTerm || selectedCategory !== 'all'
@@ -109,7 +109,7 @@ export default function Templates() {
             return (
               <div
                 key={template.id}
-                className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-5 hover:shadow-lg transition-shadow"
+                className="bg-gray-900/30 rounded-lg border border-gray-700/50 p-5 hover:shadow-lg transition-shadow"
               >
                 {/* Header */}
                 <div className="flex items-start justify-between mb-3">
@@ -161,7 +161,7 @@ export default function Templates() {
                 )}
 
                 {/* Actions */}
-                <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex gap-2 pt-4 border-t border-gray-700/50">
                   <Button
                     size="sm"
                     variant="ghost"

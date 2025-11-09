@@ -11,9 +11,9 @@ interface ProcedureListProps {
 
 export default function ProcedureList({ procedures }: ProcedureListProps) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead className="bg-gray-50 dark:bg-gray-900">
+    <div className="bg-gray-900/30 rounded-lg border border-gray-700/50 overflow-hidden">
+      <table className="min-w-full divide-y divide-gray-700/50">
+        <thead className="bg-gray-900/50">
           <tr>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               Titre
@@ -32,7 +32,7 @@ export default function ProcedureList({ procedures }: ProcedureListProps) {
             </th>
           </tr>
         </thead>
-        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+        <tbody className="bg-transparent divide-y divide-gray-700/50">
           {procedures.map((procedure) => (
             <tr
               key={procedure.id}

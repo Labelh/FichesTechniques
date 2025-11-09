@@ -212,7 +212,7 @@ export default function ToolsLibrary() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+      <div className="bg-gray-900/30 rounded-lg border border-gray-700/50 p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -227,7 +227,7 @@ export default function ToolsLibrary() {
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent text-gray-900 dark:text-white"
           >
             <option value="all">Toutes les catégories</option>
             {categories.map(cat => (
@@ -239,7 +239,7 @@ export default function ToolsLibrary() {
 
       {/* Tools Grid */}
       {filteredTools.length === 0 ? (
-        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="text-center py-12 bg-gray-900/30 rounded-lg border border-gray-700/50">
           <Wrench className="h-16 w-16 mx-auto text-gray-400 mb-4" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
             {searchTerm || selectedCategory !== 'all'
@@ -263,7 +263,7 @@ export default function ToolsLibrary() {
           {filteredTools.map((tool) => (
             <div
               key={tool.id}
-              className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-lg transition-shadow"
+              className="bg-gray-900/30 rounded-lg border border-gray-700/50 p-4 hover:shadow-lg transition-shadow"
             >
               {/* Header: Référence (gauche) et Emplacement (droite) avec boutons d'action */}
               <div className="flex justify-between items-start mb-2">
@@ -341,7 +341,7 @@ export default function ToolsLibrary() {
       {/* Import Dialog */}
       {importDialogOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-gray-900/30 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
               Importer des outils
             </h2>
@@ -511,7 +511,7 @@ function AddEditToolDialog({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="bg-gray-900/30 rounded-lg p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
         <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
           {tool ? 'Modifier l\'outil' : 'Ajouter un outil'}
         </h2>
@@ -571,7 +571,7 @@ function AddEditToolDialog({
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Description de l'outil..."
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent text-gray-900 dark:text-white"
             />
           </div>
 

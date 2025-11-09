@@ -40,7 +40,7 @@ export default function Dashboard() {
       </div>
 
       {/* Search & Filters Bar */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+      <div className="bg-gray-900/50 rounded-lg border border-gray-700/50 p-4">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">

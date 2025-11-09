@@ -47,9 +47,9 @@ export default function PhaseTemplateSelector({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+      <div className="bg-gray-900 rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+        <div className="p-6 border-b border-gray-700/50 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Ajouter une phase</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -62,7 +62,7 @@ export default function PhaseTemplateSelector({
         </div>
 
         {/* Category Filter */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex gap-2 overflow-x-auto">
+        <div className="p-4 border-b border-gray-700/50 flex gap-2 overflow-x-auto">
           {categories.map((category) => (
             <button
               key={category}
@@ -113,7 +113,7 @@ export default function PhaseTemplateSelector({
                 <button
                   key={template.id}
                   onClick={() => handleSelectTemplate(template.id)}
-                  className="p-6 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-primary dark:hover:border-primary hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all text-left group"
+                  className="p-6 border border-gray-700/50 rounded-lg hover:border-primary dark:hover:border-primary hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all text-left group"
                 >
                   <div className="flex items-start gap-4">
                     <div className="p-3 bg-primary/10 rounded-lg">
@@ -170,7 +170,7 @@ export default function PhaseTemplateSelector({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+        <div className="p-4 border-t border-gray-700/50 bg-gray-50 dark:bg-gray-800/50">
           <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
             Astuce : Vous pouvez sauvegarder n'importe quelle phase comme template pour la réutiliser
           </p>

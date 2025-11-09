@@ -121,7 +121,7 @@ export default function ProcedureView() {
       </div>
 
       {/* Content */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+      <div className="bg-gray-900/30 rounded-lg border border-gray-700/50 p-6">
         <h2 className="text-xl font-bold mb-4">Phases</h2>
 
         {procedure.phases.length === 0 ? (
