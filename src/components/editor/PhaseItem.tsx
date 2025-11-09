@@ -361,36 +361,37 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
             {activeTab === 'steps' && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Étapes détaillées
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+                    Sous-étapes détaillées
                   </label>
-                  <div className="space-y-3">
+                  <div className="space-y-6">
                     {steps.map((step, idx) => (
-                      <div key={step.id} className="p-3 bg-gray-50 dark:bg-gray-700 rounded">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs font-bold">
+                      <div key={step.id} className="p-6 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-3 mb-4">
+                          <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-white text-sm font-bold">
                             {idx + 1}
                           </span>
                           <Input
                             value={step.title}
                             onChange={(e) => updateStep(step.id, { title: e.target.value })}
-                            placeholder="Titre de l'étape..."
+                            placeholder="Titre de la sous-étape..."
                             className="flex-1"
                           />
                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => removeStep(step.id)}
+                            className="hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600"
                           >
-                            <X className="h-4 w-4" />
+                            <X className="h-5 w-5" />
                           </Button>
                         </div>
                         <textarea
                           value={step.description}
                           onChange={(e) => updateStep(step.id, { description: e.target.value })}
-                          placeholder="Description détaillée..."
-                          rows={2}
-                          className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-white mb-2"
+                          placeholder="Description détaillée de cette sous-étape..."
+                          rows={3}
+                          className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-sm text-gray-900 dark:text-white mb-4 focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                         />
 
                         {/* Step Images */}
@@ -457,23 +458,27 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                         </div>
 
                         {/* Outil pour cette sous-étape */}
-                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
-                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
-                            <Wrench className="h-3 w-3 inline mr-1" />
+                        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                            <Wrench className="h-4 w-4 inline mr-2" />
                             Outil requis (optionnel)
                           </label>
                           {step.tool ? (
-                            <div className="flex items-center justify-between p-2 bg-white dark:bg-gray-600 rounded border border-gray-300 dark:border-gray-500">
-                              <div>
-                                <div className="text-sm font-medium text-gray-900 dark:text-white">{step.tool.name}</div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400">{step.tool.category}</div>
+                            <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-700 rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm">
+                              <div className="flex items-center gap-3">
+                                <Wrench className="h-5 w-5 text-primary" />
+                                <div>
+                                  <div className="text-sm font-semibold text-gray-900 dark:text-white">{step.tool.name}</div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400">{step.tool.category}</div>
+                                </div>
                               </div>
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => updateStepTool(step.id, null)}
+                                className="hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600"
                               >
-                                <X className="h-3 w-3" />
+                                <X className="h-4 w-4" />
                               </Button>
                             </div>
                           ) : (
@@ -484,7 +489,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                                 const tool = availableTools?.find(t => t.id === toolId);
                                 updateStepTool(step.id, tool || null);
                               }}
-                              className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm"
+                              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                             >
                               <option value="">Aucun outil</option>
                               {availableTools?.map(tool => (
@@ -495,12 +500,12 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                         </div>
 
                         {/* Conseils pour cette sous-étape */}
-                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
-                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
-                            <Lightbulb className="h-3 w-3 inline mr-1" />
-                            Conseils
+                        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                            <Lightbulb className="h-4 w-4 inline mr-2 text-yellow-500" />
+                            Conseils pratiques
                           </label>
-                          <div className="space-y-2">
+                          <div className="space-y-3">
                             {(step.tips || []).map((tip, tipIdx) => (
                               <div key={tipIdx} className="flex gap-2">
                                 <Input
@@ -518,27 +523,32 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                                 </Button>
                               </div>
                             ))}
-                            <Button variant="outline" size="sm" onClick={() => addStepTip(step.id)}>
-                              <Plus className="h-3 w-3 mr-1" />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => addStepTip(step.id)}
+                              className="mt-1"
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
                               Ajouter un conseil
                             </Button>
                           </div>
                         </div>
 
                         {/* Consignes de sécurité pour cette sous-étape */}
-                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
-                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
-                            <AlertTriangle className="h-3 w-3 inline mr-1 text-orange-500" />
+                        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                            <AlertTriangle className="h-4 w-4 inline mr-2 text-orange-500" />
                             Consignes de sécurité
                           </label>
-                          <div className="space-y-2">
+                          <div className="space-y-3">
                             {(step.safetyNotes || []).map((note) => (
-                              <div key={note.id} className="p-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded">
-                                <div className="flex gap-2 items-start mb-2">
+                              <div key={note.id} className="p-4 bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-200 dark:border-orange-800 rounded-lg">
+                                <div className="flex gap-3 items-start mb-3">
                                   <select
                                     value={note.type}
                                     onChange={(e) => updateStepSafetyNote(step.id, note.id, { type: e.target.value as any })}
-                                    className="rounded-md border border-orange-300 dark:border-orange-700 bg-white dark:bg-gray-700 px-2 py-1 text-xs"
+                                    className="rounded-md border border-orange-300 dark:border-orange-700 bg-white dark:bg-gray-700 px-3 py-2 text-sm font-medium"
                                   >
                                     <option value="info">Information</option>
                                     <option value="warning">Attention</option>
@@ -562,17 +572,26 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                                 />
                               </div>
                             ))}
-                            <Button variant="outline" size="sm" onClick={() => addStepSafetyNote(step.id)}>
-                              <Plus className="h-3 w-3 mr-1" />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => addStepSafetyNote(step.id)}
+                              className="mt-1"
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
                               Ajouter une consigne
                             </Button>
                           </div>
                         </div>
                       </div>
                     ))}
-                    <Button variant="outline" size="sm" onClick={addStep}>
-                      <Plus className="h-4 w-4 mr-1" />
-                      Ajouter une étape
+                    <Button
+                      variant="outline"
+                      onClick={addStep}
+                      className="w-full mt-4 py-6 border-2 border-dashed hover:border-primary hover:bg-primary/5 transition-all"
+                    >
+                      <Plus className="h-5 w-5 mr-2" />
+                      Ajouter une sous-étape
                     </Button>
                   </div>
                 </div>

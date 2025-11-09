@@ -60,10 +60,10 @@ export default function Sidebar() {
               <Link key={item.href} to={item.href}>
                 <div
                   className={cn(
-                    'flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                    'flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
                     isActive
-                      ? 'bg-primary text-white'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      ? 'bg-primary text-white shadow-md'
+                      : 'text-white hover:bg-gray-800 hover:text-white'
                   )}
                 >
                   <div className="flex items-center">
