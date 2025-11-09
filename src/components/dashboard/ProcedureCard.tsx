@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { Clock, Edit, Trash2, Eye } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { formatDuration, formatRelativeDate } from '@/lib/utils';
@@ -39,20 +38,14 @@ export default function ProcedureCard({ procedure }: ProcedureCardProps) {
   };
 
   return (
-    <Card className="hover:shadow-lg transition-shadow">
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <CardTitle className="line-clamp-1">{procedure.title}</CardTitle>
-            <CardDescription className="line-clamp-2 mt-1">
-              {procedure.description || 'Pas de description'}
-            </CardDescription>
-          </div>
-        </div>
-      </CardHeader>
+    <div className="card h-100 shadow-sm hover-shadow-lg transition">
+      <div className="card-body">
+        <h5 className="card-title text-truncate mb-2">{procedure.title}</h5>
+        <p className="card-text text-muted small line-clamp-2 mb-3">
+          {procedure.description || 'Pas de description'}
+        </p>
 
-      <CardContent>
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div className="d-flex flex-wrap gap-2 mb-3">
           <Badge variant={getStatusColor(procedure.status) as any}>
             {procedure.status}
           </Badge>
@@ -61,46 +54,44 @@ export default function ProcedureCard({ procedure }: ProcedureCardProps) {
           )}
         </div>
 
-        <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-          <div className="flex items-center">
-            <Clock className="h-4 w-4 mr-2" />
-            {formatDuration(procedure.estimatedTotalTime)}
-          </div>
+        <div className="d-flex align-items-center text-muted small mb-3">
+          <Clock className="me-2 text-muted" size={16} />
+          {formatDuration(procedure.estimatedTotalTime)}
         </div>
 
         {procedure.tags.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1">
+          <div className="d-flex flex-wrap gap-1 mb-3">
             {procedure.tags.slice(0, 3).map((tag) => (
               <span
                 key={tag}
-                className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded"
+                className="badge bg-secondary bg-opacity-25 text-secondary"
               >
                 {tag}
               </span>
             ))}
             {procedure.tags.length > 3 && (
-              <span className="text-xs text-gray-500">
+              <span className="badge bg-secondary bg-opacity-10 text-muted">
                 +{procedure.tags.length - 3}
               </span>
             )}
           </div>
         )}
-      </CardContent>
+      </div>
 
-      <CardFooter className="flex items-center justify-between pt-4 border-t">
-        <span className="text-xs text-gray-500">
+      <div className="card-footer bg-transparent border-top d-flex align-items-center justify-content-between">
+        <small className="text-muted">
           {formatRelativeDate(procedure.updatedAt)}
-        </span>
+        </small>
 
-        <div className="flex gap-1">
+        <div className="d-flex gap-1">
           <Link to={`/procedures/${procedure.id}`}>
             <Button variant="ghost" size="icon" title="Voir">
-              <Eye className="h-4 w-4" />
+              <Eye className="text-muted" size={16} />
             </Button>
           </Link>
           <Link to={`/procedures/${procedure.id}/edit`}>
             <Button variant="ghost" size="icon" title="Modifier">
-              <Edit className="h-4 w-4" />
+              <Edit className="text-muted" size={16} />
             </Button>
           </Link>
           <Button
@@ -109,10 +100,10 @@ export default function ProcedureCard({ procedure }: ProcedureCardProps) {
             onClick={handleDelete}
             title="Supprimer"
           >
-            <Trash2 className="h-4 w-4 text-red-500" />
+            <Trash2 className="text-danger" size={16} />
           </Button>
         </div>
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   );
 }

@@ -37,55 +37,51 @@ export default function Sidebar() {
   if (!sidebarOpen) return null;
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r bg-surface border-gray-200 dark:border-gray-700 overflow-y-auto backdrop-blur-sm">
-      <div className="flex flex-col h-full pt-16">
+    <aside className="position-fixed start-0 top-0 h-100 border-end bg-dark overflow-auto" style={{ width: '256px', zIndex: 1040, paddingTop: '64px' }}>
+      <div className="d-flex flex-column h-100">
         {/* New Procedure Button */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="p-3 border-bottom">
           <Link to="/procedures/new">
-            <Button className="w-full shadow-md hover:shadow-lg transition-all" size="lg">
-              <Plus className="h-5 w-5 mr-2" />
+            <Button className="w-100" size="lg">
+              <Plus className="me-2" size={20} />
               Nouvelle Procédure
             </Button>
           </Link>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          {navItems.map((item) => {
-            const isActive =
-              location.pathname === item.href ||
-              (item.href !== '/' && location.pathname.startsWith(item.href));
+        <nav className="flex-fill px-3 py-3">
+          <div className="d-flex flex-column gap-1">
+            {navItems.map((item) => {
+              const isActive =
+                location.pathname === item.href ||
+                (item.href !== '/' && location.pathname.startsWith(item.href));
 
-            return (
-              <Link key={item.href} to={item.href}>
-                <div
-                  className={cn(
-                    'flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
-                    isActive
-                      ? 'bg-primary text-white shadow-md'
-                      : 'text-white hover:bg-gray-800 hover:text-white'
-                  )}
-                >
-                  <div className="flex items-center">
-                    <item.icon className="h-5 w-5 mr-3" />
-                    <span>{item.name}</span>
+              return (
+                <Link key={item.href} to={item.href} className="text-decoration-none">
+                  <div
+                    className={cn(
+                      'd-flex align-items-center justify-content-between px-3 py-2 rounded text-white',
+                      isActive
+                        ? 'bg-primary shadow-sm'
+                        : 'hover-bg-secondary'
+                    )}
+                    style={{ transition: 'all 0.2s' }}
+                  >
+                    <div className="d-flex align-items-center">
+                      <item.icon className="me-3 text-muted" size={20} />
+                      <span className="small fw-medium">{item.name}</span>
+                    </div>
+                    {item.count !== undefined && (
+                      <span className="badge bg-secondary">
+                        {item.count}
+                      </span>
+                    )}
                   </div>
-                  {item.count !== undefined && (
-                    <span
-                      className={cn(
-                        'px-2 py-0.5 rounded-full text-xs font-semibold',
-                        isActive
-                          ? 'bg-gray-800 text-primary'
-                          : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                      )}
-                    >
-                      {item.count}
-                    </span>
-                  )}
-                </div>
-              </Link>
-            );
-          })}
+                </Link>
+              );
+            })}
+          </div>
         </nav>
 
       </div>

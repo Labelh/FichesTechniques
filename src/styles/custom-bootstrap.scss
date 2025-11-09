@@ -149,3 +149,34 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #525252;
 }
+
+// Hover utilities
+.hover-bg-secondary:hover {
+  background-color: rgba(108, 117, 125, 0.1) !important;
+}
+
+.hover-shadow-lg {
+  transition: box-shadow 0.2s ease;
+}
+
+.hover-shadow-lg:hover {
+  box-shadow: 0 .5rem 1rem rgba(0,0,0,.5) !important;
+}
+
+// Text utilities
+.text-muted {
+  color: #737373 !important;
+}
+
+// Gap utilities (si pas disponible dans Bootstrap 5.3)
+.gap-1 {
+  gap: 0.25rem !important;
+}
+
+.gap-2 {
+  gap: 0.5rem !important;
+}
+
+.gap-3 {
+  gap: 1rem !important;
+}

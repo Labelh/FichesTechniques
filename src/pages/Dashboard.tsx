@@ -28,98 +28,102 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="container-fluid py-4">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+      <div className="mb-4">
+        <h1 className="display-5 fw-bold mb-2">
           Tableau de bord
         </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
+        <p className="text-muted">
           Gérez vos procédures techniques
         </p>
       </div>
 
       {/* Search & Filters Bar */}
-      <div className="bg-gray-900/50 rounded-lg border border-gray-700/50 p-4">
-        <div className="flex flex-col lg:flex-row gap-4">
-          {/* Search */}
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <Input
-              type="text"
-              placeholder="Rechercher une procédure..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-
-          {/* Right side: Filters, Sort & View Mode */}
-          <div className="flex items-center gap-3">
-            {/* Filters & Sort */}
-            <div className="flex gap-2">
-              <Button
-                variant={showFilters ? 'default' : 'outline'}
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                <Filter className="h-5 w-5 mr-2" />
-                Filtres
-              </Button>
-              <Button variant="outline">
-                <SortAsc className="h-5 w-5 mr-2" />
-                Trier
-              </Button>
+      <div className="card mb-4">
+        <div className="card-body">
+          <div className="row g-3 align-items-center">
+            {/* Search */}
+            <div className="col-12 col-lg-6">
+              <div className="position-relative">
+                <Search className="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted" size={20} />
+                <Input
+                  type="text"
+                  placeholder="Rechercher une procédure..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="ps-5"
+                />
+              </div>
             </div>
 
-            {/* Divider */}
-            <div className="h-8 w-px bg-gray-200 dark:bg-gray-700"></div>
+            {/* Right side: Filters, Sort & View Mode */}
+            <div className="col-12 col-lg-6">
+              <div className="d-flex align-items-center justify-content-lg-end gap-2 flex-wrap">
+                {/* Filters & Sort */}
+                <Button
+                  variant={showFilters ? 'default' : 'outline'}
+                  onClick={() => setShowFilters(!showFilters)}
+                >
+                  <Filter className="me-2 text-muted" size={18} />
+                  Filtres
+                </Button>
+                <Button variant="outline">
+                  <SortAsc className="me-2 text-muted" size={18} />
+                  Trier
+                </Button>
 
-            {/* View Mode */}
-            <div className="flex items-center gap-2">
-              <Button
-                variant={viewMode === 'grid' ? 'default' : 'outline'}
-                size="icon"
-                onClick={() => setViewMode('grid' as any)}
-                title="Vue grille"
-              >
-                <Grid className="h-5 w-5" />
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'outline'}
-                size="icon"
-                onClick={() => setViewMode('list' as any)}
-                title="Vue liste"
-              >
-                <List className="h-5 w-5" />
-              </Button>
-              <Button
-                variant={viewMode === 'kanban' ? 'default' : 'outline'}
-                size="icon"
-                onClick={() => setViewMode('kanban' as any)}
-                title="Vue kanban"
-              >
-                <Kanban className="h-5 w-5" />
-              </Button>
+                {/* Divider */}
+                <div className="vr d-none d-lg-block" style={{ height: '32px' }}></div>
+
+                {/* View Mode */}
+                <div className="btn-group" role="group">
+                  <Button
+                    variant={viewMode === 'grid' ? 'default' : 'outline'}
+                    size="icon"
+                    onClick={() => setViewMode('grid' as any)}
+                    title="Vue grille"
+                  >
+                    <Grid className="text-muted" size={18} />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'list' ? 'default' : 'outline'}
+                    size="icon"
+                    onClick={() => setViewMode('list' as any)}
+                    title="Vue liste"
+                  >
+                    <List className="text-muted" size={18} />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'kanban' ? 'default' : 'outline'}
+                    size="icon"
+                    onClick={() => setViewMode('kanban' as any)}
+                    title="Vue kanban"
+                  >
+                    <Kanban className="text-muted" size={18} />
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
+
+          {/* Filter Panel */}
+          {showFilters && (
+            <div className="mt-4 pt-4 border-top">
+              <FilterPanel />
+            </div>
+          )}
         </div>
-
-        {/* Filter Panel */}
-        {showFilters && (
-          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <FilterPanel />
-          </div>
-        )}
       </div>
 
       {/* Procedures */}
       {!procedures || procedures.length === 0 ? (
-        <div className="text-center py-12">
-          <FileText className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+        <div className="text-center py-5">
+          <FileText className="mx-auto text-muted mb-4" size={64} />
+          <h3 className="h5 fw-medium mb-2">
             Aucune procédure
           </h3>
-          <p className="text-gray-500 dark:text-gray-400 mb-6">
+          <p className="text-muted mb-4">
             Commencez par créer votre première procédure technique
           </p>
           <Link to="/procedures/new">
@@ -129,9 +133,11 @@ export default function Dashboard() {
       ) : (
         <>
           {viewMode === 'grid' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="row g-4">
               {procedures.map((procedure) => (
-                <ProcedureCard key={procedure.id} procedure={procedure} />
+                <div key={procedure.id} className="col-12 col-md-6 col-lg-4">
+                  <ProcedureCard procedure={procedure} />
+                </div>
               ))}
             </div>
           )}
