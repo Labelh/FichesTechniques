@@ -1,26 +1,511 @@
-import { Wrench } from 'lucide-react';
+import { useState } from 'react';
+import {
+  Wrench,
+  Plus,
+  Search,
+  Download,
+  Upload,
+  Trash2,
+  Edit,
+  Package,
+  DollarSign,
+  ExternalLink
+} from 'lucide-react';
+import { db } from '../db/database';
+import { Tool } from '../types';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { toast } from 'sonner';
+import { useLiveQuery } from 'dexie-react-hooks';
 
 export default function ToolsLibrary() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [showOwnedOnly, setShowOwnedOnly] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [editingTool, setEditingTool] = useState<Tool | null>(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+
+  // Récupération des outils depuis la DB
+  const tools = useLiveQuery(
+    () => db.tools.toArray(),
+    []
+  );
+
+  // Filtrage des outils
+  const filteredTools = tools?.filter(tool => {
+    const matchesSearch = tool.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         tool.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || tool.category === selectedCategory;
+    const matchesOwned = !showOwnedOnly || tool.owned;
+
+    return matchesSearch && matchesCategory && matchesOwned;
+  }) || [];
+
+  // Récupération des catégories uniques
+  const categories = Array.from(new Set(tools?.map(t => t.category) || []));
+
+  const handleDeleteTool = async (id: string) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cet outil ?')) return;
+
+    try {
+      await db.tools.delete(id);
+      toast.success('Outil supprimé avec succès');
+    } catch (error) {
+      console.error('Error deleting tool:', error);
+      toast.error('Erreur lors de la suppression de l\'outil');
+    }
+  };
+
+  const handleToggleOwned = async (tool: Tool) => {
+    try {
+      await db.tools.update(tool.id, { owned: !tool.owned });
+      toast.success(tool.owned ? 'Marqué comme non possédé' : 'Marqué comme possédé');
+    } catch (error) {
+      console.error('Error updating tool:', error);
+      toast.error('Erreur lors de la mise à jour');
+    }
+  };
+
+  const handleImportJSON = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+
+      let imported = 0;
+      const toolsToImport = Array.isArray(data) ? data : [data];
+
+      for (const toolData of toolsToImport) {
+        await db.tools.add({
+          id: crypto.randomUUID(),
+          name: toolData.name || 'Outil sans nom',
+          description: toolData.description || '',
+          category: toolData.category || 'Autre',
+          owned: toolData.owned || false,
+          price: toolData.price,
+          purchaseLink: toolData.purchaseLink,
+          alternatives: toolData.alternatives || [],
+          consumables: toolData.consumables || [],
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        imported++;
+      }
+
+      toast.success(`${imported} outil(s) importé(s) avec succès`);
+      setImportDialogOpen(false);
+    } catch (error) {
+      console.error('Error importing tools:', error);
+      toast.error('Erreur lors de l\'importation. Vérifiez le format du fichier.');
+    }
+  };
+
+  const handleExportJSON = () => {
+    if (!tools || tools.length === 0) {
+      toast.error('Aucun outil à exporter');
+      return;
+    }
+
+    const dataStr = JSON.stringify(tools, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `outils-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('Outils exportés avec succès');
+  };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Bibliothèque d'outils
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
-          Gérez vos outils et équipements
-        </p>
+      {/* Header */}
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Bibliothèque d'outils
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Gérez vos outils et équipements - {filteredTools.length} outil{filteredTools.length > 1 ? 's' : ''}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setImportDialogOpen(true)}
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Importer
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleExportJSON}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Exporter
+          </Button>
+          <Button onClick={() => {
+            setEditingTool(null);
+            setIsAddDialogOpen(true);
+          }}>
+            <Plus className="h-4 w-4 mr-2" />
+            Ajouter un outil
+          </Button>
+        </div>
       </div>
 
-      <div className="text-center py-12">
-        <Wrench className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-          Fonctionnalité en cours de développement
-        </h3>
-        <p className="text-gray-500 dark:text-gray-400">
-          La bibliothèque d'outils sera bientôt disponible
-        </p>
+      {/* Filters */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Rechercher un outil..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          >
+            <option value="all">Toutes les catégories</option>
+            {categories.map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+
+          <label className="flex items-center gap-2 px-3 py-2">
+            <input
+              type="checkbox"
+              checked={showOwnedOnly}
+              onChange={(e) => setShowOwnedOnly(e.target.checked)}
+              className="rounded text-primary focus:ring-primary"
+            />
+            <span className="text-sm text-gray-700 dark:text-gray-300">
+              Outils possédés uniquement
+            </span>
+          </label>
+        </div>
+      </div>
+
+      {/* Tools Grid */}
+      {filteredTools.length === 0 ? (
+        <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <Wrench className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            {searchTerm || selectedCategory !== 'all' || showOwnedOnly
+              ? 'Aucun outil trouvé'
+              : 'Aucun outil dans votre bibliothèque'}
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 mb-4">
+            {searchTerm || selectedCategory !== 'all' || showOwnedOnly
+              ? 'Essayez de modifier vos filtres'
+              : 'Commencez par ajouter votre premier outil'}
+          </p>
+          {!searchTerm && selectedCategory === 'all' && !showOwnedOnly && (
+            <Button onClick={() => setIsAddDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Ajouter un outil
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredTools.map((tool) => (
+            <div
+              key={tool.id}
+              className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-lg transition-shadow"
+            >
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-semibold text-gray-900 dark:text-white">
+                      {tool.name}
+                    </h3>
+                    {tool.owned && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                        Possédé
+                      </span>
+                    )}
+                  </div>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                    {tool.category}
+                  </span>
+                </div>
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => {
+                      setEditingTool(tool);
+                      setIsAddDialogOpen(true);
+                    }}
+                    className="p-1 text-gray-400 hover:text-primary transition-colors"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteTool(tool.id)}
+                    className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">
+                {tool.description || 'Aucune description'}
+              </p>
+
+              {tool.price && (
+                <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400 mb-2">
+                  <DollarSign className="h-4 w-4" />
+                  {tool.price} €
+                </div>
+              )}
+
+              <div className="flex gap-2 mt-3">
+                <Button
+                  size="sm"
+                  variant={tool.owned ? 'outline' : 'default'}
+                  onClick={() => handleToggleOwned(tool)}
+                  className="flex-1"
+                >
+                  <Package className="h-4 w-4 mr-1" />
+                  {tool.owned ? 'Possédé' : 'Marquer comme possédé'}
+                </Button>
+                {tool.purchaseLink && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => window.open(tool.purchaseLink, '_blank')}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Import Dialog */}
+      {importDialogOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
+              Importer des outils
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Importez vos outils depuis un fichier JSON. Le fichier doit contenir un tableau d'objets avec les propriétés : name, description, category, owned, price, purchaseLink.
+            </p>
+            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
+              <Upload className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+              <label className="cursor-pointer">
+                <span className="text-primary hover:text-primary/80 font-medium">
+                  Choisir un fichier JSON
+                </span>
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={handleImportJSON}
+                  className="hidden"
+                />
+              </label>
+            </div>
+            <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded text-xs">
+              <strong>Exemple de format :</strong>
+              <pre className="mt-2 overflow-x-auto">
+{`[
+  {
+    "name": "Perceuse",
+    "description": "Perceuse sans fil",
+    "category": "Électroportatif",
+    "owned": true,
+    "price": 89.99
+  }
+]`}
+              </pre>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <Button
+                variant="outline"
+                onClick={() => setImportDialogOpen(false)}
+                className="flex-1"
+              >
+                Annuler
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add/Edit Tool Dialog */}
+      {isAddDialogOpen && (
+        <AddEditToolDialog
+          tool={editingTool}
+          onClose={() => {
+            setIsAddDialogOpen(false);
+            setEditingTool(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// Composant pour ajouter/modifier un outil
+function AddEditToolDialog({
+  tool,
+  onClose
+}: {
+  tool: Tool | null;
+  onClose: () => void;
+}) {
+  const [formData, setFormData] = useState({
+    name: tool?.name || '',
+    description: tool?.description || '',
+    category: tool?.category || '',
+    owned: tool?.owned || false,
+    price: tool?.price || undefined,
+    purchaseLink: tool?.purchaseLink || '',
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.name.trim()) {
+      toast.error('Le nom de l\'outil est requis');
+      return;
+    }
+
+    try {
+      if (tool) {
+        // Update existing tool
+        await db.tools.update(tool.id, {
+          ...formData,
+          updatedAt: new Date()
+        });
+        toast.success('Outil modifié avec succès');
+      } else {
+        // Create new tool
+        await db.tools.add({
+          id: crypto.randomUUID(),
+          ...formData,
+          alternatives: [],
+          consumables: [],
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        toast.success('Outil ajouté avec succès');
+      }
+      onClose();
+    } catch (error) {
+      console.error('Error saving tool:', error);
+      toast.error('Erreur lors de l\'enregistrement de l\'outil');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
+          {tool ? 'Modifier l\'outil' : 'Ajouter un outil'}
+        </h2>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Nom de l'outil *
+            </label>
+            <Input
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="Ex: Perceuse sans fil"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Description
+            </label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Description de l'outil..."
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Catégorie
+            </label>
+            <Input
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              placeholder="Ex: Électroportatif"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Prix (€)
+            </label>
+            <Input
+              type="number"
+              step="0.01"
+              value={formData.price || ''}
+              onChange={(e) => setFormData({ ...formData, price: e.target.value ? parseFloat(e.target.value) : undefined })}
+              placeholder="89.99"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Lien d'achat
+            </label>
+            <Input
+              type="url"
+              value={formData.purchaseLink}
+              onChange={(e) => setFormData({ ...formData, purchaseLink: e.target.value })}
+              placeholder="https://..."
+            />
+          </div>
+
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={formData.owned}
+              onChange={(e) => setFormData({ ...formData, owned: e.target.checked })}
+              className="rounded text-primary focus:ring-primary"
+            />
+            <span className="text-sm text-gray-700 dark:text-gray-300">
+              Je possède cet outil
+            </span>
+          </label>
+
+          <div className="flex gap-2 mt-6">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="flex-1"
+            >
+              Annuler
+            </Button>
+            <Button type="submit" className="flex-1">
+              {tool ? 'Modifier' : 'Ajouter'}
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   );

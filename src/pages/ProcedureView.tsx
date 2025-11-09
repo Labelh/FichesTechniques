@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { formatDuration, formatDate } from '@/lib/utils';
 import { deleteProcedure, duplicateProcedure } from '@/services/procedureService';
+import { generatePDF } from '@/lib/pdfGenerator';
 import { toast } from 'sonner';
 
 export default function ProcedureView() {
@@ -49,6 +50,24 @@ export default function ProcedureView() {
     }
   };
 
+  const handleExportPDF = async () => {
+    try {
+      toast.loading('Génération du PDF en cours...');
+      await generatePDF(procedure, procedure.phases, {
+        includeCoverPage: true,
+        includeTableOfContents: true,
+        includeToolList: true,
+        includeMaterialList: true,
+      });
+      toast.dismiss();
+      toast.success('PDF généré avec succès');
+    } catch (error) {
+      toast.dismiss();
+      console.error('Error generating PDF:', error);
+      toast.error('Erreur lors de la génération du PDF');
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto">
       {/* Header */}
@@ -81,7 +100,7 @@ export default function ProcedureView() {
               <Copy className="h-4 w-4 mr-2" />
               Dupliquer
             </Button>
-            <Button variant="outline">
+            <Button variant="outline" onClick={handleExportPDF}>
               <Download className="h-4 w-4 mr-2" />
               Export PDF
             </Button>
