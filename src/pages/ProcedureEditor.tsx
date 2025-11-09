@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Eye, Plus } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Plus, Image, X } from 'lucide-react';
 import { useProcedure } from '@/hooks/useProcedures';
 import { createProcedure, updateProcedure, addPhase, deletePhase } from '@/services/procedureService';
 import { Button } from '@/components/ui/Button';
@@ -18,11 +18,13 @@ export default function ProcedureEditor() {
   const [reference, setReference] = useState('');
   const [designation, setDesignation] = useState('');
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+  const [coverImage, setCoverImage] = useState<any>(null);
 
   useEffect(() => {
     if (existingProcedure) {
       setReference(existingProcedure.title);
       setDesignation(existingProcedure.description);
+      setCoverImage(existingProcedure.coverImage || null);
     }
   }, [existingProcedure]);
 
@@ -37,12 +39,14 @@ export default function ProcedureEditor() {
         await updateProcedure(id, {
           title: reference,
           description: designation,
+          coverImage: coverImage,
         });
         toast.success('Procédure mise à jour');
       } else {
         const newId = await createProcedure({
           title: reference,
           description: designation,
+          coverImage: coverImage,
         });
         toast.success('Procédure créée');
         navigate(`/procedures/${newId}/edit`);
@@ -83,6 +87,48 @@ export default function ProcedureEditor() {
     } catch (error) {
       toast.error('Erreur lors de la suppression');
     }
+  };
+
+  const handleCoverImageChange = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Veuillez sélectionner une image');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setCoverImage({
+        data: reader.result,
+        name: file.name,
+        type: file.type,
+      });
+      toast.success('Image de couverture ajoutée');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      handleCoverImageChange(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleCoverImageChange(file);
+    }
+  };
+
+  const handleRemoveCoverImage = () => {
+    setCoverImage(null);
+    toast.success('Image de couverture supprimée');
   };
 
   return (
@@ -138,6 +184,65 @@ export default function ProcedureEditor() {
                   onChange={(e) => setDesignation(e.target.value)}
                   placeholder="Désignation de la procédure..."
                 />
+              </div>
+
+              {/* Cover Image Upload */}
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Image de couverture (PDF)
+                </label>
+
+                {coverImage ? (
+                  <div className="relative border-2 border-gray-700/30 rounded-lg p-4 bg-gray-900/30">
+                    <div className="flex items-center gap-4">
+                      <div className="flex-shrink-0">
+                        <img
+                          src={coverImage.data}
+                          alt="Couverture"
+                          className="h-24 w-24 object-cover rounded-lg border border-gray-700/50"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-300 truncate">
+                          {coverImage.name}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Image de couverture pour le PDF
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleRemoveCoverImage}
+                        className="flex-shrink-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    className="border-2 border-dashed border-gray-700/30 rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer bg-gray-900/30"
+                    onClick={() => document.getElementById('cover-image-input')?.click()}
+                  >
+                    <Image className="h-12 w-12 mx-auto mb-3 text-gray-600" />
+                    <p className="text-sm text-gray-400 mb-1">
+                      Glissez-déposez une image ici
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      ou cliquez pour sélectionner un fichier
+                    </p>
+                    <input
+                      id="cover-image-input"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileInput}
+                      className="hidden"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>

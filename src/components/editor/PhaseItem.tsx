@@ -209,7 +209,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
     <div className="border border-gray-700/50 rounded-lg bg-gray-900/30">
       {/* Header - Collapsed View */}
       <div
-        className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-t-lg"
+        className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-800/30 rounded-t-lg"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex-1 flex items-center gap-3">
@@ -243,7 +243,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
       {isExpanded && (
         <div className="border-t border-gray-200 dark:border-gray-700">
           {/* Tabs */}
-          <div className="flex overflow-x-auto border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+          <div className="flex overflow-x-auto border-b border-gray-700/50 bg-gray-900/50">
             <button
               onClick={() => setActiveTab('info')}
               className={`px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
@@ -594,7 +594,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
 
 
           {/* Footer Actions */}
-          <div className="flex justify-between gap-2 p-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex justify-between gap-2 p-4 bg-gray-900/50 border-t border-gray-700/50">
             <Button variant="outline" size="sm" onClick={handleSaveAsTemplate}>
               <Save className="h-4 w-4 mr-2" />
               Sauvegarder comme template
