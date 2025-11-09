@@ -180,8 +180,8 @@ export default function Templates() {
 
       {/* Helper text */}
       {templates && templates.length > 0 && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <p className="text-sm text-blue-800 dark:text-blue-200">
+        <div className="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-4">
+          <p className="text-sm text-gray-700 dark:text-gray-300">
             <strong>Astuce :</strong> Pour créer un nouveau template, éditez une procédure et sauvegardez l'une de ses phases en tant que template.
           </p>
         </div>

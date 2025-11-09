@@ -152,6 +152,7 @@ export interface SubStep {
 export interface Phase extends BaseEntity {
   procedureId: string;
   order: number;
+  phaseNumber?: number; // Numéro de phase personnalisable
   title: string;
   description: string;
   difficulty: DifficultyLevel;

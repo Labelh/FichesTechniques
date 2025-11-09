@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/Badge';
 import { updatePhase } from '@/services/procedureService';
 import { createPhaseTemplate } from '@/services/templateService';
 import { db } from '@/db/database';
-import type { Phase, DifficultyLevel, Tool, Material, SubStep, SafetyNote, AnnotatedImage, Annotation } from '@/types';
+import type { Phase, DifficultyLevel, Tool, SubStep, SafetyNote, AnnotatedImage, Annotation } from '@/types';
 import { toast } from 'sonner';
 import { useLiveQuery } from 'dexie-react-hooks';
 import ImageUploader from '@/components/phase/ImageUploader';
@@ -22,17 +22,17 @@ interface PhaseItemProps {
 export default function PhaseItem({ phase, index, procedureId, onDelete }: PhaseItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [title, setTitle] = useState(phase.title);
+  const [phaseNumber, setPhaseNumber] = useState(phase.phaseNumber || index + 1);
   const [description, setDescription] = useState(phase.description);
   const [difficulty, setDifficulty] = useState<DifficultyLevel>(phase.difficulty);
   const [estimatedTime, setEstimatedTime] = useState(phase.estimatedTime);
   const [selectedTools, setSelectedTools] = useState<Tool[]>(phase.tools || []);
-  const [materials, setMaterials] = useState<Material[]>(phase.materials || []);
   const [steps, setSteps] = useState<SubStep[]>(phase.steps || []);
   const [safetyNotes, setSafetyNotes] = useState<SafetyNote[]>(phase.safetyNotes || []);
   const [tips, setTips] = useState<string[]>(phase.tips || []);
   const [images, setImages] = useState<AnnotatedImage[]>(phase.images || []);
   const [editingImageId, setEditingImageId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'info' | 'tools' | 'materials' | 'steps' | 'safety' | 'photos'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'tools' | 'steps'>('info');
 
   // Récupérer tous les outils disponibles
   const availableTools = useLiveQuery(() => db.tools.toArray(), []);
@@ -41,19 +41,18 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
     try {
       await updatePhase(procedureId, phase.id, {
         title,
+        phaseNumber,
         description,
         difficulty,
         estimatedTime,
         tools: selectedTools,
         toolIds: selectedTools.map(t => t.id),
-        materials,
         steps,
         safetyNotes,
         tips,
         images,
       });
       toast.success('Phase mise à jour');
-      setIsExpanded(false);
     } catch (error) {
       toast.error('Erreur lors de la mise à jour');
     }
@@ -79,12 +78,12 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
       const currentPhase: Phase = {
         ...phase,
         title,
+        phaseNumber,
         description,
         difficulty,
         estimatedTime,
         tools: selectedTools,
         toolIds: selectedTools.map(t => t.id),
-        materials,
         steps,
         safetyNotes,
         tips,
@@ -109,33 +108,14 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
     setSelectedTools(selectedTools.filter(t => t.id !== toolId));
   };
 
-  const addMaterial = () => {
-    setMaterials([...materials, {
-      id: crypto.randomUUID(),
-      name: '',
-      quantity: 0,
-      unit: '',
-      category: '',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }]);
-  };
-
-  const updateMaterial = (id: string, updates: Partial<Material>) => {
-    setMaterials(materials.map(m => m.id === id ? { ...m, ...updates } : m));
-  };
-
-  const removeMaterial = (id: string) => {
-    setMaterials(materials.filter(m => m.id !== id));
-  };
-
   const addStep = () => {
     setSteps([...steps, {
       id: crypto.randomUUID(),
       order: steps.length + 1,
       title: '',
       description: '',
-      estimatedTime: 0
+      estimatedTime: 0,
+      images: []
     }]);
   };
 
@@ -145,6 +125,22 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
 
   const removeStep = (id: string) => {
     setSteps(steps.filter(s => s.id !== id));
+  };
+
+  const addStepImage = (stepId: string, newImages: AnnotatedImage[]) => {
+    setSteps(steps.map(s =>
+      s.id === stepId
+        ? { ...s, images: [...(s.images || []), ...newImages] }
+        : s
+    ));
+  };
+
+  const removeStepImage = (stepId: string, imageId: string) => {
+    setSteps(steps.map(s =>
+      s.id === stepId
+        ? { ...s, images: (s.images || []).filter(img => img.imageId !== imageId) }
+        : s
+    ));
   };
 
   const addSafetyNote = () => {
@@ -203,7 +199,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex-1 flex items-center gap-3">
-          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Phase {index + 1}</span>
+          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Phase {phaseNumber}</span>
           <span className="font-semibold text-gray-900 dark:text-white">{phase.title}</span>
           <Badge className={`${getDifficultyColor(phase.difficulty)} text-white text-xs`}>
             {getDifficultyLabel(phase.difficulty)}
@@ -239,10 +235,10 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
       {isExpanded && (
         <div className="border-t border-gray-200 dark:border-gray-700">
           {/* Tabs */}
-          <div className="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+          <div className="flex overflow-x-auto border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
             <button
               onClick={() => setActiveTab('info')}
-              className={`px-4 py-3 text-sm font-medium transition-colors ${
+              className={`px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'info'
                   ? 'border-b-2 border-primary text-primary'
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
@@ -253,7 +249,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
             </button>
             <button
               onClick={() => setActiveTab('tools')}
-              className={`px-4 py-3 text-sm font-medium transition-colors ${
+              className={`px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'tools'
                   ? 'border-b-2 border-primary text-primary'
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
@@ -263,19 +259,8 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
               Outils ({selectedTools.length})
             </button>
             <button
-              onClick={() => setActiveTab('materials')}
-              className={`px-4 py-3 text-sm font-medium transition-colors ${
-                activeTab === 'materials'
-                  ? 'border-b-2 border-primary text-primary'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              <Package className="h-4 w-4 inline mr-2" />
-              Matériaux ({materials.length})
-            </button>
-            <button
               onClick={() => setActiveTab('steps')}
-              className={`px-4 py-3 text-sm font-medium transition-colors ${
+              className={`px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'steps'
                   ? 'border-b-2 border-primary text-primary'
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
@@ -283,28 +268,6 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
             >
               <List className="h-4 w-4 inline mr-2" />
               Étapes ({steps.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('safety')}
-              className={`px-4 py-3 text-sm font-medium transition-colors ${
-                activeTab === 'safety'
-                  ? 'border-b-2 border-primary text-primary'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              <AlertTriangle className="h-4 w-4 inline mr-2" />
-              Sécurité ({safetyNotes.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('photos')}
-              className={`px-4 py-3 text-sm font-medium transition-colors ${
-                activeTab === 'photos'
-                  ? 'border-b-2 border-primary text-primary'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              <ImageIcon className="h-4 w-4 inline mr-2" />
-              Photos ({images.length})
             </button>
           </div>
 
@@ -320,6 +283,19 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Nom de la phase..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Numéro de phase
+                  </label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={phaseNumber}
+                    onChange={(e) => setPhaseNumber(parseInt(e.target.value) || 1)}
+                    placeholder="Numéro de phase..."
                   />
                 </div>
 
@@ -365,34 +341,20 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                   </div>
                 </div>
 
-                {/* Conseils */}
+                {/* Photo de couverture */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    <Lightbulb className="h-4 w-4 inline mr-1" />
-                    Conseils
+                    <ImageIcon className="h-4 w-4 inline mr-1" />
+                    Photo de couverture
                   </label>
-                  <div className="space-y-2">
-                    {tips.map((tip, idx) => (
-                      <div key={idx} className="flex gap-2">
-                        <Input
-                          value={tip}
-                          onChange={(e) => updateTip(idx, e.target.value)}
-                          placeholder="Conseil..."
-                        />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeTip(idx)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                    <Button variant="outline" size="sm" onClick={addTip}>
-                      <Plus className="h-4 w-4 mr-1" />
-                      Ajouter un conseil
-                    </Button>
-                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                    Ajoutez des photos et annotez-les pour illustrer la phase (trajectoires d'outils, zones importantes, etc.)
+                  </p>
+                  <ImageUploader
+                    images={images}
+                    onImagesChange={setImages}
+                    onEditImage={setEditingImageId}
+                  />
                 </div>
               </>
             )}
@@ -459,51 +421,6 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
               </>
             )}
 
-            {activeTab === 'materials' && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Matériaux nécessaires
-                  </label>
-                  <div className="space-y-3">
-                    {materials.map((material) => (
-                      <div key={material.id} className="flex gap-2 items-start p-3 bg-gray-50 dark:bg-gray-700 rounded">
-                        <div className="flex-1 grid grid-cols-3 gap-2">
-                          <Input
-                            value={material.name}
-                            onChange={(e) => updateMaterial(material.id, { name: e.target.value })}
-                            placeholder="Nom du matériau..."
-                          />
-                          <Input
-                            type="number"
-                            value={material.quantity || ''}
-                            onChange={(e) => updateMaterial(material.id, { quantity: parseFloat(e.target.value) || 0 })}
-                            placeholder="Quantité..."
-                          />
-                          <Input
-                            value={material.unit || ''}
-                            onChange={(e) => updateMaterial(material.id, { unit: e.target.value })}
-                            placeholder="Unité (kg, m, L...)"
-                          />
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeMaterial(material.id)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                    <Button variant="outline" size="sm" onClick={addMaterial}>
-                      <Plus className="h-4 w-4 mr-1" />
-                      Ajouter un matériau
-                    </Button>
-                  </div>
-                </div>
-              </>
-            )}
-
             {activeTab === 'steps' && (
               <>
                 <div>
@@ -536,8 +453,71 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                           onChange={(e) => updateStep(step.id, { description: e.target.value })}
                           placeholder="Description détaillée..."
                           rows={2}
-                          className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-white"
+                          className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-white mb-2"
                         />
+
+                        {/* Step Images */}
+                        <div className="mt-2">
+                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                            Images de l'étape
+                          </label>
+                          <div className="flex flex-wrap gap-2 mb-2">
+                            {(step.images || []).map((img) => (
+                              <div key={img.imageId} className="relative group">
+                                <img
+                                  src={URL.createObjectURL(img.image.blob)}
+                                  alt={img.description || 'Image'}
+                                  className="h-20 w-20 object-cover rounded border border-gray-300 dark:border-gray-600"
+                                />
+                                <button
+                                  onClick={() => removeStepImage(step.id, img.imageId)}
+                                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={async (e) => {
+                              const files = Array.from(e.target.files || []);
+                              const newImages: AnnotatedImage[] = await Promise.all(
+                                files.map(async (file) => {
+                                  const img = new Image();
+                                  const url = URL.createObjectURL(file);
+
+                                  await new Promise((resolve) => {
+                                    img.onload = resolve;
+                                    img.src = url;
+                                  });
+
+                                  return {
+                                    imageId: crypto.randomUUID(),
+                                    image: {
+                                      id: crypto.randomUUID(),
+                                      name: file.name,
+                                      blob: file,
+                                      size: file.size,
+                                      mimeType: file.type,
+                                      width: img.width,
+                                      height: img.height,
+                                      createdAt: new Date(),
+                                      updatedAt: new Date()
+                                    },
+                                    annotations: [],
+                                    description: ''
+                                  };
+                                })
+                              );
+                              addStepImage(step.id, newImages);
+                              e.target.value = '';
+                            }}
+                            className="text-xs"
+                          />
+                        </div>
                       </div>
                     ))}
                     <Button variant="outline" size="sm" onClick={addStep}>
@@ -546,12 +526,39 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                     </Button>
                   </div>
                 </div>
-              </>
-            )}
 
-            {activeTab === 'safety' && (
-              <>
-                <div>
+                {/* Conseils */}
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <Lightbulb className="h-4 w-4 inline mr-1" />
+                    Conseils
+                  </label>
+                  <div className="space-y-2">
+                    {tips.map((tip, idx) => (
+                      <div key={idx} className="flex gap-2">
+                        <Input
+                          value={tip}
+                          onChange={(e) => updateTip(idx, e.target.value)}
+                          placeholder="Conseil..."
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeTip(idx)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button variant="outline" size="sm" onClick={addTip}>
+                      <Plus className="h-4 w-4 mr-1" />
+                      Ajouter un conseil
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Consignes de sécurité */}
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     <AlertTriangle className="h-4 w-4 inline mr-1 text-orange-500" />
                     Consignes de sécurité
@@ -565,11 +572,11 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                             onChange={(e) => updateSafetyNote(note.id, { type: e.target.value as 'warning' | 'danger' | 'info' | 'mandatory' | 'forbidden' })}
                             className="rounded-md border border-orange-300 dark:border-orange-700 bg-white dark:bg-gray-700 px-2 py-1 text-sm"
                           >
-                            <option value="info">ℹ️ Information</option>
-                            <option value="warning">⚠️ Attention</option>
-                            <option value="danger">🚨 Danger</option>
-                            <option value="mandatory">✓ Obligatoire</option>
-                            <option value="forbidden">⛔ Interdit</option>
+                            <option value="info">Information</option>
+                            <option value="warning">Attention</option>
+                            <option value="danger">Danger</option>
+                            <option value="mandatory">Obligatoire</option>
+                            <option value="forbidden">Interdit</option>
                           </select>
                           <Button
                             variant="ghost"
@@ -591,25 +598,6 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                       Ajouter une consigne
                     </Button>
                   </div>
-                </div>
-              </>
-            )}
-
-            {activeTab === 'photos' && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    <ImageIcon className="h-4 w-4 inline mr-1" />
-                    Photos de la phase
-                  </label>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                    Ajoutez des photos et annotez-les pour illustrer la phase (trajectoires d'outils, zones importantes, etc.)
-                  </p>
-                  <ImageUploader
-                    images={images}
-                    onImagesChange={setImages}
-                    onEditImage={setEditingImageId}
-                  />
                 </div>
               </>
             )}
