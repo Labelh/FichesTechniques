@@ -19,13 +19,11 @@ export async function createProcedure(
     description: data.description || '',
     category: data.category || '',
     tags: data.tags || [],
-    status: data.status || ('in_progress' as ProcedureStatus),
+    status: data.status || ('en_cours' as ProcedureStatus),
     priority: data.priority || ('normal' as any),
-    difficulty: data.difficulty || ('medium' as DifficultyLevel),
     estimatedTotalTime: 0,
     totalCost: 0,
     requiredSkills: data.requiredSkills || [],
-    numberOfPeople: data.numberOfPeople || 1,
     riskLevel: data.riskLevel || ('low' as any),
     phases: [],
     globalTools: [],
@@ -314,10 +312,6 @@ function calculateCompletion(procedure: Procedure): number {
   if (procedure.globalTools.length > 0 || procedure.phases.some((p) => p.tools.length > 0)) {
     earnedPoints += 10;
   }
-
-  // Niveau de difficulté (5 points)
-  totalPoints += 5;
-  if (procedure.difficulty) earnedPoints += 5;
 
   // Temps estimé (5 points)
   totalPoints += 5;

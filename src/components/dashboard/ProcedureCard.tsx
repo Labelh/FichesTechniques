@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Clock, User, Edit, Trash2, Eye } from 'lucide-react';
+import { Clock, Edit, Trash2, Eye } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -56,7 +56,6 @@ export default function ProcedureCard({ procedure }: ProcedureCardProps) {
           <Badge variant={getStatusColor(procedure.status) as any}>
             {procedure.status}
           </Badge>
-          <Badge variant="outline">{procedure.difficulty}</Badge>
           {procedure.category && (
             <Badge variant="outline">{procedure.category}</Badge>
           )}
@@ -66,10 +65,6 @@ export default function ProcedureCard({ procedure }: ProcedureCardProps) {
           <div className="flex items-center">
             <Clock className="h-4 w-4 mr-2" />
             {formatDuration(procedure.estimatedTotalTime)}
-          </div>
-          <div className="flex items-center">
-            <User className="h-4 w-4 mr-2" />
-            {procedure.numberOfPeople} personne(s)
           </div>
         </div>
 

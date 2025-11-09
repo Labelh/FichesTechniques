@@ -5,12 +5,20 @@
   <title>Fiches Techniques</title>
   <script>
     // Redirection pour GitHub Pages SPA
-    // Stocke le chemin demandé et redirige vers index.html
-    sessionStorage.setItem('redirect', location.pathname + location.search + location.hash);
-    location.replace(location.origin + location.pathname.split('/').slice(0, -1).join('/') + '/');
+    // Configuration
+    var basePath = '/FichesTechniques/';
+
+    // Stocke le chemin complet demandé
+    var path = location.pathname + location.search + location.hash;
+    sessionStorage.setItem('redirect', path);
+
+    // Redirige vers index.html à la racine de l'application
+    location.replace(location.origin + basePath);
   </script>
 </head>
 <body>
-  Redirection...
+  <div style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+    <p>Redirection en cours...</p>
+  </div>
 </body>
 </html>

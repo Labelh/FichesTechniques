@@ -22,9 +22,6 @@ export default function ProcedureList({ procedures }: ProcedureListProps) {
               Statut
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Difficulté
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               Temps
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -58,9 +55,6 @@ export default function ProcedureList({ procedures }: ProcedureListProps) {
               </td>
               <td className="px-6 py-4">
                 <Badge variant="outline">{procedure.status}</Badge>
-              </td>
-              <td className="px-6 py-4">
-                <Badge variant="outline">{procedure.difficulty}</Badge>
               </td>
               <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
                 <div className="flex items-center">

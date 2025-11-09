@@ -44,10 +44,6 @@ export function useProcedures(filters?: SearchFilters, sort?: SortOption) {
       constraints.push(where('status', 'in', filters.status));
     }
 
-    if (filters?.difficulty && filters.difficulty.length > 0) {
-      constraints.push(where('difficulty', 'in', filters.difficulty));
-    }
-
     if (filters?.categories && filters.categories.length === 1) {
       constraints.push(where('category', '==', filters.categories[0]));
     }
@@ -283,10 +279,6 @@ export function useProcedureStats() {
           // Par statut
           calculatedStats.byStatus[proc.status] =
             (calculatedStats.byStatus[proc.status] || 0) + 1;
-
-          // Par difficulté
-          calculatedStats.byDifficulty[proc.difficulty] =
-            (calculatedStats.byDifficulty[proc.difficulty] || 0) + 1;
 
           // Par catégorie
           calculatedStats.byCategory[proc.category] =

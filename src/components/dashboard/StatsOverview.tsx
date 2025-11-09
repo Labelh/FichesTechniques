@@ -10,15 +10,15 @@ export default function StatsOverview({ stats }: StatsOverviewProps) {
   const statItems = [
     {
       label: 'Total Procédures',
-      value: stats.total,
+      value: stats.total || 0,
     },
     {
       label: 'En cours',
-      value: stats.byStatus?.in_progress || 0,
+      value: stats.enCours || 0,
     },
     {
       label: 'Terminées',
-      value: stats.byStatus?.completed || 0,
+      value: stats.completed || 0,
     },
   ];
 

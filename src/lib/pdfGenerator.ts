@@ -108,25 +108,6 @@ export class PDFGenerator {
       this.pdf.text(procedure.category, this.margin, infoY + 6);
     }
 
-    // Difficulté
-    const difficultyLabels: Record<string, string> = {
-      very_easy: 'Très facile',
-      easy: 'Facile',
-      medium: 'Moyen',
-      hard: 'Difficile',
-      very_hard: 'Très difficile',
-      expert: 'Expert',
-    };
-
-    this.pdf.setFont('helvetica', 'bold');
-    this.pdf.text('DIFFICULTÉ', this.margin, infoY + 16);
-    this.pdf.setFont('helvetica', 'normal');
-    this.pdf.text(
-      difficultyLabels[procedure.difficulty] || procedure.difficulty,
-      this.margin,
-      infoY + 22
-    );
-
     // Date de création
     this.pdf.setFont('helvetica', 'bold');
     this.pdf.text('DATE', this.pageWidth - this.margin - 40, infoY);
@@ -304,12 +285,9 @@ export class PDFGenerator {
     this.pdf.setTextColor(COLORS.textLight);
 
     const difficultyLabels: Record<string, string> = {
-      very_easy: 'Très facile',
       easy: 'Facile',
       medium: 'Moyen',
       hard: 'Difficile',
-      very_hard: 'Très difficile',
-      expert: 'Expert',
     };
 
     this.pdf.text(`⏱ Temps estimé : ${phase.estimatedTime} min`, this.margin + 5, this.currentY);

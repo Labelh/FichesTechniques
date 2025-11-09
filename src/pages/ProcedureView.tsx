@@ -113,12 +113,10 @@ export default function ProcedureView() {
         {/* Metadata */}
         <div className="flex flex-wrap gap-2 mt-4">
           <Badge>{procedure.status}</Badge>
-          <Badge variant="outline">{procedure.difficulty}</Badge>
           <Badge variant="outline">{procedure.category}</Badge>
           <Badge variant="outline">
             {formatDuration(procedure.estimatedTotalTime)}
           </Badge>
-          <Badge variant="outline">{procedure.numberOfPeople} personne(s)</Badge>
         </div>
       </div>
 

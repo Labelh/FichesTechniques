@@ -3,17 +3,14 @@
 // ==========================================
 
 export enum DifficultyLevel {
-  VERY_EASY = 'very_easy',
   EASY = 'easy',
   MEDIUM = 'medium',
   HARD = 'hard',
-  VERY_HARD = 'very_hard',
-  EXPERT = 'expert',
 }
 
 export enum ProcedureStatus {
   DRAFT = 'draft',
-  IN_PROGRESS = 'in_progress',
+  EN_COURS = 'en_cours',
   IN_REVIEW = 'in_review',
   COMPLETED = 'completed',
   ARCHIVED = 'archived',
@@ -196,7 +193,6 @@ export interface Procedure extends BaseEntity {
   priority: Priority;
 
   // Métadonnées
-  difficulty: DifficultyLevel;
   estimatedTotalTime: number; // calculé automatiquement
   totalCost?: number; // calculé automatiquement
 
@@ -204,7 +200,6 @@ export interface Procedure extends BaseEntity {
   season?: string; // Printemps, Été, etc.
   weatherConditions?: string;
   requiredSkills: string[];
-  numberOfPeople: number;
   riskLevel: RiskLevel;
 
   // Contenu

@@ -179,24 +179,18 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
 
   const getDifficultyColor = (diff: DifficultyLevel) => {
     switch (diff) {
-      case 'very_easy': return 'bg-green-500';
-      case 'easy': return 'bg-blue-500';
+      case 'easy': return 'bg-green-500';
       case 'medium': return 'bg-yellow-500';
-      case 'hard': return 'bg-orange-500';
-      case 'very_hard': return 'bg-red-500';
-      case 'expert': return 'bg-purple-500';
+      case 'hard': return 'bg-red-500';
       default: return 'bg-gray-500';
     }
   };
 
   const getDifficultyLabel = (diff: DifficultyLevel) => {
     switch (diff) {
-      case 'very_easy': return 'Très facile';
       case 'easy': return 'Facile';
       case 'medium': return 'Moyen';
       case 'hard': return 'Difficile';
-      case 'very_hard': return 'Très difficile';
-      case 'expert': return 'Expert';
       default: return diff;
     }
   };
@@ -352,12 +346,9 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                       onChange={(e) => setDifficulty(e.target.value as DifficultyLevel)}
                       className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white"
                     >
-                      <option value="very_easy">Très facile</option>
                       <option value="easy">Facile</option>
                       <option value="medium">Moyen</option>
                       <option value="hard">Difficile</option>
-                      <option value="very_hard">Très difficile</option>
-                      <option value="expert">Expert</option>
                     </select>
                   </div>
 

@@ -14,10 +14,6 @@ export function useProcedures(filters?: SearchFilters, sort?: SortOption) {
       query = query.filter(p => filters.status!.includes(p.status));
     }
 
-    if (filters?.difficulty && filters.difficulty.length > 0) {
-      query = query.filter(p => filters.difficulty!.includes(p.difficulty));
-    }
-
     if (filters?.categories && filters.categories.length > 0) {
       query = query.filter(p => filters.categories!.includes(p.category));
     }
@@ -91,7 +87,7 @@ export function useProcedureStats() {
     return {
       total: procedures.length,
       draft: procedures.filter(p => p.status === 'draft').length,
-      inProgress: procedures.filter(p => p.status === 'in_progress').length,
+      enCours: procedures.filter(p => p.status === 'en_cours').length,
       completed: procedures.filter(p => p.status === 'completed').length,
       archived: procedures.filter(p => p.status === 'archived').length,
     };

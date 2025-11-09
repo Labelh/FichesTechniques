@@ -10,7 +10,14 @@
       "Bash(git commit:*)",
       "Bash(git remote add:*)",
       "Bash(git branch:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(cat:*)",
+      "Bash(chmod:*)",
+      "Bash(gh run list:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(where:*)",
+      "Bash(choco install:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
