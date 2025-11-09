@@ -98,19 +98,19 @@ export default function Sidebar() {
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Brouillons</span>
                 <span className="font-medium text-gray-900 dark:text-white">
-                  {stats.byStatus?.draft || 0}
+                  {stats.draft || 0}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">En cours</span>
                 <span className="font-medium text-gray-900 dark:text-white">
-                  {stats.byStatus?.in_progress || 0}
+                  {stats.inProgress || 0}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Terminées</span>
                 <span className="font-medium text-gray-900 dark:text-white">
-                  {stats.byStatus?.completed || 0}
+                  {stats.completed || 0}
                 </span>
               </div>
             </div>

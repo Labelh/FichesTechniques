@@ -374,7 +374,21 @@ function AddEditToolDialog({
     owned: tool?.owned || false,
     price: tool?.price || undefined,
     purchaseLink: tool?.purchaseLink || '',
+    color: tool?.color || '#ff5722',
   });
+
+  const toolColors = [
+    { name: 'Rouge', value: '#ef4444' },
+    { name: 'Orange', value: '#f97316' },
+    { name: 'Orange-rouge', value: '#ff5722' },
+    { name: 'Jaune', value: '#eab308' },
+    { name: 'Vert', value: '#22c55e' },
+    { name: 'Bleu', value: '#3b82f6' },
+    { name: 'Violet', value: '#a855f7' },
+    { name: 'Rose', value: '#ec4899' },
+    { name: 'Cyan', value: '#06b6d4' },
+    { name: 'Lime', value: '#84cc16' },
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -478,6 +492,31 @@ function AddEditToolDialog({
               onChange={(e) => setFormData({ ...formData, purchaseLink: e.target.value })}
               placeholder="https://..."
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Couleur de code
+            </label>
+            <div className="grid grid-cols-5 gap-2">
+              {toolColors.map((color) => (
+                <button
+                  key={color.value}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, color: color.value })}
+                  className={`h-10 rounded-md border-2 transition-all ${
+                    formData.color === color.value
+                      ? 'border-primary scale-110'
+                      : 'border-gray-300 dark:border-gray-600 hover:scale-105'
+                  }`}
+                  style={{ backgroundColor: color.value }}
+                  title={color.name}
+                />
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              Cette couleur sera utilisée pour tracer les trajectoires d'outil sur les photos
+            </p>
           </div>
 
           <label className="flex items-center gap-2">

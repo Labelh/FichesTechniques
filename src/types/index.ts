@@ -116,6 +116,7 @@ export interface Tool extends BaseEntity {
   price?: number;
   purchaseLink?: string;
   owned: boolean;
+  color?: string; // Couleur de code pour les trajectoires
   alternatives?: string[]; // IDs d'autres outils
   consumables?: string[]; // Consommables associés
 }
