@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import Layout from './components/layout/Layout';
@@ -10,6 +11,11 @@ import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 
 function App() {
+  // Activer le mode sombre par défaut
+  useEffect(() => {
+    document.documentElement.classList.add('dark');
+  }, []);
+
   return (
     <>
       <Routes>

@@ -17,6 +17,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { toast } from 'sonner';
 import { useLiveQuery } from 'dexie-react-hooks';
+import * as XLSX from 'xlsx';
 
 export default function ToolsLibrary() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -100,6 +101,75 @@ export default function ToolsLibrary() {
     } catch (error) {
       console.error('Error importing tools:', error);
       toast.error('Erreur lors de l\'importation. Vérifiez le format du fichier.');
+    }
+  };
+
+  const handleImportExcel = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+
+      // Prendre la première feuille
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+
+      // Convertir en JSON avec en-têtes de colonnes A-Z
+      const data = XLSX.utils.sheet_to_json(worksheet, { header: 'A' });
+
+      let imported = 0;
+      let skipped = 0;
+
+      // Ignorer la première ligne si c'est un en-tête
+      const startIndex = 1;
+
+      for (let i = startIndex; i < data.length; i++) {
+        const row = data[i] as any;
+
+        // Colonnes selon le format demandé:
+        // A: Référence, B: Désignation, C: Catégorie, G: Emplacement
+        const reference = row['A'] ? String(row['A']).trim() : '';
+        const designation = row['B'] ? String(row['B']).trim() : '';
+        const category = row['C'] ? String(row['C']).trim() : 'Autre';
+        const location = row['G'] ? String(row['G']).trim() : '';
+
+        // Vérifier que la désignation existe au minimum
+        if (!designation) {
+          skipped++;
+          continue;
+        }
+
+        // Construire la description avec référence et emplacement
+        const descriptionParts = [];
+        if (reference) descriptionParts.push(`Réf: ${reference}`);
+        if (location) descriptionParts.push(`Emplacement: ${location}`);
+        const description = descriptionParts.join(' | ');
+
+        await db.tools.add({
+          id: crypto.randomUUID(),
+          name: designation,
+          description: description,
+          category: category,
+          owned: false,
+          alternatives: [],
+          consumables: [],
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        imported++;
+      }
+
+      const message = skipped > 0
+        ? `${imported} outil(s) importé(s), ${skipped} ligne(s) ignorée(s)`
+        : `${imported} outil(s) importé(s) avec succès`;
+
+      toast.success(message);
+      setImportDialogOpen(false);
+    } catch (error) {
+      console.error('Error importing Excel:', error);
+      toast.error('Erreur lors de l\'importation Excel. Vérifiez le format du fichier.');
     }
   };
 
@@ -297,42 +367,81 @@ export default function ToolsLibrary() {
       {/* Import Dialog */}
       {importDialogOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
               Importer des outils
             </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Importez vos outils depuis un fichier JSON. Le fichier doit contenir un tableau d'objets avec les propriétés : name, description, category, owned, price, purchaseLink.
-            </p>
-            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
-              <Upload className="h-12 w-12 mx-auto text-gray-400 mb-3" />
-              <label className="cursor-pointer">
-                <span className="text-primary hover:text-primary/80 font-medium">
-                  Choisir un fichier JSON
-                </span>
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={handleImportJSON}
-                  className="hidden"
-                />
-              </label>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Excel Import */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-gray-900 dark:text-white">
+                  Depuis Excel (.xlsx, .xls)
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Format attendu:
+                </p>
+                <div className="text-xs bg-gray-100 dark:bg-gray-700 p-3 rounded">
+                  <ul className="space-y-1">
+                    <li><strong>Colonne A:</strong> Référence</li>
+                    <li><strong>Colonne B:</strong> Désignation (nom)</li>
+                    <li><strong>Colonne C:</strong> Catégorie</li>
+                    <li><strong>Colonne G:</strong> Emplacement</li>
+                  </ul>
+                </div>
+                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+                  <Upload className="h-10 w-10 mx-auto text-gray-400 mb-2" />
+                  <label className="cursor-pointer">
+                    <span className="text-primary hover:text-primary/80 font-medium text-sm">
+                      Choisir un fichier Excel
+                    </span>
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={handleImportExcel}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* JSON Import */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-gray-900 dark:text-white">
+                  Depuis JSON
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Fichier JSON avec propriétés: name, description, category, owned, price, purchaseLink
+                </p>
+                <div className="text-xs bg-gray-100 dark:bg-gray-700 p-3 rounded">
+                  <strong>Exemple:</strong>
+                  <pre className="mt-1 overflow-x-auto">
+{`[{
+  "name": "Perceuse",
+  "description": "...",
+  "category": "Électro",
+  "owned": true
+}]`}
+                  </pre>
+                </div>
+                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+                  <Upload className="h-10 w-10 mx-auto text-gray-400 mb-2" />
+                  <label className="cursor-pointer">
+                    <span className="text-primary hover:text-primary/80 font-medium text-sm">
+                      Choisir un fichier JSON
+                    </span>
+                    <input
+                      type="file"
+                      accept=".json"
+                      onChange={handleImportJSON}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
             </div>
-            <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded text-xs">
-              <strong>Exemple de format :</strong>
-              <pre className="mt-2 overflow-x-auto">
-{`[
-  {
-    "name": "Perceuse",
-    "description": "Perceuse sans fil",
-    "category": "Électroportatif",
-    "owned": true,
-    "price": 89.99
-  }
-]`}
-              </pre>
-            </div>
-            <div className="flex gap-2 mt-4">
+
+            <div className="flex gap-2 mt-6">
               <Button
                 variant="outline"
                 onClick={() => setImportDialogOpen(false)}

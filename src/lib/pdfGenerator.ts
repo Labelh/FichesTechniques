@@ -290,8 +290,8 @@ export class PDFGenerator {
       hard: 'Difficile',
     };
 
-    this.pdf.text(`⏱ Temps estimé : ${phase.estimatedTime} min`, this.margin + 5, this.currentY);
-    this.pdf.text(`📊 Difficulté : ${difficultyLabels[phase.difficulty] || phase.difficulty}`, this.margin + 60, this.currentY);
+    this.pdf.text(`Temps estime : ${phase.estimatedTime} min`, this.margin + 5, this.currentY);
+    this.pdf.text(`Difficulte : ${difficultyLabels[phase.difficulty] || phase.difficulty}`, this.margin + 60, this.currentY);
     this.currentY += 10;
 
     // Outils nécessaires
@@ -300,7 +300,7 @@ export class PDFGenerator {
       this.pdf.setFontSize(11);
       this.pdf.setFont('helvetica', 'bold');
       this.pdf.setTextColor(COLORS.primary);
-      this.pdf.text('🛠 Outils nécessaires :', this.margin + 5, this.currentY);
+      this.pdf.text('OUTILS NECESSAIRES :', this.margin + 5, this.currentY);
       this.currentY += 6;
 
       this.pdf.setFontSize(9);
@@ -396,15 +396,15 @@ export class PDFGenerator {
       this.pdf.setFontSize(11);
       this.pdf.setFont('helvetica', 'bold');
       this.pdf.setTextColor(COLORS.primary);
-      this.pdf.text('⚠️ ATTENTION - Consignes de sécurité', this.margin + 5, this.currentY + 7);
+      this.pdf.text('ATTENTION - Consignes de securite', this.margin + 5, this.currentY + 7);
       this.currentY += 12;
 
       this.pdf.setFontSize(9);
       this.pdf.setFont('helvetica', 'normal');
       this.pdf.setTextColor(COLORS.text);
       phase.safetyNotes.forEach((note) => {
-        const icon = note.type === 'danger' ? '🚨' : note.type === 'mandatory' ? '✓' : note.type === 'forbidden' ? '⛔' : '⚠';
-        this.pdf.text(`${icon} ${note.content}`, this.margin + 5, this.currentY);
+        const prefix = note.type === 'danger' ? '[DANGER]' : note.type === 'mandatory' ? '[OBLIGATOIRE]' : note.type === 'forbidden' ? '[INTERDIT]' : '[ATTENTION]';
+        this.pdf.text(`${prefix} ${note.content}`, this.margin + 5, this.currentY);
         this.currentY += 6;
       });
       this.currentY += 8;
@@ -416,7 +416,7 @@ export class PDFGenerator {
       this.pdf.setFontSize(11);
       this.pdf.setFont('helvetica', 'bold');
       this.pdf.setTextColor(COLORS.primary);
-      this.pdf.text('💡 Conseils :', this.margin + 5, this.currentY);
+      this.pdf.text('CONSEILS :', this.margin + 5, this.currentY);
       this.currentY += 6;
 
       this.pdf.setFontSize(9);
@@ -424,7 +424,7 @@ export class PDFGenerator {
       this.pdf.setTextColor(COLORS.textLight);
       phase.tips.forEach((tip) => {
         this.checkPageBreak(5, procedure, pageNumber);
-        this.pdf.text(`💡 ${tip}`, this.margin + 10, this.currentY);
+        this.pdf.text(`- ${tip}`, this.margin + 10, this.currentY);
         this.currentY += 5;
       });
       this.currentY += 5;
