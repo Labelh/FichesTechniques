@@ -11,9 +11,9 @@ import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 
 function App() {
-  // Activer le mode sombre par défaut
+  // Désactiver le mode sombre - Thème clair uniquement
   useEffect(() => {
-    document.documentElement.classList.add('dark');
+    document.documentElement.classList.remove('dark');
   }, []);
 
   return (

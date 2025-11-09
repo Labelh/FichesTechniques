@@ -88,34 +88,6 @@ export default function Sidebar() {
           })}
         </nav>
 
-        {/* Statistics */}
-        {stats && (
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
-              Statistiques
-            </h3>
-            <div className="space-y-2.5 text-sm">
-              <div className="flex justify-between items-center py-1">
-                <span className="text-gray-600 dark:text-gray-400">Brouillons</span>
-                <span className="font-semibold text-gray-900 dark:text-white px-2 py-0.5 bg-white dark:bg-gray-700 rounded">
-                  {stats.draft || 0}
-                </span>
-              </div>
-              <div className="flex justify-between items-center py-1">
-                <span className="text-gray-600 dark:text-gray-400">En cours</span>
-                <span className="font-semibold text-gray-900 dark:text-white px-2 py-0.5 bg-white dark:bg-gray-700 rounded">
-                  {stats.enCours || 0}
-                </span>
-              </div>
-              <div className="flex justify-between items-center py-1">
-                <span className="text-gray-600 dark:text-gray-400">Terminées</span>
-                <span className="font-semibold text-gray-900 dark:text-white px-2 py-0.5 bg-white dark:bg-gray-700 rounded">
-                  {stats.completed || 0}
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </aside>
   );

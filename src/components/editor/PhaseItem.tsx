@@ -26,13 +26,10 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
   const [description, setDescription] = useState(phase.description);
   const [difficulty, setDifficulty] = useState<DifficultyLevel>(phase.difficulty);
   const [estimatedTime, setEstimatedTime] = useState(phase.estimatedTime);
-  const [selectedTools, setSelectedTools] = useState<Tool[]>(phase.tools || []);
   const [steps, setSteps] = useState<SubStep[]>(phase.steps || []);
   const [images, setImages] = useState<AnnotatedImage[]>(phase.images || []);
   const [editingImageId, setEditingImageId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'info' | 'tools' | 'steps'>('info');
-  const [safetyNotes, setSafetyNotes] = useState<SafetyNote[]>(phase.safetyNotes || []);
-  const [tips, setTips] = useState<string[]>(phase.tips || []);
+  const [activeTab, setActiveTab] = useState<'info' | 'steps'>('info');
 
   // Récupérer tous les outils disponibles
   const availableTools = useLiveQuery(() => db.tools.toArray(), []);
@@ -45,11 +42,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
         description,
         difficulty,
         estimatedTime,
-        tools: selectedTools,
-        toolIds: selectedTools.map(t => t.id),
         steps,
-        safetyNotes,
-        tips,
         images,
       });
       toast.success('Phase mise à jour');
@@ -82,11 +75,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
         description,
         difficulty,
         estimatedTime,
-        tools: selectedTools,
-        toolIds: selectedTools.map(t => t.id),
         steps,
-        safetyNotes,
-        tips,
         images,
       };
 
@@ -96,16 +85,6 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
       console.error('Error creating template:', error);
       toast.error('Erreur lors de la création du template');
     }
-  };
-
-  const addTool = (tool: Tool) => {
-    if (!selectedTools.find(t => t.id === tool.id)) {
-      setSelectedTools([...selectedTools, tool]);
-    }
-  };
-
-  const removeTool = (toolId: string) => {
-    setSelectedTools(selectedTools.filter(t => t.id !== toolId));
   };
 
   const addStep = () => {
@@ -145,34 +124,68 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
     ));
   };
 
-  const addSafetyNote = () => {
-    setSafetyNotes([...safetyNotes, {
-      id: crypto.randomUUID(),
-      type: 'warning',
-      content: ''
-    }]);
+  // Gestion des conseils et sécurité au niveau des sous-étapes
+  const addStepTip = (stepId: string) => {
+    setSteps(steps.map(s =>
+      s.id === stepId
+        ? { ...s, tips: [...(s.tips || []), ''] }
+        : s
+    ));
   };
 
-  const updateSafetyNote = (id: string, updates: Partial<SafetyNote>) => {
-    setSafetyNotes(safetyNotes.map(n => n.id === id ? { ...n, ...updates } : n));
+  const updateStepTip = (stepId: string, index: number, value: string) => {
+    setSteps(steps.map(s => {
+      if (s.id === stepId) {
+        const newTips = [...(s.tips || [])];
+        newTips[index] = value;
+        return { ...s, tips: newTips };
+      }
+      return s;
+    }));
   };
 
-  const removeSafetyNote = (id: string) => {
-    setSafetyNotes(safetyNotes.filter(n => n.id !== id));
+  const removeStepTip = (stepId: string, index: number) => {
+    setSteps(steps.map(s =>
+      s.id === stepId
+        ? { ...s, tips: (s.tips || []).filter((_, i) => i !== index) }
+        : s
+    ));
   };
 
-  const addTip = () => {
-    setTips([...tips, '']);
+  const addStepSafetyNote = (stepId: string) => {
+    setSteps(steps.map(s =>
+      s.id === stepId
+        ? { ...s, safetyNotes: [...(s.safetyNotes || []), { id: crypto.randomUUID(), type: 'warning', content: '' }] }
+        : s
+    ));
   };
 
-  const updateTip = (index: number, value: string) => {
-    const newTips = [...tips];
-    newTips[index] = value;
-    setTips(newTips);
+  const updateStepSafetyNote = (stepId: string, noteId: string, updates: Partial<SafetyNote>) => {
+    setSteps(steps.map(s => {
+      if (s.id === stepId) {
+        return {
+          ...s,
+          safetyNotes: (s.safetyNotes || []).map(n => n.id === noteId ? { ...n, ...updates } : n)
+        };
+      }
+      return s;
+    }));
   };
 
-  const removeTip = (index: number) => {
-    setTips(tips.filter((_, i) => i !== index));
+  const removeStepSafetyNote = (stepId: string, noteId: string) => {
+    setSteps(steps.map(s =>
+      s.id === stepId
+        ? { ...s, safetyNotes: (s.safetyNotes || []).filter(n => n.id !== noteId) }
+        : s
+    ));
+  };
+
+  const updateStepTool = (stepId: string, tool: Tool | null) => {
+    setSteps(steps.map(s =>
+      s.id === stepId
+        ? { ...s, toolId: tool?.id, tool: tool || undefined }
+        : s
+    ));
   };
 
   const getDifficultyColor = (diff: DifficultyLevel) => {
@@ -206,12 +219,6 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
           <Badge className={`${getDifficultyColor(phase.difficulty)} text-white text-xs`}>
             {getDifficultyLabel(phase.difficulty)}
           </Badge>
-          {selectedTools.length > 0 && (
-            <Badge variant="outline" className="text-xs">
-              <Wrench className="h-3 w-3 mr-1" />
-              {selectedTools.length} outil{selectedTools.length > 1 ? 's' : ''}
-            </Badge>
-          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -250,17 +257,6 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
               Informations
             </button>
             <button
-              onClick={() => setActiveTab('tools')}
-              className={`px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
-                activeTab === 'tools'
-                  ? 'border-b-2 border-primary text-primary'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              <Wrench className="h-4 w-4 inline mr-2" />
-              Outils ({selectedTools.length})
-            </button>
-            <button
               onClick={() => setActiveTab('steps')}
               className={`px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'steps'
@@ -269,7 +265,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
               }`}
             >
               <List className="h-4 w-4 inline mr-2" />
-              Étapes ({steps.length})
+              Sous-étapes ({steps.length})
             </button>
           </div>
 
@@ -361,67 +357,6 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
               </>
             )}
 
-            {activeTab === 'tools' && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Outils nécessaires
-                  </label>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                    Sélectionnez les outils depuis votre bibliothèque
-                  </p>
-
-                  {selectedTools.length > 0 && (
-                    <div className="mb-4 space-y-2">
-                      {selectedTools.map((tool) => (
-                        <div key={tool.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded">
-                          <span className="text-sm text-gray-900 dark:text-white">{tool.name}</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeTool(tool.id)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-3 max-h-60 overflow-y-auto">
-                    {availableTools && availableTools.length > 0 ? (
-                      <div className="grid grid-cols-1 gap-2">
-                        {availableTools
-                          .filter(t => !selectedTools.find(st => st.id === t.id))
-                          .map((tool) => (
-                            <button
-                              key={tool.id}
-                              onClick={() => addTool(tool)}
-                              className="flex items-center justify-between p-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
-                            >
-                              <div>
-                                <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                  {tool.name}
-                                </div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400">
-                                  {tool.category}
-                                </div>
-                              </div>
-                              <Plus className="h-4 w-4 text-primary" />
-                            </button>
-                          ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-                        Aucun outil dans votre bibliothèque.
-                        <br />
-                        Ajoutez-en dans la section "Outils".
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
 
             {activeTab === 'steps' && (
               <>
@@ -520,6 +455,119 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                             className="text-xs"
                           />
                         </div>
+
+                        {/* Outil pour cette sous-étape */}
+                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                            <Wrench className="h-3 w-3 inline mr-1" />
+                            Outil requis (optionnel)
+                          </label>
+                          {step.tool ? (
+                            <div className="flex items-center justify-between p-2 bg-white dark:bg-gray-600 rounded border border-gray-300 dark:border-gray-500">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900 dark:text-white">{step.tool.name}</div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">{step.tool.category}</div>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => updateStepTool(step.id, null)}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <select
+                              value={step.toolId || ''}
+                              onChange={(e) => {
+                                const toolId = e.target.value;
+                                const tool = availableTools?.find(t => t.id === toolId);
+                                updateStepTool(step.id, tool || null);
+                              }}
+                              className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm"
+                            >
+                              <option value="">Aucun outil</option>
+                              {availableTools?.map(tool => (
+                                <option key={tool.id} value={tool.id}>{tool.name}</option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+
+                        {/* Conseils pour cette sous-étape */}
+                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                            <Lightbulb className="h-3 w-3 inline mr-1" />
+                            Conseils
+                          </label>
+                          <div className="space-y-2">
+                            {(step.tips || []).map((tip, tipIdx) => (
+                              <div key={tipIdx} className="flex gap-2">
+                                <Input
+                                  value={tip}
+                                  onChange={(e) => updateStepTip(step.id, tipIdx, e.target.value)}
+                                  placeholder="Conseil..."
+                                  className="text-sm"
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeStepTip(step.id, tipIdx)}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ))}
+                            <Button variant="outline" size="sm" onClick={() => addStepTip(step.id)}>
+                              <Plus className="h-3 w-3 mr-1" />
+                              Ajouter un conseil
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Consignes de sécurité pour cette sous-étape */}
+                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                            <AlertTriangle className="h-3 w-3 inline mr-1 text-orange-500" />
+                            Consignes de sécurité
+                          </label>
+                          <div className="space-y-2">
+                            {(step.safetyNotes || []).map((note) => (
+                              <div key={note.id} className="p-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded">
+                                <div className="flex gap-2 items-start mb-2">
+                                  <select
+                                    value={note.type}
+                                    onChange={(e) => updateStepSafetyNote(step.id, note.id, { type: e.target.value as any })}
+                                    className="rounded-md border border-orange-300 dark:border-orange-700 bg-white dark:bg-gray-700 px-2 py-1 text-xs"
+                                  >
+                                    <option value="info">Information</option>
+                                    <option value="warning">Attention</option>
+                                    <option value="danger">Danger</option>
+                                    <option value="mandatory">Obligatoire</option>
+                                    <option value="forbidden">Interdit</option>
+                                  </select>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => removeStepSafetyNote(step.id, note.id)}
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                                <Input
+                                  value={note.content}
+                                  onChange={(e) => updateStepSafetyNote(step.id, note.id, { content: e.target.value })}
+                                  placeholder="Consigne de sécurité..."
+                                  className="text-sm"
+                                />
+                              </div>
+                            ))}
+                            <Button variant="outline" size="sm" onClick={() => addStepSafetyNote(step.id)}>
+                              <Plus className="h-3 w-3 mr-1" />
+                              Ajouter une consigne
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                     ))}
                     <Button variant="outline" size="sm" onClick={addStep}>
@@ -529,78 +577,6 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                   </div>
                 </div>
 
-                {/* Conseils */}
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    <Lightbulb className="h-4 w-4 inline mr-1" />
-                    Conseils
-                  </label>
-                  <div className="space-y-2">
-                    {tips.map((tip, idx) => (
-                      <div key={idx} className="flex gap-2">
-                        <Input
-                          value={tip}
-                          onChange={(e) => updateTip(idx, e.target.value)}
-                          placeholder="Conseil..."
-                        />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeTip(idx)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                    <Button variant="outline" size="sm" onClick={addTip}>
-                      <Plus className="h-4 w-4 mr-1" />
-                      Ajouter un conseil
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Consignes de sécurité */}
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    <AlertTriangle className="h-4 w-4 inline mr-1 text-orange-500" />
-                    Consignes de sécurité
-                  </label>
-                  <div className="space-y-3">
-                    {safetyNotes.map((note) => (
-                      <div key={note.id} className="p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded">
-                        <div className="flex gap-2 items-start mb-2">
-                          <select
-                            value={note.type}
-                            onChange={(e) => updateSafetyNote(note.id, { type: e.target.value as 'warning' | 'danger' | 'info' | 'mandatory' | 'forbidden' })}
-                            className="rounded-md border border-orange-300 dark:border-orange-700 bg-white dark:bg-gray-700 px-2 py-1 text-sm"
-                          >
-                            <option value="info">Information</option>
-                            <option value="warning">Attention</option>
-                            <option value="danger">Danger</option>
-                            <option value="mandatory">Obligatoire</option>
-                            <option value="forbidden">Interdit</option>
-                          </select>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeSafetyNote(note.id)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        <Input
-                          value={note.content}
-                          onChange={(e) => updateSafetyNote(note.id, { content: e.target.value })}
-                          placeholder="Consigne de sécurité..."
-                        />
-                      </div>
-                    ))}
-                    <Button variant="outline" size="sm" onClick={addSafetyNote}>
-                      <Plus className="h-4 w-4 mr-1" />
-                      Ajouter une consigne
-                    </Button>
-                  </div>
-                </div>
               </>
             )}
           </div>
@@ -609,7 +585,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
           {editingImageId && (
             <ImageAnnotator
               annotatedImage={images.find(img => img.imageId === editingImageId)!}
-              tools={selectedTools}
+              tools={phase.tools || []}
               onSave={(annotations, description) => handleSaveAnnotations(editingImageId, annotations, description)}
               onCancel={() => setEditingImageId(null)}
             />

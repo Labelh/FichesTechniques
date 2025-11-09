@@ -147,6 +147,12 @@ export interface SubStep {
   description: string;
   images?: AnnotatedImage[];
   estimatedTime?: number; // en minutes
+
+  // Outil spécifique à cette sous-étape
+  toolId?: string;
+  tool?: Tool;
+
+  // Conseils et sécurité par sous-étape
   tips?: string[];
   safetyNotes?: SafetyNote[];
 }
