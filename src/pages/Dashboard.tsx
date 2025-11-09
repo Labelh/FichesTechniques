@@ -28,20 +28,20 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="container-fluid py-4">
+    <div className="container-fluid">
       {/* Header */}
       <div className="mb-4">
-        <h1 className="display-5 fw-bold mb-2">
+        <h1 className="display-6 fw-bold mb-1" style={{ letterSpacing: '-0.02em' }}>
           Tableau de bord
         </h1>
-        <p className="text-muted">
+        <p className="text-muted mb-0">
           Gérez vos procédures techniques
         </p>
       </div>
 
       {/* Search & Filters Bar */}
-      <div className="card mb-4">
-        <div className="card-body">
+      <div className="card shadow-sm mb-4 border-0" style={{ backgroundColor: 'rgba(23, 23, 23, 0.5)' }}>
+        <div className="card-body p-4">
           <div className="row g-3 align-items-center">
             {/* Search */}
             <div className="col-12 col-lg-6">
@@ -65,7 +65,7 @@ export default function Dashboard() {
                   variant={showFilters ? 'default' : 'outline'}
                   onClick={() => setShowFilters(!showFilters)}
                 >
-                  <Filter className="me-2 text-muted" size={18} />
+                  <Filter className={showFilters ? 'me-2' : 'me-2 text-muted'} size={18} />
                   Filtres
                 </Button>
                 <Button variant="outline">
@@ -84,7 +84,7 @@ export default function Dashboard() {
                     onClick={() => setViewMode('grid' as any)}
                     title="Vue grille"
                   >
-                    <Grid className="text-muted" size={18} />
+                    <Grid className={viewMode === 'grid' ? '' : 'text-muted'} size={18} />
                   </Button>
                   <Button
                     variant={viewMode === 'list' ? 'default' : 'outline'}
@@ -92,7 +92,7 @@ export default function Dashboard() {
                     onClick={() => setViewMode('list' as any)}
                     title="Vue liste"
                   >
-                    <List className="text-muted" size={18} />
+                    <List className={viewMode === 'list' ? '' : 'text-muted'} size={18} />
                   </Button>
                   <Button
                     variant={viewMode === 'kanban' ? 'default' : 'outline'}
@@ -100,7 +100,7 @@ export default function Dashboard() {
                     onClick={() => setViewMode('kanban' as any)}
                     title="Vue kanban"
                   >
-                    <Kanban className="text-muted" size={18} />
+                    <Kanban className={viewMode === 'kanban' ? '' : 'text-muted'} size={18} />
                   </Button>
                 </div>
               </div>
@@ -109,7 +109,7 @@ export default function Dashboard() {
 
           {/* Filter Panel */}
           {showFilters && (
-            <div className="mt-4 pt-4 border-top">
+            <div className="mt-4 pt-4 border-top border-secondary border-opacity-10">
               <FilterPanel />
             </div>
           )}
