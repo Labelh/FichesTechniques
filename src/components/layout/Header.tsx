@@ -11,7 +11,7 @@ export default function Header() {
   const { toggleSidebar } = useAppStore();
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+    <header className="sticky top-0 z-50 w-full border-b border-gray-200 dark:border-gray-700 backdrop-blur-md" style={{ backgroundColor: 'var(--color-surface)' }}>
       <div className="flex h-16 items-center px-4">
         {/* Menu Button */}
         <Button

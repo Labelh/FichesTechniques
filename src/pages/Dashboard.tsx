@@ -41,7 +41,7 @@ export default function Dashboard() {
 
       {/* Search & Filters Bar */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -54,47 +54,53 @@ export default function Dashboard() {
             />
           </div>
 
-          {/* View Mode */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant={viewMode === 'grid' ? 'default' : 'outline'}
-              size="icon"
-              onClick={() => setViewMode('grid' as any)}
-              title="Vue grille"
-            >
-              <Grid className="h-5 w-5" />
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'outline'}
-              size="icon"
-              onClick={() => setViewMode('list' as any)}
-              title="Vue liste"
-            >
-              <List className="h-5 w-5" />
-            </Button>
-            <Button
-              variant={viewMode === 'kanban' ? 'default' : 'outline'}
-              size="icon"
-              onClick={() => setViewMode('kanban' as any)}
-              title="Vue kanban"
-            >
-              <Kanban className="h-5 w-5" />
-            </Button>
-          </div>
+          {/* Right side: Filters, Sort & View Mode */}
+          <div className="flex items-center gap-3">
+            {/* Filters & Sort */}
+            <div className="flex gap-2">
+              <Button
+                variant={showFilters ? 'default' : 'outline'}
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <Filter className="h-5 w-5 mr-2" />
+                Filtres
+              </Button>
+              <Button variant="outline">
+                <SortAsc className="h-5 w-5 mr-2" />
+                Trier
+              </Button>
+            </div>
 
-          {/* Filters & Sort */}
-          <div className="flex gap-2">
-            <Button
-              variant={showFilters ? 'default' : 'outline'}
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              <Filter className="h-5 w-5 mr-2" />
-              Filtres
-            </Button>
-            <Button variant="outline">
-              <SortAsc className="h-5 w-5 mr-2" />
-              Trier
-            </Button>
+            {/* Divider */}
+            <div className="h-8 w-px bg-gray-200 dark:bg-gray-700"></div>
+
+            {/* View Mode */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'outline'}
+                size="icon"
+                onClick={() => setViewMode('grid' as any)}
+                title="Vue grille"
+              >
+                <Grid className="h-5 w-5" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'outline'}
+                size="icon"
+                onClick={() => setViewMode('list' as any)}
+                title="Vue liste"
+              >
+                <List className="h-5 w-5" />
+              </Button>
+              <Button
+                variant={viewMode === 'kanban' ? 'default' : 'outline'}
+                size="icon"
+                onClick={() => setViewMode('kanban' as any)}
+                title="Vue kanban"
+              >
+                <Kanban className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
 

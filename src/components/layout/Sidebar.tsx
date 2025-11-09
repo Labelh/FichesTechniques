@@ -37,12 +37,12 @@ export default function Sidebar() {
   if (!sidebarOpen) return null;
 
   return (
-    <aside className="fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-64 border-r bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 overflow-y-auto">
-      <div className="flex flex-col h-full">
+    <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r bg-surface border-gray-200 dark:border-gray-700 overflow-y-auto backdrop-blur-sm">
+      <div className="flex flex-col h-full pt-16">
         {/* New Procedure Button */}
-        <div className="p-4">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <Link to="/procedures/new">
-            <Button className="w-full" size="lg">
+            <Button className="w-full shadow-md hover:shadow-lg transition-all" size="lg">
               <Plus className="h-5 w-5 mr-2" />
               Nouvelle Procédure
             </Button>
@@ -50,7 +50,7 @@ export default function Sidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 space-y-1">
+        <nav className="flex-1 px-3 py-4 space-y-1">
           {navItems.map((item) => {
             const isActive =
               location.pathname === item.href ||
@@ -90,26 +90,26 @@ export default function Sidebar() {
 
         {/* Statistics */}
         {stats && (
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
               Statistiques
             </h3>
-            <div className="space-y-1 text-sm">
-              <div className="flex justify-between">
+            <div className="space-y-2.5 text-sm">
+              <div className="flex justify-between items-center py-1">
                 <span className="text-gray-600 dark:text-gray-400">Brouillons</span>
-                <span className="font-medium text-gray-900 dark:text-white">
+                <span className="font-semibold text-gray-900 dark:text-white px-2 py-0.5 bg-white dark:bg-gray-700 rounded">
                   {stats.draft || 0}
                 </span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center py-1">
                 <span className="text-gray-600 dark:text-gray-400">En cours</span>
-                <span className="font-medium text-gray-900 dark:text-white">
+                <span className="font-semibold text-gray-900 dark:text-white px-2 py-0.5 bg-white dark:bg-gray-700 rounded">
                   {stats.enCours || 0}
                 </span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center py-1">
                 <span className="text-gray-600 dark:text-gray-400">Terminées</span>
-                <span className="font-medium text-gray-900 dark:text-white">
+                <span className="font-semibold text-gray-900 dark:text-white px-2 py-0.5 bg-white dark:bg-gray-700 rounded">
                   {stats.completed || 0}
                 </span>
               </div>
