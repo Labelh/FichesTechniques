@@ -1,13 +1,16 @@
 import { useState } from 'react';
-import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, Package, List, AlertTriangle, Lightbulb } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, Package, List, AlertTriangle, Lightbulb, Image as ImageIcon, Save } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { updatePhase } from '@/services/procedureService';
+import { createPhaseTemplate } from '@/services/templateService';
 import { db } from '@/db/database';
-import type { Phase, DifficultyLevel, Tool, Material, SubStep, SafetyNote } from '@/types';
+import type { Phase, DifficultyLevel, Tool, Material, SubStep, SafetyNote, AnnotatedImage, Annotation } from '@/types';
 import { toast } from 'sonner';
 import { useLiveQuery } from 'dexie-react-hooks';
+import ImageUploader from '@/components/phase/ImageUploader';
+import ImageAnnotator from '@/components/phase/ImageAnnotator';
 
 interface PhaseItemProps {
   phase: Phase;
@@ -27,7 +30,9 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
   const [steps, setSteps] = useState<SubStep[]>(phase.steps || []);
   const [safetyNotes, setSafetyNotes] = useState<SafetyNote[]>(phase.safetyNotes || []);
   const [tips, setTips] = useState<string[]>(phase.tips || []);
-  const [activeTab, setActiveTab] = useState<'info' | 'tools' | 'materials' | 'steps' | 'safety'>('info');
+  const [images, setImages] = useState<AnnotatedImage[]>(phase.images || []);
+  const [editingImageId, setEditingImageId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'info' | 'tools' | 'materials' | 'steps' | 'safety' | 'photos'>('info');
 
   // Récupérer tous les outils disponibles
   const availableTools = useLiveQuery(() => db.tools.toArray(), []);
@@ -45,11 +50,52 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
         steps,
         safetyNotes,
         tips,
+        images,
       });
       toast.success('Phase mise à jour');
       setIsExpanded(false);
     } catch (error) {
       toast.error('Erreur lors de la mise à jour');
+    }
+  };
+
+  const handleSaveAnnotations = (imageId: string, annotations: Annotation[], description: string) => {
+    setImages(images.map(img =>
+      img.imageId === imageId
+        ? { ...img, annotations, description }
+        : img
+    ));
+    setEditingImageId(null);
+  };
+
+  const handleSaveAsTemplate = async () => {
+    const templateName = prompt('Nom du template:', title || 'Mon template');
+    if (!templateName) return;
+
+    const category = prompt('Catégorie du template:', 'Général') || 'Général';
+
+    try {
+      // Créer une phase temporaire avec les données actuelles
+      const currentPhase: Phase = {
+        ...phase,
+        title,
+        description,
+        difficulty,
+        estimatedTime,
+        tools: selectedTools,
+        toolIds: selectedTools.map(t => t.id),
+        materials,
+        steps,
+        safetyNotes,
+        tips,
+        images,
+      };
+
+      await createPhaseTemplate(currentPhase, templateName, category);
+      toast.success('Template créé avec succès');
+    } catch (error) {
+      console.error('Error creating template:', error);
+      toast.error('Erreur lors de la création du template');
     }
   };
 
@@ -254,6 +300,17 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
             >
               <AlertTriangle className="h-4 w-4 inline mr-2" />
               Sécurité ({safetyNotes.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('photos')}
+              className={`px-4 py-3 text-sm font-medium transition-colors ${
+                activeTab === 'photos'
+                  ? 'border-b-2 border-primary text-primary'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              <ImageIcon className="h-4 w-4 inline mr-2" />
+              Photos ({images.length})
             </button>
           </div>
 
@@ -546,17 +603,53 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                 </div>
               </>
             )}
+
+            {activeTab === 'photos' && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <ImageIcon className="h-4 w-4 inline mr-1" />
+                    Photos de la phase
+                  </label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                    Ajoutez des photos et annotez-les pour illustrer la phase (trajectoires d'outils, zones importantes, etc.)
+                  </p>
+                  <ImageUploader
+                    images={images}
+                    onImagesChange={setImages}
+                    onEditImage={setEditingImageId}
+                  />
+                </div>
+              </>
+            )}
           </div>
 
+          {/* Image Annotator Modal */}
+          {editingImageId && (
+            <ImageAnnotator
+              annotatedImage={images.find(img => img.imageId === editingImageId)!}
+              tools={selectedTools}
+              onSave={(annotations, description) => handleSaveAnnotations(editingImageId, annotations, description)}
+              onCancel={() => setEditingImageId(null)}
+            />
+          )}
+
+
           {/* Footer Actions */}
-          <div className="flex justify-end gap-2 p-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
-            <Button variant="ghost" onClick={() => setIsExpanded(false)}>
-              Annuler
+          <div className="flex justify-between gap-2 p-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
+            <Button variant="outline" size="sm" onClick={handleSaveAsTemplate}>
+              <Save className="h-4 w-4 mr-2" />
+              Sauvegarder comme template
             </Button>
-            <Button onClick={handleSave}>
-              <Plus className="h-4 w-4 mr-2" />
-              Enregistrer les modifications
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="ghost" onClick={() => setIsExpanded(false)}>
+                Annuler
+              </Button>
+              <Button onClick={handleSave}>
+                <Plus className="h-4 w-4 mr-2" />
+                Enregistrer les modifications
+              </Button>
+            </div>
           </div>
         </div>
       )}

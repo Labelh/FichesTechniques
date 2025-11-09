@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Fiches Techniques</title>
+  <script>
+    // Redirection pour GitHub Pages SPA
+    // Stocke le chemin demandé et redirige vers index.html
+    sessionStorage.setItem('redirect', location.pathname + location.search + location.hash);
+    location.replace(location.origin + location.pathname.split('/').slice(0, -1).join('/') + '/');
+  </script>
+</head>
+<body>
+  Redirection...
+</body>
+</html>

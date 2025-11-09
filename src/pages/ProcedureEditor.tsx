@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
 import PhaseItem from '@/components/editor/PhaseItem';
+import PhaseTemplateSelector from '@/components/editor/PhaseTemplateSelector';
 import { toast } from 'sonner';
 
 export default function ProcedureEditor() {
@@ -16,6 +17,7 @@ export default function ProcedureEditor() {
 
   const [reference, setReference] = useState('');
   const [designation, setDesignation] = useState('');
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
 
   useEffect(() => {
     if (existingProcedure) {
@@ -50,11 +52,16 @@ export default function ProcedureEditor() {
     }
   };
 
-  const handleAddPhase = async () => {
+  const handleAddPhase = () => {
     if (!id) {
       toast.error('Veuillez d\'abord sauvegarder la procédure');
       return;
     }
+    setShowTemplateSelector(true);
+  };
+
+  const handleAddBlankPhase = async () => {
+    if (!id) return;
 
     try {
       await addPhase(id, {
@@ -169,6 +176,15 @@ export default function ProcedureEditor() {
           </Card>
         )}
       </div>
+
+      {/* Template Selector Modal */}
+      {showTemplateSelector && id && (
+        <PhaseTemplateSelector
+          procedureId={id}
+          onClose={() => setShowTemplateSelector(false)}
+          onAddBlank={handleAddBlankPhase}
+        />
+      )}
     </div>
   );
 }

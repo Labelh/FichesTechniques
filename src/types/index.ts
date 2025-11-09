@@ -35,6 +35,7 @@ export enum RiskLevel {
 }
 
 export enum AnnotationType {
+  TRAJECTORY = 'trajectory',
   ARROW = 'arrow',
   RECTANGLE = 'rectangle',
   CIRCLE = 'circle',
@@ -92,11 +93,14 @@ export interface Image extends BaseEntity {
 export interface Annotation {
   id: string;
   type: AnnotationType;
-  data: any; // Fabric.js object data
-  layer: number;
-  visible: boolean;
+  data?: any; // Fabric.js object data (optional for backward compatibility)
+  points?: { x: number; y: number }[]; // Points for trajectory, line, arrow, etc.
+  text?: string; // Text content for text annotations
+  label?: string; // Label to display on annotation
+  layer?: number;
+  visible?: boolean;
   color: string;
-  strokeWidth: number;
+  strokeWidth?: number;
   createdAt: Date;
 }
 
