@@ -1,0 +1,151 @@
+// 1. Personnalisation des variables Bootstrap
+$primary: #ff6b35;
+$secondary: #6c757d;
+$success: #10b981;
+$danger: #ef4444;
+$warning: #f59e0b;
+$info: #3b82f6;
+
+// Couleurs sombres pour le thème
+$body-bg: #0a0a0a;
+$body-color: #f5f5f5;
+
+// Composants
+$card-bg: rgba(23, 23, 23, 0.3);
+$card-border-color: rgba(64, 64, 64, 0.5);
+$border-color: rgba(64, 64, 64, 0.5);
+
+$input-bg: rgba(23, 23, 23, 0.5);
+$input-border-color: #404040;
+$input-color: #f5f5f5;
+$input-placeholder-color: #737373;
+$input-focus-border-color: $primary;
+$input-focus-box-shadow: 0 0 0 0.25rem rgba(255, 107, 53, 0.25);
+
+// Bordures arrondies
+$border-radius: 0.5rem;
+$border-radius-lg: 0.75rem;
+$border-radius-sm: 0.375rem;
+
+// Boutons
+$btn-border-radius: $border-radius;
+$btn-font-weight: 500;
+
+// Modal
+$modal-content-bg: #121212;
+$modal-content-border-color: rgba(64, 64, 64, 0.5);
+$modal-backdrop-bg: #000000;
+$modal-backdrop-opacity: 0.5;
+
+// Dropdown
+$dropdown-bg: #1e1e1e;
+$dropdown-border-color: rgba(64, 64, 64, 0.5);
+$dropdown-link-color: #f5f5f5;
+$dropdown-link-hover-bg: rgba(255, 107, 53, 0.1);
+$dropdown-link-hover-color: #f5f5f5;
+
+// Table
+$table-bg: transparent;
+$table-striped-bg: rgba(23, 23, 23, 0.3);
+$table-hover-bg: rgba(64, 64, 64, 0.2);
+$table-border-color: rgba(64, 64, 64, 0.5);
+$table-color: #f5f5f5;
+
+// Badge
+$badge-font-weight: 500;
+$badge-border-radius: 0.375rem;
+
+// 2. Import Bootstrap
+@import "bootstrap/scss/bootstrap";
+
+// 3. Styles personnalisés additionnels
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Amélioration des boutons
+.btn-outline-primary {
+  background-color: transparent;
+  border-color: rgba(255, 107, 53, 0.3);
+  color: #ff6b35;
+
+  &:hover {
+    background-color: rgba(255, 107, 53, 0.1);
+    border-color: #ff6b35;
+    color: #ff6b35;
+  }
+}
+
+.btn-outline-secondary {
+  background-color: transparent;
+  border-color: #404040;
+  color: #d4d4d4;
+
+  &:hover {
+    background-color: transparent;
+    border-color: #525252;
+    color: #f5f5f5;
+  }
+}
+
+.btn-outline-danger {
+  background-color: transparent;
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+
+  &:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+    border-color: #ef4444;
+    color: #ef4444;
+  }
+}
+
+// Cards élégantes
+.card {
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: rgba(64, 64, 64, 0.7);
+  }
+}
+
+// Inputs améliorés
+.form-control,
+.form-select {
+  &:hover {
+    border-color: #525252;
+  }
+
+  &:focus {
+    background-color: rgba(23, 23, 23, 0.5);
+  }
+}
+
+// Tables améliorées
+.table {
+  th {
+    font-weight: 600;
+    color: #f5f5f5;
+  }
+}
+
+// Scrollbar personnalisée
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #404040;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #525252;
+}

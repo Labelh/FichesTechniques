@@ -1,5 +1,5 @@
-/* Import du fichier CSS principal sans Tailwind */
-@import './main.css';
+/* Import de Bootstrap personnalisé */
+@import './custom-bootstrap.scss';
 
 /* Styles spécifiques à l'éditeur */
 .editor-container {
