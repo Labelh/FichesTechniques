@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Eye, Plus, Image, X } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Plus, Image, X, Cloud } from 'lucide-react';
 import { useProcedure } from '@/hooks/useProcedures';
 import { createProcedure, updateProcedure, addPhase, deletePhase } from '@/services/procedureService';
+import { useAutoSave } from '@/hooks/useAutoSave';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -27,6 +28,24 @@ export default function ProcedureEditor() {
       setCoverImage(existingProcedure.coverImage || null);
     }
   }, [existingProcedure]);
+
+  // Auto-save (seulement pour les procédures existantes)
+  const { isSaving, lastSaved } = useAutoSave(
+    {
+      onSave: async () => {
+        if (id && existingProcedure && reference.trim()) {
+          await updateProcedure(id, {
+            title: reference,
+            description: designation,
+            coverImage: coverImage,
+          });
+        }
+      },
+      delay: 2000, // 2 secondes après la dernière modification
+      enabled: !!id, // Actif seulement en mode édition
+    },
+    [reference, designation, coverImage]
+  );
 
   const handleSave = async () => {
     if (!reference.trim()) {
@@ -142,19 +161,40 @@ export default function ProcedureEditor() {
           </Button>
         </Link>
 
-        <div className="flex gap-2">
+        <div className="flex items-center gap-3">
+          {/* Auto-save status indicator */}
           {id && (
-            <Link to={`/procedures/${id}`}>
-              <Button variant="secondary">
-                <Eye className="h-4 w-4 mr-2" />
-                Aperçu
-              </Button>
-            </Link>
+            <div className="flex items-center gap-2 text-sm">
+              {isSaving ? (
+                <>
+                  <Cloud className="h-4 w-4 text-gray-400 animate-pulse" />
+                  <span className="text-gray-400">Sauvegarde...</span>
+                </>
+              ) : lastSaved ? (
+                <>
+                  <Cloud className="h-4 w-4 text-green-500" />
+                  <span className="text-gray-400">
+                    Sauvegardé à {lastSaved.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </>
+              ) : null}
+            </div>
           )}
-          <Button onClick={handleSave}>
-            <Save className="h-4 w-4 mr-2" />
-            Sauvegarder
-          </Button>
+
+          <div className="flex gap-2">
+            {id && (
+              <Link to={`/procedures/${id}`}>
+                <Button variant="secondary">
+                  <Eye className="h-4 w-4 mr-2" />
+                  Aperçu
+                </Button>
+              </Link>
+            )}
+            <Button onClick={handleSave}>
+              <Save className="h-4 w-4 mr-2" />
+              Sauvegarder
+            </Button>
+          </div>
         </div>
       </div>
 

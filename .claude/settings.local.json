@@ -21,7 +21,9 @@
       "Bash(npm run build:*)",
       "Bash(find:*)",
       "Bash(/tmp/tools_head.txt)",
-      "Bash(/tmp/tools_tail.txt)"
+      "Bash(/tmp/tools_tail.txt)",
+      "Bash(cat:*)",
+      "Bash(test:*)"
     ],
     "deny": [],
     "ask": []

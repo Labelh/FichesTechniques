@@ -192,6 +192,7 @@ export interface Phase extends BaseEntity {
 
 export interface Procedure extends BaseEntity {
   // Informations de base
+  reference?: string; // Référence de la procédure
   title: string;
   description: string;
   category: string;

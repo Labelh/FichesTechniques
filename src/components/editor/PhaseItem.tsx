@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, Package, List, AlertTriangle, Lightbulb, Save } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, Package, List, AlertTriangle, Lightbulb, Save, Cloud } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { updatePhase } from '@/services/procedureService';
 import { createPhaseTemplate } from '@/services/templateService';
+import { useAutoSave } from '@/hooks/useAutoSave';
 import { db } from '@/db/database';
 import type { Phase, DifficultyLevel, Tool, SubStep, SafetyNote, AnnotatedImage, Annotation } from '@/types';
 import { toast } from 'sonner';
@@ -49,6 +50,26 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
       toast.error('Erreur lors de la mise à jour');
     }
   };
+
+  // Auto-save
+  const { isSaving, lastSaved } = useAutoSave(
+    {
+      onSave: async () => {
+        await updatePhase(procedureId, phase.id, {
+          title,
+          phaseNumber,
+          description,
+          difficulty,
+          estimatedTime,
+          steps,
+          images,
+        });
+      },
+      delay: 2000,
+      enabled: true,
+    },
+    [title, phaseNumber, description, difficulty, estimatedTime, steps, images]
+  );
 
   const handleSaveAnnotations = (imageId: string, annotations: Annotation[], description: string) => {
     setImages(images.map(img =>
@@ -595,10 +616,24 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
 
           {/* Footer Actions */}
           <div className="flex justify-between gap-2 p-4 bg-gray-900/50 border-t border-gray-700/50">
-            <Button variant="secondary" size="sm" onClick={handleSaveAsTemplate}>
-              <Save className="h-4 w-4 mr-2" />
-              Sauvegarder comme template
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button variant="secondary" size="sm" onClick={handleSaveAsTemplate}>
+                <Save className="h-4 w-4 mr-2" />
+                Sauvegarder comme template
+              </Button>
+              {/* Auto-save indicator */}
+              {isSaving ? (
+                <div className="flex items-center gap-2 text-sm text-gray-400">
+                  <Cloud className="h-4 w-4 animate-pulse" />
+                  <span>Sauvegarde...</span>
+                </div>
+              ) : lastSaved ? (
+                <div className="flex items-center gap-2 text-sm text-gray-400">
+                  <Cloud className="h-4 w-4 text-green-500" />
+                  <span>Sauvegardé</span>
+                </div>
+              ) : null}
+            </div>
             <div className="flex gap-2">
               <Button variant="ghost" onClick={() => setIsExpanded(false)}>
                 Annuler
