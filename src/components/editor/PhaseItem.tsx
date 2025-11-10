@@ -294,17 +294,6 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
               <>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Titre de la phase *
-                  </label>
-                  <Input
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Nom de la phase..."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Numéro de phase
                   </label>
                   <Input
@@ -313,6 +302,17 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                     value={phaseNumber}
                     onChange={(e) => setPhaseNumber(parseInt(e.target.value) || 1)}
                     placeholder="Numéro de phase..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Titre de la phase *
+                  </label>
+                  <Input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Nom de la phase..."
                   />
                 </div>
 
