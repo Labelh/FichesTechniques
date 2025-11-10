@@ -13,13 +13,12 @@ export async function createTool(data: Partial<Tool>): Promise<string> {
   try {
     const toolData: any = {
       name: data.name || 'Nouvel outil',
-      designation: data.designation || '',
+      description: data.description || '',
       category: data.category || 'Général',
-      owned: data.owned || false,
-      quantity: data.quantity || 1,
       location: data.location || '',
-      condition: data.condition || 'good',
-      notes: data.notes || '',
+      reference: data.reference || '',
+      alternatives: data.alternatives || [],
+      consumables: data.consumables || [],
     };
 
     console.log('Creating tool with data:', toolData);

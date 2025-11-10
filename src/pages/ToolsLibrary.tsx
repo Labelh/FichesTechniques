@@ -93,13 +93,12 @@ export default function ToolsLibrary() {
 
         await createTool({
           name: designation,
-          designation: '',
+          description: '',
           category: category,
-          owned: false,
-          quantity: 1,
           location: location,
-          condition: 'good',
-          notes: ''
+          reference: reference,
+          alternatives: [],
+          consumables: []
         });
         imported++;
       }

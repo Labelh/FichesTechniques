@@ -18,13 +18,11 @@ export default function PhaseTemplateSelector({
 }: PhaseTemplateSelectorProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [templates, setTemplates] = useState<ProcedureTemplate[]>([]);
-  const [loading, setLoading] = useState(true);
 
   // Récupérer tous les templates depuis Firestore
   useEffect(() => {
     getAllPhaseTemplates().then(data => {
       setTemplates(data);
-      setLoading(false);
     });
   }, []);
 

@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Edit, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
 import { formatRelativeDate } from '@/lib/utils';
 import type { Procedure } from '@/types';
 

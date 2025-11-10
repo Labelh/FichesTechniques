@@ -219,7 +219,7 @@ export interface Procedure extends BaseEntity {
   globalTools: Tool[];
   globalToolIds: string[];
   globalMaterials: Material[];
-  coverImage?: AnnotatedImage;
+  coverImage?: string; // URL Firebase Storage
 
   // Procédures liées
   relatedProcedures?: string[]; // IDs
