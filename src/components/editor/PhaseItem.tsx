@@ -6,10 +6,9 @@ import { Badge } from '@/components/ui/Badge';
 import { updatePhase } from '@/services/procedureService';
 import { createPhaseTemplate } from '@/services/templateService';
 import { useAutoSave } from '@/hooks/useAutoSave';
-import { db } from '@/db/database';
+import { useTools } from '@/hooks/useTools';
 import type { Phase, DifficultyLevel, Tool, SubStep, SafetyNote, AnnotatedImage, Annotation } from '@/types';
 import { toast } from 'sonner';
-import { useLiveQuery } from 'dexie-react-hooks';
 import ImageAnnotator from '@/components/phase/ImageAnnotator';
 
 interface PhaseItemProps {
@@ -31,8 +30,8 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
   const [editingImageId, setEditingImageId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'info' | 'steps'>('info');
 
-  // Récupérer tous les outils disponibles
-  const availableTools = useLiveQuery(() => db.tools.toArray(), []);
+  // Récupérer tous les outils disponibles depuis Firestore
+  const availableTools = useTools();
 
   const handleSave = async () => {
     try {

@@ -10,12 +10,12 @@ import {
   DollarSign,
   ExternalLink
 } from 'lucide-react';
-import { db } from '../db/database';
+import { createTool, updateTool, deleteTool as deleteToolService } from '@/services/toolService';
+import { useTools } from '@/hooks/useTools';
 import { Tool } from '../types';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { toast } from 'sonner';
-import { useLiveQuery } from 'dexie-react-hooks';
 import * as XLSX from 'xlsx';
 
 export default function ToolsLibrary() {
@@ -25,11 +25,8 @@ export default function ToolsLibrary() {
   const [editingTool, setEditingTool] = useState<Tool | null>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
 
-  // Récupération des outils depuis la DB
-  const tools = useLiveQuery(
-    () => db.tools.toArray(),
-    []
-  );
+  // Récupération des outils depuis Firestore
+  const tools = useTools();
 
   // Filtrage des outils
   const filteredTools = tools?.filter(tool => {
@@ -47,7 +44,7 @@ export default function ToolsLibrary() {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cet outil ?')) return;
 
     try {
-      await db.tools.delete(id);
+      await deleteToolService(id);
       toast.success('Outil supprimé avec succès');
     } catch (error) {
       console.error('Error deleting tool:', error);
@@ -94,17 +91,15 @@ export default function ToolsLibrary() {
           continue;
         }
 
-        await db.tools.add({
-          id: crypto.randomUUID(),
+        await createTool({
           name: designation,
-          description: '',
+          designation: '',
           category: category,
-          reference: reference,
+          owned: false,
+          quantity: 1,
           location: location,
-          alternatives: [],
-          consumables: [],
-          createdAt: new Date(),
-          updatedAt: new Date()
+          condition: 'good',
+          notes: ''
         });
         imported++;
       }
@@ -396,17 +391,10 @@ function AddEditToolDialog({
 
     try {
       if (tool) {
-        await db.tools.update(tool.id, { ...formData, updatedAt: new Date() });
+        await updateTool(tool.id, formData);
         toast.success('Outil modifié avec succès');
       } else {
-        await db.tools.add({
-          id: crypto.randomUUID(),
-          ...formData,
-          alternatives: [],
-          consumables: [],
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
+        await createTool(formData);
         toast.success('Outil ajouté avec succès');
       }
       onClose();

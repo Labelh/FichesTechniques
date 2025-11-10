@@ -16,8 +16,7 @@ export default function ProcedureList({ procedures }: ProcedureListProps) {
         <thead>
           <tr>
             <th>Référence</th>
-            <th>Titre</th>
-            <th>Catégorie</th>
+            <th>Désignation</th>
             <th>Modifié</th>
             <th className="text-right">Actions</th>
           </tr>
@@ -36,15 +35,10 @@ export default function ProcedureList({ procedures }: ProcedureListProps) {
                   {procedure.title}
                 </Link>
               </td>
-              <td>
-                {procedure.category && (
-                  <Badge variant="secondary">{procedure.category}</Badge>
-                )}
-              </td>
               <td className="text-sm text-gray-400">
                 {formatRelativeDate(procedure.updatedAt)}
               </td>
-              <td className="text-right">
+              <td>
                 <div className="flex items-center justify-end gap-2">
                   <Link to={`/procedures/${procedure.id}`}>
                     <Button variant="ghost" size="icon" title="Voir">

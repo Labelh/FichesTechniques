@@ -1,20 +1,22 @@
-import { db } from '@/db/database';
+import {
+  createTemplate,
+  getAllTemplates,
+  updateTemplate as updateTemplateFirestore,
+  deleteTemplate as deleteTemplateFirestore,
+} from '@/lib/firestore';
 import { addPhase } from '@/services/procedureService';
 import type { ProcedureTemplate, Phase } from '@/types';
 
 /**
  * Crée un template de phase à partir d'une phase existante
- * Note: Les templates restent dans IndexedDB (Dexie) car ils sont locaux
+ * Sauvegardé dans Firestore pour synchronisation cloud
  */
 export async function createPhaseTemplate(
   phase: Phase,
   templateName: string,
   category: string = 'Général'
 ): Promise<string> {
-  const now = new Date();
-
-  const template: ProcedureTemplate = {
-    id: crypto.randomUUID(),
+  const template: Omit<ProcedureTemplate, 'id' | 'createdAt' | 'updatedAt'> = {
     name: templateName,
     description: `Template basé sur: ${phase.title}`,
     category,
@@ -23,18 +25,14 @@ export async function createPhaseTemplate(
       id: '', // Will be regenerated when used
       procedureId: '', // Will be set when used
       completed: false,
-      createdAt: now,
-      updatedAt: now,
     }],
     defaultTools: phase.tools || [],
     defaultMaterials: phase.materials || [],
     usageCount: 0,
-    createdAt: now,
-    updatedAt: now,
   };
 
-  await db.templates.add(template);
-  return template.id;
+  const templateId = await createTemplate(template);
+  return templateId;
 }
 
 /**
@@ -47,7 +45,8 @@ export async function applyPhaseTemplate(
   try {
     console.log('Applying template', templateId, 'to procedure', procedureId);
 
-    const template = await db.templates.get(templateId);
+    const templates = await getAllTemplates();
+    const template = templates.find(t => t.id === templateId);
     if (!template) {
       throw new Error(`Template ${templateId} introuvable`);
     }
@@ -77,8 +76,8 @@ export async function applyPhaseTemplate(
       newPhaseIds.push(phaseId);
     }
 
-    // Incrémenter le compteur d'utilisation du template (reste dans IndexedDB)
-    await db.templates.update(templateId, {
+    // Incrémenter le compteur d'utilisation du template dans Firestore
+    await updateTemplateFirestore(templateId, {
       usageCount: (template.usageCount || 0) + 1,
     });
 
@@ -94,21 +93,22 @@ export async function applyPhaseTemplate(
  * Récupère tous les templates de phases
  */
 export async function getAllPhaseTemplates(): Promise<ProcedureTemplate[]> {
-  return await db.templates.toArray();
+  return await getAllTemplates();
 }
 
 /**
  * Récupère les templates par catégorie
  */
 export async function getPhaseTemplatesByCategory(category: string): Promise<ProcedureTemplate[]> {
-  return await db.templates.where('category').equals(category).toArray();
+  const allTemplates = await getAllTemplates();
+  return allTemplates.filter(t => t.category === category);
 }
 
 /**
  * Supprime un template
  */
 export async function deletePhaseTemplate(templateId: string): Promise<void> {
-  await db.templates.delete(templateId);
+  await deleteTemplateFirestore(templateId);
 }
 
 /**
@@ -118,8 +118,5 @@ export async function updatePhaseTemplate(
   templateId: string,
   updates: Partial<ProcedureTemplate>
 ): Promise<void> {
-  await db.templates.update(templateId, {
-    ...updates,
-    updatedAt: new Date(),
-  });
+  await updateTemplateFirestore(templateId, updates);
 }

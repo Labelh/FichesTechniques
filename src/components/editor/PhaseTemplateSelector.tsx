@@ -1,10 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Plus, FileText, Clock, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/db/database';
-import { applyPhaseTemplate } from '@/services/templateService';
+import { getAllPhaseTemplates, applyPhaseTemplate } from '@/services/templateService';
 import { toast } from 'sonner';
+import type { ProcedureTemplate } from '@/types';
 
 interface PhaseTemplateSelectorProps {
   procedureId: string;
@@ -18,9 +17,16 @@ export default function PhaseTemplateSelector({
   onAddBlank,
 }: PhaseTemplateSelectorProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [templates, setTemplates] = useState<ProcedureTemplate[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Récupérer tous les templates
-  const templates = useLiveQuery(() => db.templates.toArray(), []);
+  // Récupérer tous les templates depuis Firestore
+  useEffect(() => {
+    getAllPhaseTemplates().then(data => {
+      setTemplates(data);
+      setLoading(false);
+    });
+  }, []);
 
   // Catégories disponibles
   const categories = ['all', ...(templates ? Array.from(new Set(templates.map(t => t.category))) : [])];

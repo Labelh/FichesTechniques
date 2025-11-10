@@ -315,6 +315,17 @@ export async function getAllTags(): Promise<Tag[]> {
 // CRUD OPERATIONS - TEMPLATES
 // ==========================================
 
+export async function createTemplate(data: Omit<ProcedureTemplate, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+  const templateData = {
+    ...data,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+
+  const docRef = await addDoc(collection(db, collections.templates), templateData);
+  return docRef.id;
+}
+
 export async function getAllTemplates(): Promise<ProcedureTemplate[]> {
   const querySnapshot = await getDocs(collection(db, collections.templates));
 
@@ -324,6 +335,17 @@ export async function getAllTemplates(): Promise<ProcedureTemplate[]> {
       ...doc.data(),
     })
   );
+}
+
+export async function updateTemplate(id: string, data: Partial<ProcedureTemplate>): Promise<void> {
+  const docRef = doc(db, collections.templates, id);
+  const preparedData = prepareForFirestore(data);
+  await updateDoc(docRef, preparedData);
+}
+
+export async function deleteTemplate(id: string): Promise<void> {
+  const docRef = doc(db, collections.templates, id);
+  await deleteDoc(docRef);
 }
 
 // ==========================================
