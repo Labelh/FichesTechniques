@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { initializeFirestore } from '@/lib/firestore';
+import { testFirestoreConnection } from './test-firestore';
 import Layout from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
 import ProcedureEditor from './pages/ProcedureEditor';
@@ -16,9 +17,17 @@ function App() {
   useEffect(() => {
     document.documentElement.classList.add('dark');
 
-    // Initialiser Firestore (créer catégories et préférences par défaut)
-    initializeFirestore().catch(error => {
-      console.error('Erreur lors de l\'initialisation de Firestore:', error);
+    // DIAGNOSTIC : Tester la connexion Firestore en premier
+    testFirestoreConnection().then(results => {
+      if (results.config && results.read && results.write) {
+        console.log('✅ Firestore connecté, initialisation...');
+        // Initialiser Firestore (créer catégories et préférences par défaut)
+        initializeFirestore().catch(error => {
+          console.error('Erreur lors de l\'initialisation de Firestore:', error);
+        });
+      } else {
+        console.error('❌ Firestore non fonctionnel. Consultez les logs ci-dessus.');
+      }
     });
   }, []);
 
