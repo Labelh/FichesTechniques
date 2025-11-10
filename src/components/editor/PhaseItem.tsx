@@ -421,6 +421,43 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                             ))}
                           </div>
                           <div
+                            onClick={() => {
+                              const input = document.createElement('input');
+                              input.type = 'file';
+                              input.accept = 'image/*';
+                              input.multiple = true;
+                              input.onchange = async (e) => {
+                                const files = Array.from((e.target as HTMLInputElement).files || []);
+                                const newImages: AnnotatedImage[] = await Promise.all(
+                                  files.map(async (file) => {
+                                    const img = new Image();
+                                    const url = URL.createObjectURL(file);
+                                    await new Promise((resolve) => {
+                                      img.onload = resolve;
+                                      img.src = url;
+                                    });
+                                    return {
+                                      imageId: crypto.randomUUID(),
+                                      image: {
+                                        id: crypto.randomUUID(),
+                                        name: file.name,
+                                        blob: file,
+                                        size: file.size,
+                                        mimeType: file.type,
+                                        width: img.width,
+                                        height: img.height,
+                                        createdAt: new Date(),
+                                        updatedAt: new Date()
+                                      },
+                                      annotations: [],
+                                      description: ''
+                                    };
+                                  })
+                                );
+                                addStepImage(step.id, newImages);
+                              };
+                              input.click();
+                            }}
                             onDragOver={(e) => e.preventDefault()}
                             onDrop={async (e) => {
                               e.preventDefault();
@@ -455,7 +492,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                             }}
                             className="border-2 border-dashed border-gray-700/30 rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer"
                           >
-                            <p className="text-sm text-gray-400">Glissez-déposez des images ici</p>
+                            <p className="text-sm text-gray-400">Cliquez ou glissez-déposez des images ici</p>
                           </div>
                         </div>
 

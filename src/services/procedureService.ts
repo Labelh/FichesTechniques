@@ -8,6 +8,7 @@ import {
   updatePhase as updatePhaseFirestore,
   deletePhase as deletePhaseFirestore,
 } from '@/lib/firestore';
+import { uploadCoverImage, base64ToBlob, deleteImage } from '@/services/storageService';
 import type { Procedure, Phase, DifficultyLevel } from '@/types';
 
 // ==========================================
@@ -49,16 +50,27 @@ export async function createProcedure(
       procedureData.reference = data.reference;
     }
 
-    // Ne PAS ajouter coverImage pour l'instant (trop volumineux pour Firestore)
-    // TODO: Implémenter upload vers Firebase Storage
-    // if (data.coverImage) {
-    //   procedureData.coverImage = data.coverImage;
-    // }
-
     console.log('Creating procedure with data:', procedureData);
     console.log('Data size (approx):', JSON.stringify(procedureData).length, 'bytes');
     const procedureId = await createProcedureFirestore(procedureData);
     console.log('Procedure created with ID:', procedureId);
+
+    // Upload de l'image de couverture vers Firebase Storage (si présente)
+    if (data.coverImage) {
+      try {
+        console.log('Uploading cover image to Firebase Storage...');
+        const blob = base64ToBlob(data.coverImage);
+        const imageUrl = await uploadCoverImage(blob, procedureId);
+        console.log('Cover image uploaded, URL:', imageUrl);
+
+        // Mettre à jour la procédure avec l'URL de l'image
+        await updateProcedureFirestore(procedureId, { coverImage: imageUrl });
+      } catch (error) {
+        console.error('Error uploading cover image:', error);
+        // Ne pas bloquer la création si l'upload échoue
+      }
+    }
+
     return procedureId;
   } catch (error) {
     console.error('Error creating procedure:', error);
@@ -81,12 +93,16 @@ export async function updateProcedure(
     }
 
     const updatedData = { ...updates };
+    let coverImageToUpload: string | null = null;
 
-    // Ne PAS sauvegarder coverImage (trop volumineux)
-    // TODO: Implémenter upload vers Firebase Storage
+    // Gérer l'image de couverture
     if (updatedData.coverImage) {
-      console.warn('coverImage ignoré (trop volumineux pour Firestore)');
-      delete updatedData.coverImage;
+      // Si c'est une image base64, on la prépare pour l'upload
+      if (updatedData.coverImage.startsWith('data:image')) {
+        coverImageToUpload = updatedData.coverImage;
+        delete updatedData.coverImage; // Ne pas mettre la base64 dans Firestore
+      }
+      // Sinon c'est déjà une URL, on la garde
     }
 
     // Recalculer les totaux si les phases sont fournies
@@ -98,6 +114,27 @@ export async function updateProcedure(
 
     console.log('Updating procedure', id, 'with data size:', JSON.stringify(updatedData).length, 'bytes');
     await updateProcedureFirestore(id, updatedData);
+
+    // Upload de la nouvelle image de couverture (si présente)
+    if (coverImageToUpload) {
+      try {
+        console.log('Uploading new cover image to Firebase Storage...');
+
+        // Supprimer l'ancienne image si elle existe
+        if (procedure.coverImage && procedure.coverImage.includes('firebase')) {
+          await deleteImage(procedure.coverImage);
+        }
+
+        const blob = base64ToBlob(coverImageToUpload);
+        const imageUrl = await uploadCoverImage(blob, id);
+        console.log('Cover image uploaded, URL:', imageUrl);
+
+        // Mettre à jour la procédure avec l'URL de la nouvelle image
+        await updateProcedureFirestore(id, { coverImage: imageUrl });
+      } catch (error) {
+        console.error('Error uploading cover image:', error);
+      }
+    }
   } catch (error) {
     console.error('Error updating procedure:', error);
     throw error;
