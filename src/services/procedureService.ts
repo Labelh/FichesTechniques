@@ -49,12 +49,14 @@ export async function createProcedure(
       procedureData.reference = data.reference;
     }
 
-    // Ajouter coverImage seulement si défini
-    if (data.coverImage) {
-      procedureData.coverImage = data.coverImage;
-    }
+    // Ne PAS ajouter coverImage pour l'instant (trop volumineux pour Firestore)
+    // TODO: Implémenter upload vers Firebase Storage
+    // if (data.coverImage) {
+    //   procedureData.coverImage = data.coverImage;
+    // }
 
     console.log('Creating procedure with data:', procedureData);
+    console.log('Data size (approx):', JSON.stringify(procedureData).length, 'bytes');
     const procedureId = await createProcedureFirestore(procedureData);
     console.log('Procedure created with ID:', procedureId);
     return procedureId;
@@ -71,22 +73,35 @@ export async function updateProcedure(
   id: string,
   updates: Partial<Procedure>
 ): Promise<void> {
-  // Recuperer la procedure existante pour calculer les totaux
-  const procedure = await getProcedureFirestore(id);
-  if (!procedure) {
-    throw new Error(`Procedure ${id} introuvable`);
+  try {
+    // Recuperer la procedure existante pour calculer les totaux
+    const procedure = await getProcedureFirestore(id);
+    if (!procedure) {
+      throw new Error(`Procedure ${id} introuvable`);
+    }
+
+    const updatedData = { ...updates };
+
+    // Ne PAS sauvegarder coverImage (trop volumineux)
+    // TODO: Implémenter upload vers Firebase Storage
+    if (updatedData.coverImage) {
+      console.warn('coverImage ignoré (trop volumineux pour Firestore)');
+      delete updatedData.coverImage;
+    }
+
+    // Recalculer les totaux si les phases sont fournies
+    if (updates.phases) {
+      updatedData.estimatedTotalTime = calculateTotalTime(updates.phases);
+      updatedData.completionPercentage = calculateCompletion({ ...procedure, ...updates });
+      updatedData.validationScore = calculateValidationScore({ ...procedure, ...updates });
+    }
+
+    console.log('Updating procedure', id, 'with data size:', JSON.stringify(updatedData).length, 'bytes');
+    await updateProcedureFirestore(id, updatedData);
+  } catch (error) {
+    console.error('Error updating procedure:', error);
+    throw error;
   }
-
-  const updatedData = { ...updates };
-
-  // Recalculer les totaux si les phases sont fournies
-  if (updates.phases) {
-    updatedData.estimatedTotalTime = calculateTotalTime(updates.phases);
-    updatedData.completionPercentage = calculateCompletion({ ...procedure, ...updates });
-    updatedData.validationScore = calculateValidationScore({ ...procedure, ...updates });
-  }
-
-  await updateProcedureFirestore(id, updatedData);
 }
 
 /**
