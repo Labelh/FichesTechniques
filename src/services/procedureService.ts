@@ -8,7 +8,7 @@ import {
   updatePhase as updatePhaseFirestore,
   deletePhase as deletePhaseFirestore,
 } from '@/lib/firestore';
-import type { Procedure, Phase, DifficultyLevel, ProcedureStatus } from '@/types';
+import type { Procedure, Phase, DifficultyLevel } from '@/types';
 
 // ==========================================
 // PROCEDURE CRUD - FIRESTORE

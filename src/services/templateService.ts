@@ -56,12 +56,12 @@ export async function applyPhaseTemplate(
 
     // Créer chaque phase du template dans Firestore
     for (const templatePhase of template.defaultPhases) {
-      const phaseData = {
+      const phaseData: Partial<Phase> = {
         title: templatePhase.title || 'Nouvelle phase',
         description: templatePhase.description || '',
-        difficulty: templatePhase.difficulty || 'medium',
+        difficulty: (templatePhase.difficulty as any) || 'medium',
         estimatedTime: templatePhase.estimatedTime || 30,
-        riskLevel: templatePhase.riskLevel || 'low',
+        riskLevel: (templatePhase.riskLevel as any) || 'low',
         tools: templatePhase.tools || [],
         toolIds: templatePhase.toolIds || [],
         materials: templatePhase.materials || [],
