@@ -1,8 +1,10 @@
 import { db } from '@/db/database';
+import { addPhase } from '@/services/procedureService';
 import type { ProcedureTemplate, Phase } from '@/types';
 
 /**
  * Crée un template de phase à partir d'une phase existante
+ * Note: Les templates restent dans IndexedDB (Dexie) car ils sont locaux
  */
 export async function createPhaseTemplate(
   phase: Phase,
@@ -36,65 +38,56 @@ export async function createPhaseTemplate(
 }
 
 /**
- * Applique un template de phase à une procédure
+ * Applique un template de phase à une procédure (Firestore)
  */
 export async function applyPhaseTemplate(
   templateId: string,
   procedureId: string
 ): Promise<string[]> {
-  const template = await db.templates.get(templateId);
-  if (!template) {
-    throw new Error(`Template ${templateId} introuvable`);
+  try {
+    console.log('Applying template', templateId, 'to procedure', procedureId);
+
+    const template = await db.templates.get(templateId);
+    if (!template) {
+      throw new Error(`Template ${templateId} introuvable`);
+    }
+
+    const newPhaseIds: string[] = [];
+
+    // Créer chaque phase du template dans Firestore
+    for (const templatePhase of template.defaultPhases) {
+      const phaseData = {
+        title: templatePhase.title || 'Nouvelle phase',
+        description: templatePhase.description || '',
+        difficulty: templatePhase.difficulty || 'medium',
+        estimatedTime: templatePhase.estimatedTime || 30,
+        riskLevel: templatePhase.riskLevel || 'low',
+        tools: templatePhase.tools || [],
+        toolIds: templatePhase.toolIds || [],
+        materials: templatePhase.materials || [],
+        steps: templatePhase.steps || [],
+        images: templatePhase.images || [],
+        safetyNotes: templatePhase.safetyNotes || [],
+        tips: templatePhase.tips || [],
+        completed: false,
+      };
+
+      console.log('Creating phase from template:', phaseData);
+      const phaseId = await addPhase(procedureId, phaseData);
+      newPhaseIds.push(phaseId);
+    }
+
+    // Incrémenter le compteur d'utilisation du template (reste dans IndexedDB)
+    await db.templates.update(templateId, {
+      usageCount: (template.usageCount || 0) + 1,
+    });
+
+    console.log('Template applied successfully, created phases:', newPhaseIds);
+    return newPhaseIds;
+  } catch (error) {
+    console.error('Error applying template:', error);
+    throw error;
   }
-
-  const procedure = await db.procedures.get(procedureId);
-  if (!procedure) {
-    throw new Error(`Procédure ${procedureId} introuvable`);
-  }
-
-  const now = new Date();
-  const newPhaseIds: string[] = [];
-
-  // Créer une copie de chaque phase du template
-  for (const templatePhase of template.defaultPhases) {
-    const newPhase: Phase = {
-      ...templatePhase as Phase,
-      id: crypto.randomUUID(),
-      procedureId,
-      order: procedure.phases.length,
-      title: templatePhase.title || 'Nouvelle phase',
-      description: templatePhase.description || '',
-      difficulty: (templatePhase.difficulty || 'medium') as any,
-      estimatedTime: templatePhase.estimatedTime || 30,
-      riskLevel: (templatePhase.riskLevel || 'low') as any,
-      tools: templatePhase.tools || [],
-      toolIds: templatePhase.toolIds || [],
-      materials: templatePhase.materials || [],
-      steps: templatePhase.steps || [],
-      images: templatePhase.images || [],
-      safetyNotes: templatePhase.safetyNotes || [],
-      tips: templatePhase.tips || [],
-      createdAt: now,
-      updatedAt: now,
-      completed: false,
-    };
-
-    procedure.phases.push(newPhase);
-    newPhaseIds.push(newPhase.id);
-  }
-
-  // Mettre à jour la procédure
-  await db.procedures.update(procedureId, {
-    phases: procedure.phases,
-    updatedAt: now,
-  });
-
-  // Incrémenter le compteur d'utilisation du template
-  await db.templates.update(templateId, {
-    usageCount: (template.usageCount || 0) + 1,
-  });
-
-  return newPhaseIds;
 }
 
 /**
