@@ -193,13 +193,13 @@ export default function ProcedureEditor() {
                 </label>
 
                 {coverImage ? (
-                  <div className="relative border-2 border-gray-700/30 rounded-lg p-4 bg-gray-900/30">
+                  <div className="relative border-2 border-gray-700/30 rounded-lg p-4 bg-[#2a2a2a]">
                     <div className="flex items-center gap-4">
                       <div className="flex-shrink-0">
                         <img
                           src={coverImage.data}
                           alt="Couverture"
-                          className="h-24 w-24 object-cover rounded-lg border border-gray-700/50"
+                          className="h-24 w-24 object-cover rounded-lg border border-[#3a3a3a]"
                         />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -224,7 +224,7 @@ export default function ProcedureEditor() {
                   <div
                     onDrop={handleDrop}
                     onDragOver={handleDragOver}
-                    className="border-2 border-dashed border-gray-700/30 rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer bg-gray-900/30"
+                    className="border-2 border-dashed border-gray-700/30 rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer bg-[#2a2a2a]"
                     onClick={() => document.getElementById('cover-image-input')?.click()}
                   >
                     <Image className="h-12 w-12 mx-auto mb-3 text-gray-600" />

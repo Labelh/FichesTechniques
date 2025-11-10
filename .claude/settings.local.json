@@ -19,7 +19,9 @@
       "Bash(npm install:*)",
       "Bash(npx tailwindcss:*)",
       "Bash(npm run build:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(/tmp/tools_head.txt)",
+      "Bash(/tmp/tools_tail.txt)"
     ],
     "deny": [],
     "ask": []
