@@ -5,28 +5,36 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
   size?: 'default' | 'sm' | 'lg' | 'icon';
-  asChild?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'default', size = 'default', ...props }, ref) => {
-    // Utiliser les classes Bootstrap natives
-    let bootstrapClass = 'btn';
+    const baseStyles = 'btn';
 
-    if (variant === 'default') bootstrapClass += ' btn-primary';
-    else if (variant === 'destructive') bootstrapClass += ' btn-outline-danger';
-    else if (variant === 'outline') bootstrapClass += ' btn-outline-secondary';
-    else if (variant === 'secondary') bootstrapClass += ' btn-outline-secondary';
-    else if (variant === 'ghost') bootstrapClass += ' btn-ghost';
-    else if (variant === 'link') bootstrapClass += ' btn-link';
+    const variants = {
+      default: 'btn-primary',
+      destructive: 'btn-danger',
+      outline: 'btn-secondary',
+      secondary: 'btn-secondary',
+      ghost: 'btn-ghost',
+      link: 'btn-ghost underline',
+    };
 
-    if (size === 'sm') bootstrapClass += ' btn-sm';
-    else if (size === 'lg') bootstrapClass += ' btn-lg';
-    else if (size === 'icon') bootstrapClass += ' btn-sm p-2';
+    const sizes = {
+      default: '',
+      sm: 'px-3 py-2 text-xs',
+      lg: 'px-6 py-3 text-base',
+      icon: 'p-2 w-10 h-10',
+    };
 
     return (
       <button
-        className={cn(bootstrapClass, className)}
+        className={cn(
+          baseStyles,
+          variants[variant],
+          sizes[size],
+          className
+        )}
         ref={ref}
         {...props}
       />

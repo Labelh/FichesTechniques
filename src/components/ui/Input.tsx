@@ -9,7 +9,14 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <input
         type={type}
-        className={cn('form-control', className)}
+        className={cn(
+          'w-full px-4 py-3 bg-[#1f1f1f] border border-white/10 rounded-lg',
+          'text-white text-sm transition-all',
+          'focus:outline-none focus:border-[rgb(249,55,5)] focus:ring-2 focus:ring-[rgb(249,55,5)]/20',
+          'disabled:bg-[#303030] disabled:text-gray-400 disabled:cursor-not-allowed',
+          'placeholder:text-gray-400',
+          className
+        )}
         ref={ref}
         {...props}
       />

@@ -7,23 +7,20 @@ export default function Layout() {
   const sidebarOpen = useAppStore((state) => state.sidebarOpen);
 
   return (
-    <div className="d-flex flex-column min-vh-100 bg-dark">
+    <div className="flex flex-col min-h-screen bg-background">
       <Header />
 
-      <div className="d-flex flex-grow-1 position-relative">
+      <div className="flex flex-1 relative">
         {/* Sidebar */}
         <Sidebar />
 
         {/* Main Content */}
         <main
-          className="flex-grow-1 overflow-auto"
-          style={{
-            marginLeft: sidebarOpen ? '256px' : '0',
-            transition: 'margin-left 0.3s ease',
-            paddingTop: '64px', // Header height
-          }}
+          className={`flex-1 overflow-auto pt-16 transition-all duration-300 ease-in-out ${
+            sidebarOpen ? 'ml-[260px]' : 'ml-0'
+          }`}
         >
-          <div className="container-fluid p-4">
+          <div className="container-fluid p-6">
             <Outlet />
           </div>
         </main>

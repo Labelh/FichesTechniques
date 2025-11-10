@@ -4,6 +4,7 @@ import {
   Wrench,
   FolderKanban,
   Plus,
+  Package,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useAppStore } from '@/store/useAppStore';
@@ -37,95 +38,54 @@ export default function Sidebar() {
   if (!sidebarOpen) return null;
 
   return (
-    <aside
-      className="position-fixed start-0 top-0 h-100 border-end overflow-auto"
-      style={{
-        width: '260px',
-        zIndex: 1040,
-        paddingTop: '0',
-        backgroundColor: '#1f1f1f',
-        borderRight: '1px solid rgba(255, 255, 255, 0.1)',
-        backdropFilter: 'blur(10px)'
-      }}
-    >
-      <div className="d-flex flex-column h-100">
+    <aside className="fixed left-0 top-0 h-screen w-[260px] bg-background border-r border-white/10 overflow-auto z-[1040] backdrop-blur-sm">
+      <div className="flex flex-col h-full">
         {/* Sidebar Header */}
-        <div className="p-3 border-bottom" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
-          <div className="d-flex align-items-center gap-3">
-            <div className="d-flex align-items-center justify-content-center" style={{ width: '32px', height: '32px' }}>
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-              </svg>
+        <div className="p-4 border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-8 h-8">
+              <Package className="w-8 h-8 text-primary" strokeWidth={2} />
             </div>
             <div>
-              <h1 className="mb-0" style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ffffff', lineHeight: 1 }}>FichesTech</h1>
-              <p className="mb-0 mt-1" style={{ fontSize: '0.875rem', fontWeight: 600, color: 'rgb(249, 55, 5)', lineHeight: 1 }}>Ajust'82</p>
+              <h1 className="text-xl font-bold text-white leading-none">
+                FichesTech
+              </h1>
+              <p className="text-sm font-semibold text-primary leading-none mt-1">
+                Ajust'82
+              </p>
             </div>
           </div>
         </div>
 
         {/* New Procedure Button */}
-        <div className="p-3">
-          <Link to="/procedures/new">
-            <Button className="w-100 shadow" size="lg">
-              <Plus className="me-2" size={20} />
+        <div className="p-4">
+          <Link to="/procedures/new" className="block">
+            <Button className="w-full shadow-md" size="lg">
+              <Plus className="mr-2" size={20} />
               Nouvelle Procédure
             </Button>
           </Link>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-fill px-3 py-2">
-          <div className="d-flex flex-column gap-1">
+        <nav className="flex-1 px-3 py-2">
+          <div className="flex flex-col gap-1">
             {navItems.map((item) => {
               const isActive =
                 location.pathname === item.href ||
                 (item.href !== '/' && location.pathname.startsWith(item.href));
 
               return (
-                <Link key={item.href} to={item.href} className="text-decoration-none">
-                  <div
-                    className={cn(
-                      'd-flex align-items-center gap-3 px-3 py-3 rounded',
-                      isActive ? '' : ''
-                    )}
-                    style={{
-                      transition: 'all 0.2s ease',
-                      backgroundColor: isActive ? 'rgb(249, 55, 5)' : 'transparent',
-                      color: isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.7)',
-                      fontSize: '0.9375rem',
-                      fontWeight: 500
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isActive) {
-                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
-                        e.currentTarget.style.color = '#ffffff';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isActive) {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                        e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
-                      }
-                    }}
-                  >
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  className="no-underline"
+                >
+                  <div className={cn('sidebar-link', isActive && 'active')}>
                     <item.icon size={20} />
-                    <span className="flex-grow-1">{item.name}</span>
+                    <span className="flex-1">{item.name}</span>
                     {item.count !== undefined && item.count > 0 && (
-                      <span
-                        className="badge rounded-pill d-flex align-items-center justify-content-center"
-                        style={{
-                          backgroundColor: 'rgb(249, 55, 5)',
-                          color: '#ffffff',
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                          minWidth: '1.25rem',
-                          height: '1.25rem',
-                          padding: '0.125rem 0.5rem'
-                        }}
-                      >
-                        {item.count}
-                      </span>
+                      <span className="sidebar-badge">{item.count}</span>
                     )}
                   </div>
                 </Link>
@@ -135,26 +95,15 @@ export default function Sidebar() {
         </nav>
 
         {/* Footer */}
-        <div className="p-3 border-top" style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}>
-          <div className="d-flex align-items-center justify-content-between">
-            <div className="d-flex align-items-center gap-2">
-              <div
-                className="d-flex align-items-center justify-content-center rounded-circle"
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  backgroundColor: 'rgb(249, 55, 5)',
-                  color: '#ffffff',
-                  fontWeight: 600,
-                  fontSize: '0.875rem',
-                  flexShrink: 0
-                }}
-              >
+        <div className="p-4 border-t border-white/10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center w-9 h-9 rounded-full bg-primary text-white font-semibold text-sm flex-shrink-0">
                 U
               </div>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: '0.875rem', fontWeight: 500, color: '#ffffff' }}>Utilisateur</div>
-                <div style={{ fontSize: '0.75rem', color: '#808080' }}>Gestionnaire</div>
+              <div className="min-w-0">
+                <div className="text-sm font-medium text-white">Utilisateur</div>
+                <div className="text-xs text-text-secondary">Gestionnaire</div>
               </div>
             </div>
           </div>

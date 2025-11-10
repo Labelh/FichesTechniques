@@ -145,7 +145,7 @@ export default function ProcedureEditor() {
         <div className="flex gap-2">
           {id && (
             <Link to={`/procedures/${id}`}>
-              <Button variant="outline">
+              <Button variant="secondary">
                 <Eye className="h-4 w-4 mr-2" />
                 Aperçu
               </Button>

@@ -506,7 +506,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                               </div>
                             ))}
                             <Button
-                              variant="outline"
+                              variant="secondary"
                               size="sm"
                               onClick={() => addStepTip(step.id)}
                               className="mt-1"
@@ -555,7 +555,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                               </div>
                             ))}
                             <Button
-                              variant="outline"
+                              variant="secondary"
                               size="sm"
                               onClick={() => addStepSafetyNote(step.id)}
                               className="mt-1"
@@ -568,7 +568,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                       </div>
                     ))}
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       onClick={addStep}
                       className="w-full mt-4 py-6 border-2 border-dashed hover:border-primary hover:bg-primary/5 transition-all"
                     >
@@ -595,7 +595,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
 
           {/* Footer Actions */}
           <div className="flex justify-between gap-2 p-4 bg-gray-900/50 border-t border-gray-700/50">
-            <Button variant="outline" size="sm" onClick={handleSaveAsTemplate}>
+            <Button variant="secondary" size="sm" onClick={handleSaveAsTemplate}>
               <Save className="h-4 w-4 mr-2" />
               Sauvegarder comme template
             </Button>

@@ -188,14 +188,14 @@ export default function ToolsLibrary() {
         </div>
         <div className="flex gap-2">
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={() => setImportDialogOpen(true)}
           >
             <Upload className="h-4 w-4 mr-2" />
             Importer
           </Button>
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={handleExportJSON}
           >
             <Download className="h-4 w-4 mr-2" />
@@ -324,7 +324,7 @@ export default function ToolsLibrary() {
                 <div className="mt-3">
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="secondary"
                     onClick={() => window.open(tool.purchaseLink, '_blank')}
                     className="w-full"
                   >
@@ -417,7 +417,7 @@ export default function ToolsLibrary() {
 
             <div className="flex gap-2 mt-6">
               <Button
-                variant="outline"
+                variant="secondary"
                 onClick={() => setImportDialogOpen(false)}
                 className="flex-1"
               >
@@ -628,7 +628,7 @@ function AddEditToolDialog({
           <div className="flex gap-2 mt-6">
             <Button
               type="button"
-              variant="outline"
+              variant="secondary"
               onClick={onClose}
               className="flex-1"
             >

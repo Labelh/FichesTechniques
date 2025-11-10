@@ -54,7 +54,7 @@ export default function ProcedureList({ procedures }: ProcedureListProps) {
                 </div>
               </td>
               <td className="px-6 py-4">
-                <Badge variant="outline">{procedure.status}</Badge>
+                <Badge variant="secondary">{procedure.status}</Badge>
               </td>
               <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
                 <div className="flex items-center">

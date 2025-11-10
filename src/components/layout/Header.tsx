@@ -11,54 +11,40 @@ export default function Header() {
   const { toggleSidebar } = useAppStore();
 
   return (
-    <header
-      className="position-fixed top-0 start-0 end-0 bg-dark border-bottom shadow-sm"
-      style={{
-        zIndex: 1050,
-        height: '64px',
-        backdropFilter: 'blur(10px)',
-        backgroundColor: 'rgba(18, 18, 18, 0.95) !important'
-      }}
-    >
-      <div className="container-fluid h-100">
-        <div className="d-flex align-items-center h-100">
+    <header className="fixed top-0 left-0 right-0 h-16 bg-background/95 border-b border-border-dark shadow-sm backdrop-blur-md z-[1050]">
+      <div className="container-fluid h-full px-4">
+        <div className="flex items-center h-full">
           {/* Menu Button */}
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleSidebar}
-            className="me-3"
+            className="mr-3"
           >
-            <Menu className="text-muted" size={22} />
+            <Menu className="text-text-secondary" size={22} />
           </Button>
 
           {/* Logo & Title */}
-          <Link to="/" className="text-decoration-none d-flex align-items-center gap-2 me-auto">
-            <div className="d-flex align-items-center justify-content-center rounded"
-                 style={{
-                   width: '36px',
-                   height: '36px',
-                   background: 'linear-gradient(135deg, #ff6b35 0%, #f44f1b 100%)',
-                   boxShadow: '0 2px 8px rgba(255, 107, 53, 0.3)'
-                 }}>
+          <Link to="/" className="no-underline flex items-center gap-3 mr-auto">
+            <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/30">
               <FileText className="text-white" size={20} />
             </div>
             <div>
-              <h1 className="mb-0 fs-5 fw-bold text-white" style={{ letterSpacing: '-0.02em' }}>
+              <h1 className="text-lg font-bold text-white tracking-tight leading-none">
                 Fiches Techniques
               </h1>
-              <p className="mb-0 text-muted" style={{ fontSize: '0.7rem', marginTop: '-2px' }}>
+              <p className="text-xs text-text-secondary leading-none mt-0.5">
                 Gestion de procédures
               </p>
             </div>
           </Link>
 
           {/* Actions */}
-          <div className="d-flex align-items-center gap-2">
+          <div className="flex items-center gap-2">
             {/* Settings */}
             <Link to="/settings">
               <Button variant="ghost" size="icon" title="Paramètres">
-                <SettingsIcon className="text-muted" size={20} />
+                <SettingsIcon className="text-text-secondary" size={20} />
               </Button>
             </Link>
           </div>

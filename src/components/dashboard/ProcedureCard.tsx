@@ -51,7 +51,7 @@ export default function ProcedureCard({ procedure }: ProcedureCardProps) {
             {procedure.status}
           </Badge>
           {procedure.category && (
-            <Badge variant="outline">{procedure.category}</Badge>
+            <Badge variant="secondary">{procedure.category}</Badge>
           )}
         </div>
 

@@ -40,7 +40,7 @@ export default function FilterPanel() {
           {statuses.map((status) => (
             <Badge
               key={status}
-              variant={isActive('status', status) ? 'default' : 'outline'}
+              variant={isActive('status', status) ? 'default' : 'secondary'}
               className="cursor-pointer"
               onClick={() => toggleFilter('status', status)}
             >
@@ -57,7 +57,7 @@ export default function FilterPanel() {
           {difficulties.map((diff) => (
             <Badge
               key={diff}
-              variant={isActive('difficulty', diff) ? 'default' : 'outline'}
+              variant={isActive('difficulty', diff) ? 'default' : 'secondary'}
               className="cursor-pointer"
               onClick={() => toggleFilter('difficulty', diff)}
             >
@@ -76,7 +76,7 @@ export default function FilterPanel() {
               <Badge
                 key={cat.id}
                 variant={
-                  isActive('categories', cat.name) ? 'default' : 'outline'
+                  isActive('categories', cat.name) ? 'default' : 'secondary'
                 }
                 className="cursor-pointer"
                 onClick={() => toggleFilter('categories', cat.name)}

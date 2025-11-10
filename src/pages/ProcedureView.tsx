@@ -91,16 +91,16 @@ export default function ProcedureView() {
 
           <div className="flex gap-2">
             <Link to={`/procedures/${procedure.id}/edit`}>
-              <Button variant="outline">
+              <Button variant="secondary">
                 <Edit className="h-4 w-4 mr-2" />
                 Modifier
               </Button>
             </Link>
-            <Button variant="outline" onClick={handleDuplicate}>
+            <Button variant="secondary" onClick={handleDuplicate}>
               <Copy className="h-4 w-4 mr-2" />
               Dupliquer
             </Button>
-            <Button variant="outline" onClick={handleExportPDF}>
+            <Button variant="secondary" onClick={handleExportPDF}>
               <Download className="h-4 w-4 mr-2" />
               Export PDF
             </Button>
@@ -113,8 +113,8 @@ export default function ProcedureView() {
         {/* Metadata */}
         <div className="flex flex-wrap gap-2 mt-4">
           <Badge>{procedure.status}</Badge>
-          <Badge variant="outline">{procedure.category}</Badge>
-          <Badge variant="outline">
+          <Badge variant="secondary">{procedure.category}</Badge>
+          <Badge variant="secondary">
             {formatDuration(procedure.estimatedTotalTime)}
           </Badge>
         </div>
@@ -142,8 +142,8 @@ export default function ProcedureView() {
                   {phase.description}
                 </p>
                 <div className="flex gap-2 text-sm">
-                  <Badge variant="outline">{phase.difficulty}</Badge>
-                  <Badge variant="outline">
+                  <Badge variant="secondary">{phase.difficulty}</Badge>
+                  <Badge variant="secondary">
                     {formatDuration(phase.estimatedTime)}
                   </Badge>
                 </div>

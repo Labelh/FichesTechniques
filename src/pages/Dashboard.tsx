@@ -62,14 +62,14 @@ export default function Dashboard() {
               <div className="d-flex align-items-center justify-content-lg-end gap-2 flex-wrap">
                 {/* Filters & Sort */}
                 <Button
-                  variant={showFilters ? 'default' : 'outline'}
+                  variant={showFilters ? 'default' : 'secondary'}
                   onClick={() => setShowFilters(!showFilters)}
                   size="sm"
                 >
                   <Filter className="me-2" size={16} />
                   Filtres
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="secondary" size="sm">
                   <SortAsc className="me-2" size={16} />
                   Trier
                 </Button>
@@ -80,7 +80,7 @@ export default function Dashboard() {
                 {/* View Mode */}
                 <div className="btn-group" role="group">
                   <Button
-                    variant={viewMode === 'grid' ? 'default' : 'outline'}
+                    variant={viewMode === 'grid' ? 'default' : 'secondary'}
                     size="icon"
                     onClick={() => setViewMode('grid' as any)}
                     title="Vue grille"
@@ -88,7 +88,7 @@ export default function Dashboard() {
                     <Grid size={16} />
                   </Button>
                   <Button
-                    variant={viewMode === 'list' ? 'default' : 'outline'}
+                    variant={viewMode === 'list' ? 'default' : 'secondary'}
                     size="icon"
                     onClick={() => setViewMode('list' as any)}
                     title="Vue liste"
@@ -96,7 +96,7 @@ export default function Dashboard() {
                     <List size={16} />
                   </Button>
                   <Button
-                    variant={viewMode === 'kanban' ? 'default' : 'outline'}
+                    variant={viewMode === 'kanban' ? 'default' : 'secondary'}
                     size="icon"
                     onClick={() => setViewMode('kanban' as any)}
                     title="Vue kanban"
