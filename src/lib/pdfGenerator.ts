@@ -248,7 +248,7 @@ export class PDFGenerator {
       this.pdf.setFontSize(11);
       this.pdf.setFont('helvetica', 'bold');
       this.pdf.setTextColor(COLORS.primary);
-      this.pdf.text('📦 Matériaux nécessaires :', this.margin + 5, this.currentY);
+      this.pdf.text('MATERIAUX NECESSAIRES :', this.margin + 5, this.currentY);
       this.currentY += 6;
 
       this.pdf.setFontSize(9);
@@ -269,7 +269,7 @@ export class PDFGenerator {
       this.pdf.setFontSize(11);
       this.pdf.setFont('helvetica', 'bold');
       this.pdf.setTextColor(COLORS.primary);
-      this.pdf.text('📋 Étapes détaillées :', this.margin + 5, this.currentY);
+      this.pdf.text('ETAPES DETAILLEES :', this.margin + 5, this.currentY);
       this.currentY += 8;
 
       phase.steps.forEach((step, index) => {
@@ -304,6 +304,50 @@ export class PDFGenerator {
             this.pdf.text(line, this.margin + 14, this.currentY);
             this.currentY += 4;
           });
+        }
+
+        // Images de l'étape
+        if (step.images && step.images.length > 0) {
+          this.currentY += 3;
+          const imagesPerRow = 2;
+          const imageWidth = (this.pageWidth - 2 * this.margin - 25) / imagesPerRow;
+          const imageHeight = imageWidth * 0.75; // Ratio 4:3
+
+          step.images.forEach((img, imgIndex) => {
+            if (imgIndex % imagesPerRow === 0 && imgIndex > 0) {
+              this.currentY += imageHeight + 5;
+            }
+
+            this.checkPageBreak(imageHeight + 10, procedure, pageNumber);
+
+            const xPos = this.margin + 14 + (imgIndex % imagesPerRow) * (imageWidth + 5);
+
+            try {
+              // Convertir le Blob en base64
+              if (img.image && img.image.blob) {
+                const reader = new FileReader();
+                reader.readAsDataURL(img.image.blob);
+                reader.onload = () => {
+                  const base64 = reader.result as string;
+                  this.pdf.addImage(base64, 'JPEG', xPos, this.currentY, imageWidth, imageHeight);
+                };
+              }
+            } catch (error) {
+              console.warn('Erreur lors de l\'ajout d\'une image:', error);
+            }
+
+            // Description de l'image
+            if (img.description) {
+              this.pdf.setFontSize(7);
+              this.pdf.setTextColor(COLORS.textLight);
+              const imgDesc = this.pdf.splitTextToSize(img.description, imageWidth);
+              this.pdf.text(imgDesc[0] || '', xPos, this.currentY + imageHeight + 3);
+            }
+          });
+
+          if (step.images.length > 0) {
+            this.currentY += imageHeight + 8;
+          }
         }
 
         this.currentY += 5;
