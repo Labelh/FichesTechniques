@@ -4,7 +4,7 @@ import { useProcedure } from '@/hooks/useProcedures';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { formatDuration, formatDate } from '@/lib/utils';
-import { deleteProcedure, duplicateProcedure } from '@/services/procedureService';
+import { deleteProcedure } from '@/services/procedureService';
 import { generatePDF } from '@/lib/pdfGenerator';
 import { toast } from 'sonner';
 
@@ -41,13 +41,8 @@ export default function ProcedureView() {
   };
 
   const handleDuplicate = async () => {
-    try {
-      const newId = await duplicateProcedure(procedure.id);
-      toast.success('Procédure dupliquée');
-      navigate(`/procedures/${newId}/edit`);
-    } catch (error) {
-      toast.error('Erreur lors de la duplication');
-    }
+    toast.info('Fonction de duplication temporairement désactivée');
+    // TODO: Réimplémenter la duplication avec Firestore
   };
 
   const handleExportPDF = async () => {

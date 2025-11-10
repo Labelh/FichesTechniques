@@ -41,7 +41,7 @@ export default function ProcedureEditor() {
           });
         }
       },
-      delay: 2000, // 2 secondes après la dernière modification
+      delay: 600000, // 10 minutes (600000 ms)
       enabled: !!id, // Actif seulement en mode édition
     },
     [reference, designation, coverImage]

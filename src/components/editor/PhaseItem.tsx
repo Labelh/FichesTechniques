@@ -65,7 +65,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
           images,
         });
       },
-      delay: 2000,
+      delay: 600000, // 10 minutes (600000 ms)
       enabled: true,
     },
     [title, phaseNumber, description, difficulty, estimatedTime, steps, images]

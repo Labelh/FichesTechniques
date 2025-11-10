@@ -1,22 +1,29 @@
-import { db } from '@/db/database';
+import {
+  createProcedure as createProcedureFirestore,
+  updateProcedure as updateProcedureFirestore,
+  deleteProcedure as deleteProcedureFirestore,
+  getProcedure as getProcedureFirestore,
+  createPhase as createPhaseFirestore,
+  getPhasesByProcedure as getPhasesByProcedureFirestore,
+  updatePhase as updatePhaseFirestore,
+  deletePhase as deletePhaseFirestore,
+} from '@/lib/firestore';
 import type { Procedure, Phase, DifficultyLevel, ProcedureStatus } from '@/types';
 
 // ==========================================
-// PROCEDURE CRUD
+// PROCEDURE CRUD - FIRESTORE
 // ==========================================
 
 /**
- * Crée une nouvelle procédure
+ * Cree une nouvelle procedure dans Firestore
  */
 export async function createProcedure(
   data: Partial<Procedure>
 ): Promise<string> {
-  const now = new Date();
-
-  const procedure: Procedure = {
-    id: crypto.randomUUID(),
-    title: data.title || 'Nouvelle Procédure',
+  const procedureData: Omit<Procedure, 'id' | 'createdAt' | 'updatedAt'> = {
+    title: data.title || 'Nouvelle Procedure',
     description: data.description || '',
+    reference: data.reference,
     category: data.category || '',
     tags: data.tags || [],
     status: data.status || ('en_cours' as ProcedureStatus),
@@ -34,121 +41,50 @@ export async function createProcedure(
     version: 1,
     validationScore: 0,
     completionPercentage: 0,
-    createdAt: now,
-    updatedAt: now,
+    coverImage: data.coverImage,
     ...data,
-  };
+  } as any;
 
-  await db.procedures.add(procedure);
-
-  // Créer une entrée dans l'historique
-  await db.history.add({
-    id: crypto.randomUUID(),
-    procedureId: procedure.id,
-    action: 'created',
-    createdAt: now,
-    updatedAt: now,
-  });
-
-  return procedure.id;
+  const procedureId = await createProcedureFirestore(procedureData);
+  return procedureId;
 }
 
 /**
- * Met à jour une procédure
+ * Met a jour une procedure
  */
 export async function updateProcedure(
   id: string,
   updates: Partial<Procedure>
 ): Promise<void> {
-  const procedure = await db.procedures.get(id);
+  // Recuperer la procedure existante pour calculer les totaux
+  const procedure = await getProcedureFirestore(id);
   if (!procedure) {
-    throw new Error(`Procédure ${id} introuvable`);
+    throw new Error(`Procedure ${id} introuvable`);
   }
 
-  const updatedProcedure = {
-    ...procedure,
-    ...updates,
-    updatedAt: new Date(),
-  };
+  const updatedData = { ...updates };
 
-  // Recalculer les totaux si nécessaire
+  // Recalculer les totaux si les phases sont fournies
   if (updates.phases) {
-    updatedProcedure.estimatedTotalTime = calculateTotalTime(updates.phases);
-    updatedProcedure.completionPercentage = calculateCompletion(updatedProcedure);
-    updatedProcedure.validationScore = calculateValidationScore(updatedProcedure);
+    updatedData.estimatedTotalTime = calculateTotalTime(updates.phases);
+    updatedData.completionPercentage = calculateCompletion({ ...procedure, ...updates });
+    updatedData.validationScore = calculateValidationScore({ ...procedure, ...updates });
   }
 
-  await db.procedures.update(id, updatedProcedure);
-
-  // Ajouter à l'historique
-  await db.history.add({
-    id: crypto.randomUUID(),
-    procedureId: id,
-    action: 'updated',
-    changes: updates,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  });
+  await updateProcedureFirestore(id, updatedData);
 }
 
 /**
- * Supprime une procédure
+ * Supprime une procedure
  */
 export async function deleteProcedure(id: string): Promise<void> {
-  const procedure = await db.procedures.get(id);
+  const procedure = await getProcedureFirestore(id);
   if (!procedure) {
-    throw new Error(`Procédure ${id} introuvable`);
+    throw new Error(`Procedure ${id} introuvable`);
   }
 
-  // Supprimer les phases associées
-  await db.phases.where('procedureId').equals(id).delete();
-
-  // Sauvegarder dans l'historique avant suppression
-  await db.history.add({
-    id: crypto.randomUUID(),
-    procedureId: id,
-    action: 'deleted',
-    snapshot: procedure,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  });
-
-  await db.procedures.delete(id);
-}
-
-/**
- * Duplique une procédure
- */
-export async function duplicateProcedure(id: string): Promise<string> {
-  const original = await db.procedures.get(id);
-  if (!original) {
-    throw new Error(`Procédure ${id} introuvable`);
-  }
-
-  const now = new Date();
-  const duplicate: Procedure = {
-    ...original,
-    id: crypto.randomUUID(),
-    title: `${original.title} (Copie)`,
-    status: 'draft' as ProcedureStatus,
-    createdAt: now,
-    updatedAt: now,
-    viewCount: 0,
-    exportCount: 0,
-    version: 1,
-  };
-
-  await db.procedures.add(duplicate);
-
-  await db.history.add({
-    id: crypto.randomUUID(),
-    procedureId: duplicate.id,
-    action: 'duplicated',
-    createdAt: now,
-    updatedAt: now,
-  });
-
-  return duplicate.id;
+  // La suppression des phases est geree automatiquement par deleteProcedureFirestore
+  await deleteProcedureFirestore(id);
 }
 
 // ==========================================
@@ -156,72 +92,68 @@ export async function duplicateProcedure(id: string): Promise<string> {
 // ==========================================
 
 /**
- * Ajoute une phase à une procédure
+ * Ajoute une phase a une procedure
  */
 export async function addPhase(
   procedureId: string,
   phaseData: Partial<Phase>
 ): Promise<string> {
-  const procedure = await db.procedures.get(procedureId);
+  const procedure = await getProcedureFirestore(procedureId);
   if (!procedure) {
-    throw new Error(`Procédure ${procedureId} introuvable`);
+    throw new Error(`Procedure ${procedureId} introuvable`);
   }
 
+  // Recuperer les phases existantes pour determiner l'ordre
+  const existingPhases = await getPhasesByProcedureFirestore(procedureId);
+
   const now = new Date();
-  const phase: Phase = {
-    id: crypto.randomUUID(),
+  const phaseToCreate: Omit<Phase, 'id' | 'createdAt' | 'updatedAt'> = {
     procedureId,
-    order: procedure.phases.length,
+    order: existingPhases.length,
     title: phaseData.title || 'Nouvelle Phase',
     description: phaseData.description || '',
     difficulty: phaseData.difficulty || ('medium' as DifficultyLevel),
     estimatedTime: phaseData.estimatedTime || 30,
-    tools: [],
-    toolIds: [],
-    materials: [],
-    steps: [],
-    images: [],
-    safetyNotes: [],
-    tips: [],
+    tools: phaseData.tools || [],
+    toolIds: phaseData.toolIds || [],
+    materials: phaseData.materials || [],
+    steps: phaseData.steps || [],
+    images: phaseData.images || [],
+    safetyNotes: phaseData.safetyNotes || [],
+    tips: phaseData.tips || [],
     riskLevel: phaseData.riskLevel || ('low' as any),
     completed: false,
-    createdAt: now,
-    updatedAt: now,
     ...phaseData,
   };
 
-  // Ajouter la phase à la procédure
-  procedure.phases.push(phase);
-  await updateProcedure(procedureId, { phases: procedure.phases });
+  const phaseId = await createPhaseFirestore(phaseToCreate);
 
-  return phase.id;
+  // Mettre a jour les totaux de la procedure
+  const allPhases = [...existingPhases, { ...phaseToCreate, id: phaseId, createdAt: now, updatedAt: now }];
+  await updateProcedureWithPhaseCalculations(procedureId, allPhases);
+
+  return phaseId;
 }
 
 /**
- * Met à jour une phase
+ * Met a jour une phase
  */
 export async function updatePhase(
   procedureId: string,
   phaseId: string,
   updates: Partial<Phase>
 ): Promise<void> {
-  const procedure = await db.procedures.get(procedureId);
+  const procedure = await getProcedureFirestore(procedureId);
   if (!procedure) {
-    throw new Error(`Procédure ${procedureId} introuvable`);
+    throw new Error(`Procedure ${procedureId} introuvable`);
   }
 
-  const phaseIndex = procedure.phases.findIndex((p) => p.id === phaseId);
-  if (phaseIndex === -1) {
-    throw new Error(`Phase ${phaseId} introuvable`);
-  }
+  // Mettre a jour la phase dans Firestore
+  await updatePhaseFirestore(phaseId, updates);
 
-  procedure.phases[phaseIndex] = {
-    ...procedure.phases[phaseIndex],
-    ...updates,
-    updatedAt: new Date(),
-  };
-
-  await updateProcedure(procedureId, { phases: procedure.phases });
+  // Recuperer toutes les phases pour recalculer les totaux
+  const allPhases = await getPhasesByProcedureFirestore(procedureId);
+  await updateProcedureWithPhaseCalculations(procedureId, allPhases);
 }
 
 /**
@@ -231,40 +163,69 @@ export async function deletePhase(
   procedureId: string,
   phaseId: string
 ): Promise<void> {
-  const procedure = await db.procedures.get(procedureId);
+  const procedure = await getProcedureFirestore(procedureId);
   if (!procedure) {
-    throw new Error(`Procédure ${procedureId} introuvable`);
+    throw new Error(`Procedure ${procedureId} introuvable`);
   }
 
-  procedure.phases = procedure.phases.filter((p) => p.id !== phaseId);
+  // Supprimer la phase
+  await deletePhaseFirestore(phaseId);
 
-  // Réordonner les phases
-  procedure.phases.forEach((phase, index) => {
-    phase.order = index;
-  });
+  // Recuperer les phases restantes
+  const remainingPhases = await getPhasesByProcedureFirestore(procedureId);
 
-  await updateProcedure(procedureId, { phases: procedure.phases });
+  // Reordonner les phases
+  const reorderedPhases = remainingPhases.map((phase, index) => ({
+    ...phase,
+    order: index,
+  }));
+
+  // Mettre a jour l'ordre de chaque phase
+  await Promise.all(
+    reorderedPhases.map(phase =>
+      updatePhaseFirestore(phase.id, { order: phase.order })
+    )
+  );
+
+  // Mettre a jour les totaux de la procedure
+  await updateProcedureWithPhaseCalculations(procedureId, reorderedPhases);
 }
 
 /**
- * Réordonne les phases
+ * Reordonne les phases
  */
 export async function reorderPhases(
   procedureId: string,
   phaseIds: string[]
 ): Promise<void> {
-  const procedure = await db.procedures.get(procedureId);
+  const procedure = await getProcedureFirestore(procedureId);
   if (!procedure) {
-    throw new Error(`Procédure ${procedureId} introuvable`);
+    throw new Error(`Procedure ${procedureId} introuvable`);
   }
 
-  const reorderedPhases = phaseIds.map((id, index) => {
-    const phase = procedure.phases.find((p) => p.id === id);
-    if (!phase) throw new Error(`Phase ${id} introuvable`);
-    return { ...phase, order: index };
-  });
+  // Recuperer toutes les phases
+  const allPhases = await getPhasesByProcedureFirestore(procedureId);
 
-  await updateProcedure(procedureId, { phases: reorderedPhases });
+  // Creer un map pour un acces rapide
+  const phaseMap = new Map(allPhases.map(p => [p.id, p]));
+
+  // Verifier que tous les IDs existent
+  for (const id of phaseIds) {
+    if (!phaseMap.has(id)) {
+      throw new Error(`Phase ${id} introuvable`);
+    }
+  }
+
+  // Mettre a jour l'ordre de chaque phase
+  await Promise.all(
+    phaseIds.map((id, index) =>
+      updatePhaseFirestore(id, { order: index })
+    )
+  );
+
+  // Recuperer les phases avec le nouvel ordre
+  const reorderedPhases = await getPhasesByProcedureFirestore(procedureId);
+  await updateProcedureWithPhaseCalculations(procedureId, reorderedPhases);
 }
 
 // ==========================================
@@ -272,14 +233,36 @@ export async function reorderPhases(
 // ==========================================
 
 /**
- * Calcule le temps total d'une procédure
+ * Met a jour la procedure avec les calculs bases sur les phases
+ */
+async function updateProcedureWithPhaseCalculations(
+  procedureId: string,
+  phases: Phase[]
+): Promise<void> {
+  const procedure = await getProcedureFirestore(procedureId);
+  if (!procedure) return;
+
+  const estimatedTotalTime = calculateTotalTime(phases);
+  const procedureWithPhases = { ...procedure, phases };
+  const completionPercentage = calculateCompletion(procedureWithPhases);
+  const validationScore = calculateValidationScore(procedureWithPhases);
+
+  await updateProcedureFirestore(procedureId, {
+    estimatedTotalTime,
+    completionPercentage,
+    validationScore,
+  });
+}
+
+/**
+ * Calcule le temps total d'une procedure
  */
 function calculateTotalTime(phases: Phase[]): number {
   return phases.reduce((total, phase) => total + (phase.estimatedTime || 0), 0);
 }
 
 /**
- * Calcule le pourcentage de complétion
+ * Calcule le pourcentage de completion
  */
 function calculateCompletion(procedure: Procedure): number {
   let totalPoints = 0;
@@ -289,7 +272,7 @@ function calculateCompletion(procedure: Procedure): number {
   totalPoints += 10;
   if (procedure.title && procedure.description) earnedPoints += 10;
 
-  // Catégorie (5 points)
+  // Categorie (5 points)
   totalPoints += 5;
   if (procedure.category) earnedPoints += 5;
 
@@ -307,13 +290,13 @@ function calculateCompletion(procedure: Procedure): number {
   const hasImages = procedure.phases.some((p) => p.images.length > 0) || !!procedure.coverImage;
   if (hasImages) earnedPoints += 15;
 
-  // Outils définis (10 points)
+  // Outils definis (10 points)
   totalPoints += 10;
   if (procedure.globalTools.length > 0 || procedure.phases.some((p) => p.tools.length > 0)) {
     earnedPoints += 10;
   }
 
-  // Temps estimé (5 points)
+  // Temps estime (5 points)
   totalPoints += 5;
   if (procedure.estimatedTotalTime > 0) earnedPoints += 5;
 

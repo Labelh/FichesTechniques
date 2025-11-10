@@ -23,7 +23,8 @@
       "Bash(/tmp/tools_head.txt)",
       "Bash(/tmp/tools_tail.txt)",
       "Bash(cat:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []
