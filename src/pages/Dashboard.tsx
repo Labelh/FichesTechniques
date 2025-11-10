@@ -1,19 +1,15 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Grid, List, Kanban, Filter, SortAsc, FileText } from 'lucide-react';
+import { Search, Filter, SortAsc, FileText } from 'lucide-react';
 import { useProcedures } from '@/hooks/useProcedures';
 import { useAppStore } from '@/store/useAppStore';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import ProcedureCard from '@/components/dashboard/ProcedureCard';
 import ProcedureList from '@/components/dashboard/ProcedureList';
-import ProcedureKanban from '@/components/dashboard/ProcedureKanban';
 import FilterPanel from '@/components/dashboard/FilterPanel';
 
 export default function Dashboard() {
   const {
-    viewMode,
-    setViewMode,
     searchQuery,
     setSearchQuery,
     searchFilters,
@@ -31,10 +27,10 @@ export default function Dashboard() {
     <div className="container-fluid">
       {/* Header */}
       <div className="mb-4">
-        <h1 className="display-6 fw-bold mb-1" style={{ letterSpacing: '-0.02em' }}>
+        <h1 className="text-2xl font-bold mb-1 tracking-tight">
           Tableau de bord
         </h1>
-        <p className="text-muted mb-0">
+        <p className="text-gray-400 text-sm">
           Gérez vos procédures techniques
         </p>
       </div>
@@ -42,89 +38,53 @@ export default function Dashboard() {
       {/* Search & Filters Bar */}
       <div className="card mb-4">
         <div className="card-body">
-          <div className="row g-3 align-items-center">
+          <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center">
             {/* Search */}
-            <div className="col-12 col-lg-6">
-              <div className="position-relative">
-                <Search className="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted" size={18} />
-                <Input
-                  type="text"
-                  placeholder="Rechercher une procédure..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="ps-5"
-                />
-              </div>
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <Input
+                type="text"
+                placeholder="Rechercher une procédure..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
             </div>
 
-            {/* Right side: Filters, Sort & View Mode */}
-            <div className="col-12 col-lg-6">
-              <div className="d-flex align-items-center justify-content-lg-end gap-2 flex-wrap">
-                {/* Filters & Sort */}
-                <Button
-                  variant={showFilters ? 'default' : 'secondary'}
-                  onClick={() => setShowFilters(!showFilters)}
-                  size="sm"
-                >
-                  <Filter className="me-2" size={16} />
-                  Filtres
-                </Button>
-                <Button variant="secondary" size="sm">
-                  <SortAsc className="me-2" size={16} />
-                  Trier
-                </Button>
-
-                {/* Divider */}
-                <div className="vr d-none d-lg-block" style={{ height: '24px' }}></div>
-
-                {/* View Mode */}
-                <div className="btn-group" role="group">
-                  <Button
-                    variant={viewMode === 'grid' ? 'default' : 'secondary'}
-                    size="icon"
-                    onClick={() => setViewMode('grid' as any)}
-                    title="Vue grille"
-                  >
-                    <Grid size={16} />
-                  </Button>
-                  <Button
-                    variant={viewMode === 'list' ? 'default' : 'secondary'}
-                    size="icon"
-                    onClick={() => setViewMode('list' as any)}
-                    title="Vue liste"
-                  >
-                    <List size={16} />
-                  </Button>
-                  <Button
-                    variant={viewMode === 'kanban' ? 'default' : 'secondary'}
-                    size="icon"
-                    onClick={() => setViewMode('kanban' as any)}
-                    title="Vue kanban"
-                  >
-                    <Kanban size={16} />
-                  </Button>
-                </div>
-              </div>
+            {/* Buttons on the right */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant={showFilters ? 'default' : 'secondary'}
+                onClick={() => setShowFilters(!showFilters)}
+                size="sm"
+              >
+                <Filter className="mr-2" size={16} />
+                Filtres
+              </Button>
+              <Button variant="secondary" size="sm">
+                <SortAsc className="mr-2" size={16} />
+                Trier
+              </Button>
             </div>
           </div>
 
           {/* Filter Panel */}
           {showFilters && (
-            <div className="mt-4 pt-4 border-top">
+            <div className="mt-4 pt-4 border-t border-[#3a3a3a]">
               <FilterPanel />
             </div>
           )}
         </div>
       </div>
 
-      {/* Procedures */}
+      {/* Procedures - Vue Liste Uniquement */}
       {!procedures || procedures.length === 0 ? (
-        <div className="text-center py-5">
-          <FileText className="mx-auto text-muted mb-4" size={64} />
-          <h3 className="h5 fw-medium mb-2">
+        <div className="text-center py-12">
+          <FileText className="mx-auto text-gray-400 mb-4" size={64} />
+          <h3 className="text-lg font-medium mb-2 text-white">
             Aucune procédure
           </h3>
-          <p className="text-muted mb-4">
+          <p className="text-gray-400 mb-4">
             Commencez par créer votre première procédure technique
           </p>
           <Link to="/procedures/new">
@@ -132,25 +92,7 @@ export default function Dashboard() {
           </Link>
         </div>
       ) : (
-        <>
-          {viewMode === 'grid' && (
-            <div className="row g-4">
-              {procedures.map((procedure) => (
-                <div key={procedure.id} className="col-12 col-md-6 col-lg-4">
-                  <ProcedureCard procedure={procedure} />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {viewMode === 'list' && (
-            <ProcedureList procedures={procedures} />
-          )}
-
-          {viewMode === 'kanban' && (
-            <ProcedureKanban procedures={procedures} />
-          )}
-        </>
+        <ProcedureList procedures={procedures} />
       )}
     </div>
   );

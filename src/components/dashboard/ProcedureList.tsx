@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
-import { Edit, Eye, Clock } from 'lucide-react';
+import { Edit, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { formatDuration, formatRelativeDate } from '@/lib/utils';
+import { formatRelativeDate } from '@/lib/utils';
 import type { Procedure } from '@/types';
 
 interface ProcedureListProps {
@@ -11,69 +11,48 @@ interface ProcedureListProps {
 
 export default function ProcedureList({ procedures }: ProcedureListProps) {
   return (
-    <div className="bg-gray-900/30 rounded-lg border border-gray-700/50 overflow-hidden">
-      <table className="min-w-full divide-y divide-gray-700/50">
-        <thead className="bg-gray-900/50">
+    <div className="bg-[#2a2a2a] rounded-xl border border-[#3a3a3a] overflow-hidden">
+      <table className="table">
+        <thead>
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Titre
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Statut
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Temps
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Modifié
-            </th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Actions
-            </th>
+            <th>Référence</th>
+            <th>Titre</th>
+            <th>Catégorie</th>
+            <th>Modifié</th>
+            <th className="text-right">Actions</th>
           </tr>
         </thead>
-        <tbody className="bg-transparent divide-y divide-gray-700/50">
+        <tbody>
           {procedures.map((procedure) => (
-            <tr
-              key={procedure.id}
-              className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
-              <td className="px-6 py-4">
-                <div>
-                  <Link
-                    to={`/procedures/${procedure.id}`}
-                    className="font-medium text-gray-900 dark:text-white hover:text-primary"
-                  >
-                    {procedure.title}
-                  </Link>
-                  {procedure.category && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {procedure.category}
-                    </p>
-                  )}
-                </div>
+            <tr key={procedure.id}>
+              <td className="font-mono text-sm text-gray-400">
+                {procedure.reference || 'N/A'}
               </td>
-              <td className="px-6 py-4">
-                <Badge variant="secondary">{procedure.status}</Badge>
+              <td>
+                <Link
+                  to={`/procedures/${procedure.id}`}
+                  className="font-medium text-white hover:text-[rgb(249,55,5)] transition-colors"
+                >
+                  {procedure.title}
+                </Link>
               </td>
-              <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                <div className="flex items-center">
-                  <Clock className="h-4 w-4 mr-1" />
-                  {formatDuration(procedure.estimatedTotalTime)}
-                </div>
+              <td>
+                {procedure.category && (
+                  <Badge variant="secondary">{procedure.category}</Badge>
+                )}
               </td>
-              <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+              <td className="text-sm text-gray-400">
                 {formatRelativeDate(procedure.updatedAt)}
               </td>
-              <td className="px-6 py-4 text-right">
+              <td className="text-right">
                 <div className="flex items-center justify-end gap-2">
                   <Link to={`/procedures/${procedure.id}`}>
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon" title="Voir">
                       <Eye className="h-4 w-4" />
                     </Button>
                   </Link>
                   <Link to={`/procedures/${procedure.id}/edit`}>
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon" title="Modifier">
                       <Edit className="h-4 w-4" />
                     </Button>
                   </Link>
