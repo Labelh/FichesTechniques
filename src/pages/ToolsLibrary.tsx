@@ -56,42 +56,6 @@ export default function ToolsLibrary() {
   };
 
 
-  const handleImportJSON = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    try {
-      const text = await file.text();
-      const data = JSON.parse(text);
-
-      let imported = 0;
-      const toolsToImport = Array.isArray(data) ? data : [data];
-
-      for (const toolData of toolsToImport) {
-        await db.tools.add({
-          id: crypto.randomUUID(),
-          name: toolData.name || 'Outil sans nom',
-          description: toolData.description || '',
-          category: toolData.category || 'Autre',
-          reference: toolData.reference,
-          location: toolData.location,
-          price: toolData.price,
-          purchaseLink: toolData.purchaseLink,
-          alternatives: toolData.alternatives || [],
-          consumables: toolData.consumables || [],
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
-        imported++;
-      }
-
-      toast.success(`${imported} outil(s) importé(s) avec succès`);
-      setImportDialogOpen(false);
-    } catch (error) {
-      console.error('Error importing tools:', error);
-      toast.error('Erreur lors de l\'importation. Vérifiez le format du fichier.');
-    }
-  };
 
   const handleImportExcel = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -212,7 +176,7 @@ export default function ToolsLibrary() {
       </div>
 
       {/* Filters */}
-      <div className="bg-gray-900/30 rounded-lg border border-gray-700/50 p-4">
+      <div className="bg-[#2a2a2a] rounded-lg border border-[#3a3a3a] p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -239,7 +203,7 @@ export default function ToolsLibrary() {
 
       {/* Tools Grid */}
       {filteredTools.length === 0 ? (
-        <div className="text-center py-12 bg-gray-900/30 rounded-lg border border-gray-700/50">
+        <div className="text-center py-12 bg-[#2a2a2a] rounded-lg border border-[#3a3a3a]">
           <Wrench className="h-16 w-16 mx-auto text-gray-400 mb-4" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
             {searchTerm || selectedCategory !== 'all'
@@ -263,7 +227,7 @@ export default function ToolsLibrary() {
           {filteredTools.map((tool) => (
             <div
               key={tool.id}
-              className="bg-gray-900/30 rounded-lg border border-gray-700/50 p-4 hover:shadow-lg transition-shadow"
+              className="bg-[#2a2a2a] rounded-lg border border-[#3a3a3a] p-4 hover:shadow-lg transition-shadow"
             >
               {/* Header: Référence (gauche) et Emplacement (droite) avec boutons d'action */}
               <div className="flex justify-between items-start mb-2">
@@ -340,30 +304,30 @@ export default function ToolsLibrary() {
 
       {/* Import Dialog */}
       {importDialogOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-900/30 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <div className="bg-[#2a2a2a] rounded-xl border border-[#3a3a3a] p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-bold mb-4 text-white">
               Importer des outils
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {/* Excel Import */}
               <div className="space-y-3">
-                <h3 className="font-semibold text-gray-900 dark:text-white">
+                <h3 className="font-semibold text-white">
                   Depuis Excel (.xlsx, .xls)
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-gray-400">
                   Format attendu:
                 </p>
-                <div className="text-xs bg-gray-100 dark:bg-gray-700 p-3 rounded">
-                  <ul className="space-y-1">
+                <div className="text-xs bg-[#1f1f1f] p-3 rounded">
+                  <ul className="space-y-1 text-gray-300">
                     <li><strong>Colonne A:</strong> Référence</li>
                     <li><strong>Colonne B:</strong> Désignation (nom)</li>
                     <li><strong>Colonne C:</strong> Catégorie</li>
                     <li><strong>Colonne G:</strong> Emplacement</li>
                   </ul>
                 </div>
-                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+                <div className="border-2 border-dashed border-[#3a3a3a] rounded-lg p-6 text-center">
                   <Upload className="h-10 w-10 mx-auto text-gray-400 mb-2" />
                   <label className="cursor-pointer">
                     <span className="text-primary hover:text-primary/80 font-medium text-sm">
@@ -373,41 +337,6 @@ export default function ToolsLibrary() {
                       type="file"
                       accept=".xlsx,.xls"
                       onChange={handleImportExcel}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-              </div>
-
-              {/* JSON Import */}
-              <div className="space-y-3">
-                <h3 className="font-semibold text-gray-900 dark:text-white">
-                  Depuis JSON
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Fichier JSON avec propriétés: name, description, category, reference, location, price, purchaseLink
-                </p>
-                <div className="text-xs bg-gray-100 dark:bg-gray-700 p-3 rounded">
-                  <strong>Exemple:</strong>
-                  <pre className="mt-1 overflow-x-auto">
-{`[{
-  "name": "Perceuse",
-  "reference": "REF-001",
-  "category": "Électro",
-  "location": "Atelier A"
-}]`}
-                  </pre>
-                </div>
-                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
-                  <Upload className="h-10 w-10 mx-auto text-gray-400 mb-2" />
-                  <label className="cursor-pointer">
-                    <span className="text-primary hover:text-primary/80 font-medium text-sm">
-                      Choisir un fichier JSON
-                    </span>
-                    <input
-                      type="file"
-                      accept=".json"
-                      onChange={handleImportJSON}
                       className="hidden"
                     />
                   </label>
@@ -456,27 +385,10 @@ function AddEditToolDialog({
     category: tool?.category || '',
     reference: tool?.reference || '',
     location: tool?.location || '',
-    price: tool?.price || undefined,
-    purchaseLink: tool?.purchaseLink || '',
-    color: tool?.color || '#ff5722',
   });
-
-  const toolColors = [
-    { name: 'Rouge', value: '#ef4444' },
-    { name: 'Orange', value: '#f97316' },
-    { name: 'Orange-rouge', value: '#ff5722' },
-    { name: 'Jaune', value: '#eab308' },
-    { name: 'Vert', value: '#22c55e' },
-    { name: 'Bleu', value: '#3b82f6' },
-    { name: 'Violet', value: '#a855f7' },
-    { name: 'Rose', value: '#ec4899' },
-    { name: 'Cyan', value: '#06b6d4' },
-    { name: 'Lime', value: '#84cc16' },
-  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!formData.name.trim()) {
       toast.error('Le nom de l\'outil est requis');
       return;
@@ -484,14 +396,9 @@ function AddEditToolDialog({
 
     try {
       if (tool) {
-        // Update existing tool
-        await db.tools.update(tool.id, {
-          ...formData,
-          updatedAt: new Date()
-        });
+        await db.tools.update(tool.id, { ...formData, updatedAt: new Date() });
         toast.success('Outil modifié avec succès');
       } else {
-        // Create new tool
         await db.tools.add({
           id: crypto.randomUUID(),
           ...formData,
@@ -505,138 +412,46 @@ function AddEditToolDialog({
       onClose();
     } catch (error) {
       console.error('Error saving tool:', error);
-      toast.error('Erreur lors de l\'enregistrement de l\'outil');
+      toast.error('Erreur lors de l\'enregistrement');
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-gray-900/30 rounded-lg p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+      <div className="bg-[#2a2a2a] rounded-xl border border-[#3a3a3a] p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <h2 className="text-xl font-bold mb-4 text-white">
           {tool ? 'Modifier l\'outil' : 'Ajouter un outil'}
         </h2>
-
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Référence */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Référence
-            </label>
-            <Input
-              value={formData.reference}
-              onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
-              placeholder="Ex: REF-001"
-            />
+            <label className="block text-sm font-medium text-white mb-1">Référence</label>
+            <Input value={formData.reference} onChange={(e) => setFormData({ ...formData, reference: e.target.value })} placeholder="Ex: REF-001" />
           </div>
-
+          {/* Nom */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Désignation (Nom de l'outil) *
-            </label>
-            <Input
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Ex: Perceuse sans fil"
-              required
-            />
+            <label className="block text-sm font-medium text-white mb-1">Désignation (Nom) *</label>
+            <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Ex: Perceuse sans fil" required />
           </div>
-
+          {/* Catégorie */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Catégorie
-            </label>
-            <Input
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              placeholder="Ex: Électroportatif"
-            />
+            <label className="block text-sm font-medium text-white mb-1">Catégorie</label>
+            <Input value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} placeholder="Ex: Électroportatif" />
           </div>
-
+          {/* Emplacement */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Emplacement
-            </label>
-            <Input
-              value={formData.location}
-              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              placeholder="Ex: Atelier A - Étagère 2"
-            />
+            <label className="block text-sm font-medium text-white mb-1">Emplacement</label>
+            <Input value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} placeholder="Ex: Atelier A - Étagère 2" />
           </div>
-
+          {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Description
-            </label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Description de l'outil..."
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent text-gray-900 dark:text-white"
-            />
+            <label className="block text-sm font-medium text-white mb-1">Description</label>
+            <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Description..." rows={3} className="w-full px-4 py-3 bg-[#1f1f1f] border border-white/10 rounded-lg text-white text-sm transition-all focus:outline-none focus:border-[rgb(249,55,5)] focus:ring-2 focus:ring-[rgb(249,55,5)]/20 placeholder:text-gray-400" />
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Prix (€)
-            </label>
-            <Input
-              type="number"
-              step="0.01"
-              value={formData.price || ''}
-              onChange={(e) => setFormData({ ...formData, price: e.target.value ? parseFloat(e.target.value) : undefined })}
-              placeholder="89.99"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Lien d'achat
-            </label>
-            <Input
-              type="url"
-              value={formData.purchaseLink}
-              onChange={(e) => setFormData({ ...formData, purchaseLink: e.target.value })}
-              placeholder="https://..."
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Couleur de code
-            </label>
-            <div className="grid grid-cols-5 gap-2">
-              {toolColors.map((color) => (
-                <button
-                  key={color.value}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, color: color.value })}
-                  className={`h-10 rounded-md border-2 transition-all ${
-                    formData.color === color.value
-                      ? 'border-primary scale-110'
-                      : 'border-gray-300 dark:border-gray-600 hover:scale-105'
-                  }`}
-                  style={{ backgroundColor: color.value }}
-                  title={color.name}
-                />
-              ))}
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-              Cette couleur sera utilisée pour tracer les trajectoires d'outil sur les photos
-            </p>
-          </div>
-
+          {/* Buttons */}
           <div className="flex gap-2 mt-6">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={onClose}
-              className="flex-1"
-            >
-              Annuler
-            </Button>
-            <Button type="submit" className="flex-1">
-              {tool ? 'Modifier' : 'Ajouter'}
-            </Button>
+            <Button type="button" variant="secondary" onClick={onClose} className="flex-1">Annuler</Button>
+            <Button type="submit" className="flex-1">{tool ? 'Modifier' : 'Ajouter'}</Button>
           </div>
         </form>
       </div>
