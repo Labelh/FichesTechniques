@@ -64,8 +64,14 @@ export function formatDateTime(date: Date | string): string {
 /**
  * Formate une date relative (il y a X jours)
  */
-export function formatRelativeDate(date: Date | string): string {
+export function formatRelativeDate(date: Date | string | undefined): string {
+  if (!date) return 'Date inconnue';
+
   const d = typeof date === 'string' ? new Date(date) : date;
+
+  // Vérifier que la date est valide
+  if (isNaN(d.getTime())) return 'Date invalide';
+
   const now = new Date();
   const diffInMs = now.getTime() - d.getTime();
   const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
