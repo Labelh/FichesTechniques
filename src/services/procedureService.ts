@@ -20,33 +20,48 @@ import type { Procedure, Phase, DifficultyLevel, ProcedureStatus } from '@/types
 export async function createProcedure(
   data: Partial<Procedure>
 ): Promise<string> {
-  const procedureData: Omit<Procedure, 'id' | 'createdAt' | 'updatedAt'> = {
-    title: data.title || 'Nouvelle Procedure',
-    description: data.description || '',
-    reference: data.reference,
-    category: data.category || '',
-    tags: data.tags || [],
-    status: data.status || ('en_cours' as ProcedureStatus),
-    priority: data.priority || ('normal' as any),
-    estimatedTotalTime: 0,
-    totalCost: 0,
-    requiredSkills: data.requiredSkills || [],
-    riskLevel: data.riskLevel || ('low' as any),
-    phases: [],
-    globalTools: [],
-    globalToolIds: [],
-    globalMaterials: [],
-    viewCount: 0,
-    exportCount: 0,
-    version: 1,
-    validationScore: 0,
-    completionPercentage: 0,
-    coverImage: data.coverImage,
-    ...data,
-  } as any;
+  try {
+    // Préparer les données en supprimant les undefined
+    const procedureData: any = {
+      title: data.title || 'Nouvelle Procedure',
+      description: data.description || '',
+      category: data.category || '',
+      tags: data.tags || [],
+      status: data.status || 'en_cours',
+      priority: data.priority || 'normal',
+      estimatedTotalTime: 0,
+      totalCost: 0,
+      requiredSkills: data.requiredSkills || [],
+      riskLevel: data.riskLevel || 'low',
+      phases: [],
+      globalTools: [],
+      globalToolIds: [],
+      globalMaterials: [],
+      viewCount: 0,
+      exportCount: 0,
+      version: 1,
+      validationScore: 0,
+      completionPercentage: 0,
+    };
 
-  const procedureId = await createProcedureFirestore(procedureData);
-  return procedureId;
+    // Ajouter reference seulement si défini
+    if (data.reference) {
+      procedureData.reference = data.reference;
+    }
+
+    // Ajouter coverImage seulement si défini
+    if (data.coverImage) {
+      procedureData.coverImage = data.coverImage;
+    }
+
+    console.log('Creating procedure with data:', procedureData);
+    const procedureId = await createProcedureFirestore(procedureData);
+    console.log('Procedure created with ID:', procedureId);
+    return procedureId;
+  } catch (error) {
+    console.error('Error creating procedure:', error);
+    throw error;
+  }
 }
 
 /**

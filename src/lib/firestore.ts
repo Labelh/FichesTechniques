@@ -82,9 +82,12 @@ export function prepareForFirestore(data: any): any {
   // Supprimer l'id si présent (Firestore le gère)
   delete prepared.id;
 
-  // Convertir les dates
+  // Supprimer les valeurs undefined (Firestore ne les accepte pas)
   Object.keys(prepared).forEach(key => {
-    if (prepared[key] instanceof Date) {
+    if (prepared[key] === undefined) {
+      delete prepared[key];
+    } else if (prepared[key] instanceof Date) {
+      // Convertir les dates
       prepared[key] = Timestamp.fromDate(prepared[key]);
     }
   });
