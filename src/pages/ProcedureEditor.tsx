@@ -114,6 +114,12 @@ export default function ProcedureEditor() {
       return;
     }
 
+    // Vérifier la taille (15 MB max)
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('L\'image est trop volumineuse (max 15 MB)');
+      return;
+    }
+
     const reader = new FileReader();
     reader.onloadend = () => {
       setCoverImage({

@@ -428,49 +428,22 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                               input.multiple = true;
                               input.onchange = async (e) => {
                                 const files = Array.from((e.target as HTMLInputElement).files || []);
-                                const newImages: AnnotatedImage[] = await Promise.all(
-                                  files.map(async (file) => {
-                                    const img = new Image();
-                                    const url = URL.createObjectURL(file);
-                                    await new Promise((resolve) => {
-                                      img.onload = resolve;
-                                      img.src = url;
-                                    });
-                                    return {
-                                      imageId: crypto.randomUUID(),
-                                      image: {
-                                        id: crypto.randomUUID(),
-                                        name: file.name,
-                                        blob: file,
-                                        size: file.size,
-                                        mimeType: file.type,
-                                        width: img.width,
-                                        height: img.height,
-                                        createdAt: new Date(),
-                                        updatedAt: new Date()
-                                      },
-                                      annotations: [],
-                                      description: ''
-                                    };
-                                  })
-                                );
-                                addStepImage(step.id, newImages);
-                              };
-                              input.click();
-                            }}
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={async (e) => {
-                              e.preventDefault();
-                              const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
-                              const newImages: AnnotatedImage[] = await Promise.all(
-                                files.map(async (file) => {
+                                const validImages: AnnotatedImage[] = [];
+
+                                for (const file of files) {
+                                  // Vérifier la taille (15 MB max)
+                                  if (file.size > 15 * 1024 * 1024) {
+                                    toast.error(`${file.name} est trop volumineux (max 15 MB)`);
+                                    continue;
+                                  }
+
                                   const img = new Image();
                                   const url = URL.createObjectURL(file);
                                   await new Promise((resolve) => {
                                     img.onload = resolve;
                                     img.src = url;
                                   });
-                                  return {
+                                  validImages.push({
                                     imageId: crypto.randomUUID(),
                                     image: {
                                       id: crypto.randomUUID(),
@@ -485,10 +458,55 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                                     },
                                     annotations: [],
                                     description: ''
-                                  };
-                                })
-                              );
-                              addStepImage(step.id, newImages);
+                                  });
+                                }
+
+                                if (validImages.length > 0) {
+                                  addStepImage(step.id, validImages);
+                                }
+                              };
+                              input.click();
+                            }}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={async (e) => {
+                              e.preventDefault();
+                              const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+                              const validImages: AnnotatedImage[] = [];
+
+                              for (const file of files) {
+                                // Vérifier la taille (15 MB max)
+                                if (file.size > 15 * 1024 * 1024) {
+                                  toast.error(`${file.name} est trop volumineux (max 15 MB)`);
+                                  continue;
+                                }
+
+                                const img = new Image();
+                                const url = URL.createObjectURL(file);
+                                await new Promise((resolve) => {
+                                  img.onload = resolve;
+                                  img.src = url;
+                                });
+                                validImages.push({
+                                  imageId: crypto.randomUUID(),
+                                  image: {
+                                    id: crypto.randomUUID(),
+                                    name: file.name,
+                                    blob: file,
+                                    size: file.size,
+                                    mimeType: file.type,
+                                    width: img.width,
+                                    height: img.height,
+                                    createdAt: new Date(),
+                                    updatedAt: new Date()
+                                  },
+                                  annotations: [],
+                                  description: ''
+                                });
+                              }
+
+                              if (validImages.length > 0) {
+                                addStepImage(step.id, validImages);
+                              }
                             }}
                             className="border-2 border-dashed border-gray-700/30 rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer"
                           >

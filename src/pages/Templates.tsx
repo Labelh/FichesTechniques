@@ -1,18 +1,29 @@
-import { useState } from 'react';
-import { FolderKanban, Trash2, FileText, Clock, Wrench, Search } from 'lucide-react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/db/database';
-import { deletePhaseTemplate } from '@/services/templateService';
+import { useState, useEffect } from 'react';
+import { FolderKanban, Trash2, FileText, Clock, Wrench, Search, Plus } from 'lucide-react';
+import { getAllPhaseTemplates, deletePhaseTemplate } from '@/services/templateService';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { toast } from 'sonner';
+import type { ProcedureTemplate } from '@/types';
 
 export default function Templates() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [templates, setTemplates] = useState<ProcedureTemplate[]>([]);
 
-  // Récupérer tous les templates
-  const templates = useLiveQuery(() => db.templates.toArray(), []);
+  // Récupérer tous les templates depuis Firestore
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const data = await getAllPhaseTemplates();
+        setTemplates(data);
+      } catch (error) {
+        console.error('Error fetching templates:', error);
+        toast.error('Erreur lors du chargement des templates');
+      }
+    };
+    fetchTemplates();
+  }, []);
 
   // Catégories disponibles
   const categories = ['all', ...(templates ? Array.from(new Set(templates.map(t => t.category))) : [])];
@@ -25,12 +36,22 @@ export default function Templates() {
     return matchesSearch && matchesCategory;
   }) || [];
 
+  const refreshTemplates = async () => {
+    try {
+      const data = await getAllPhaseTemplates();
+      setTemplates(data);
+    } catch (error) {
+      console.error('Error fetching templates:', error);
+    }
+  };
+
   const handleDeleteTemplate = async (templateId: string, templateName: string) => {
     if (!confirm(`Supprimer le template "${templateName}" ?`)) return;
 
     try {
       await deletePhaseTemplate(templateId);
       toast.success('Template supprimé avec succès');
+      await refreshTemplates();
     } catch (error) {
       console.error('Error deleting template:', error);
       toast.error('Erreur lors de la suppression du template');
@@ -40,13 +61,22 @@ export default function Templates() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Templates de phases
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
-          Gérez vos modèles de phases réutilisables - {filteredTemplates.length} template{filteredTemplates.length > 1 ? 's' : ''}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Templates de phases
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Gérez vos modèles de phases réutilisables - {filteredTemplates.length} template{filteredTemplates.length > 1 ? 's' : ''}
+          </p>
+        </div>
+        <Button
+          onClick={() => toast.info('Créez un template en sauvegardant une phase lors de l\'édition d\'une procédure')}
+          className="flex items-center gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Créer un template
+        </Button>
       </div>
 
       {/* Filters */}

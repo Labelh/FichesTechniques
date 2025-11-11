@@ -22,6 +22,12 @@ export default function ImageUploader({ images, onImagesChange, onEditImage }: I
       const newImages: AnnotatedImage[] = [];
 
       for (const file of acceptedFiles) {
+        // Vérifier la taille (15 MB max)
+        if (file.size > 15 * 1024 * 1024) {
+          toast.error(`${file.name} est trop volumineux (max 15 MB)`);
+          continue;
+        }
+
         // Upload l'image
         const imageId = await uploadImage(file);
         const image = await getImage(imageId);
@@ -36,8 +42,10 @@ export default function ImageUploader({ images, onImagesChange, onEditImage }: I
         }
       }
 
-      onImagesChange([...images, ...newImages]);
-      toast.success(`${acceptedFiles.length} image(s) ajoutée(s)`);
+      if (newImages.length > 0) {
+        onImagesChange([...images, ...newImages]);
+        toast.success(`${newImages.length} image(s) ajoutée(s)`);
+      }
     } catch (error) {
       console.error('Error uploading images:', error);
       toast.error('Erreur lors de l\'upload des images');
@@ -52,6 +60,7 @@ export default function ImageUploader({ images, onImagesChange, onEditImage }: I
       'image/*': ['.png', '.jpg', '.jpeg', '.webp', '.gif']
     },
     multiple: true,
+    maxSize: 15 * 1024 * 1024, // 15 MB
   });
 
   const handleRemoveImage = async (imageId: string) => {
@@ -92,7 +101,7 @@ export default function ImageUploader({ images, onImagesChange, onEditImage }: I
               ou cliquez pour sélectionner des fichiers
             </p>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-              PNG, JPG, JPEG, WEBP, GIF (max 10 MB par image)
+              PNG, JPG, JPEG, WEBP, GIF (max 15 MB par image)
             </p>
           </>
         )}
