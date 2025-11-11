@@ -107,43 +107,43 @@ export async function testFirestoreConnection() {
     console.error('   Code erreur:', error.code);
   }
 
-  // Test 4 : Simulation d'une procédure
-  try {
-    console.log('\n🧪 Test 4 : Simulation création procédure');
-    const procedureData = {
-      title: 'Test Procédure',
-      description: 'Test de création',
-      category: '',
-      tags: [],
-      status: 'en_cours',
-      priority: 'normal',
-      estimatedTotalTime: 0,
-      totalCost: 0,
-      requiredSkills: [],
-      riskLevel: 'low',
-      phases: [],
-      globalTools: [],
-      globalToolIds: [],
-      globalMaterials: [],
-      viewCount: 0,
-      exportCount: 0,
-      version: 1,
-      validationScore: 0,
-      completionPercentage: 0,
-    };
+  // Test 4 : Simulation d'une procédure (DÉSACTIVÉ - créait des procédures inutiles)
+  // try {
+  //   console.log('\n🧪 Test 4 : Simulation création procédure');
+  //   const procedureData = {
+  //     title: 'Test Procédure',
+  //     description: 'Test de création',
+  //     category: '',
+  //     tags: [],
+  //     status: 'en_cours',
+  //     priority: 'normal',
+  //     estimatedTotalTime: 0,
+  //     totalCost: 0,
+  //     requiredSkills: [],
+  //     riskLevel: 'low',
+  //     phases: [],
+  //     globalTools: [],
+  //     globalToolIds: [],
+  //     globalMaterials: [],
+  //     viewCount: 0,
+  //     exportCount: 0,
+  //     version: 1,
+  //     validationScore: 0,
+  //     completionPercentage: 0,
+  //   };
 
-    console.log('   Taille document:', JSON.stringify(procedureData).length, 'bytes');
-    const docRef = await addDoc(collection(db, 'procedures'), procedureData);
-    console.log('   ✅ Création procédure OK. ID:', docRef.id);
-  } catch (error: any) {
-    console.error('   ❌ Création procédure échouée:', error.message);
-    console.error('   Code erreur:', error.code);
+  //   console.log('   Taille document:', JSON.stringify(procedureData).length, 'bytes');
+  //   const docRef = await addDoc(collection(db, 'procedures'), procedureData);
+  //   console.log('   ✅ Création procédure OK. ID:', docRef.id);
+  // } catch (error: any) {
+  //   console.error('   ❌ Création procédure échouée:', error.message);
+  //   console.error('   Code erreur:', error.code);
 
-    if (error.code === 'permission-denied') {
-      console.error('   🔒 C\'EST ICI LE PROBLÈME !');
-      console.error('   💡 Les règles bloquent l\'écriture dans "procedures"');
-    }
-  }
+  //   if (error.code === 'permission-denied') {
+  //     console.error('   🔒 C\'EST ICI LE PROBLÈME !');
+  //     console.error('   💡 Les règles bloquent l\'écriture dans "procedures"');
+  //   }
+  // }
 
   // Résumé
   console.log('\n📊 ========================================');

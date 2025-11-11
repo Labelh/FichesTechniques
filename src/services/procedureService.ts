@@ -59,7 +59,19 @@ export async function createProcedure(
     if (data.coverImage) {
       try {
         console.log('Uploading cover image to Firebase Storage...');
-        const blob = base64ToBlob(data.coverImage);
+
+        // Extraire la string base64
+        let base64Data: string;
+        const coverImg = data.coverImage as any;
+        if (typeof coverImg === 'object' && 'data' in coverImg) {
+          base64Data = coverImg.data as string;
+        } else if (typeof coverImg === 'string') {
+          base64Data = coverImg;
+        } else {
+          throw new Error('Format d\'image invalide');
+        }
+
+        const blob = base64ToBlob(base64Data);
         const imageUrl = await uploadCoverImage(blob, procedureId);
         console.log('Cover image uploaded, URL:', imageUrl);
 
@@ -97,12 +109,20 @@ export async function updateProcedure(
 
     // Gérer l'image de couverture
     if (updatedData.coverImage) {
-      // Si c'est une image base64, on la prépare pour l'upload
-      if (updatedData.coverImage.startsWith('data:image')) {
-        coverImageToUpload = updatedData.coverImage;
-        delete updatedData.coverImage; // Ne pas mettre la base64 dans Firestore
+      const coverImg = updatedData.coverImage as any;
+      // Vérifier si c'est un objet {data, name, type} ou une string
+      if (typeof coverImg === 'object' && 'data' in coverImg) {
+        // C'est un objet avec data (base64)
+        coverImageToUpload = coverImg.data as string;
+        delete updatedData.coverImage; // Ne pas mettre l'objet dans Firestore
+      } else if (typeof coverImg === 'string') {
+        // C'est une string, vérifier si c'est base64 ou URL
+        if (coverImg.startsWith('data:image')) {
+          coverImageToUpload = coverImg;
+          delete updatedData.coverImage; // Ne pas mettre la base64 dans Firestore
+        }
+        // Sinon c'est déjà une URL, on la garde
       }
-      // Sinon c'est déjà une URL, on la garde
     }
 
     // Recalculer les totaux si les phases sont fournies
