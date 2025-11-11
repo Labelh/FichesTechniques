@@ -77,9 +77,18 @@ export async function createProcedure(
 
         // Mettre à jour la procédure avec l'URL de l'image
         await updateProcedureFirestore(procedureId, { coverImage: imageUrl });
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error uploading cover image:', error);
+
+        // Message d'erreur spécifique pour CORS
+        if (error?.code === 'storage/unauthorized' || error?.message?.includes('CORS')) {
+          console.error('⚠️ ERREUR CORS Firebase Storage détectée');
+          console.error('💡 Solution: Configurez CORS dans Firebase Storage');
+          console.error('   Voir la documentation dans FIREBASE_STORAGE_CORS.md');
+        }
+
         // Ne pas bloquer la création si l'upload échoue
+        // La procédure est créée mais sans image de couverture
       }
     }
 
@@ -151,8 +160,15 @@ export async function updateProcedure(
 
         // Mettre à jour la procédure avec l'URL de la nouvelle image
         await updateProcedureFirestore(id, { coverImage: imageUrl });
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error uploading cover image:', error);
+
+        // Message d'erreur spécifique pour CORS
+        if (error?.code === 'storage/unauthorized' || error?.message?.includes('CORS')) {
+          console.error('⚠️ ERREUR CORS Firebase Storage détectée');
+          console.error('💡 Solution: Configurez CORS dans Firebase Storage');
+          console.error('   Voir la documentation dans FIREBASE_STORAGE_CORS.md');
+        }
       }
     }
   } catch (error) {
