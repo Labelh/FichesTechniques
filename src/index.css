@@ -120,6 +120,15 @@
   ::-webkit-scrollbar-thumb {
     @apply bg-gray-700 rounded-md hover:bg-gray-600;
   }
+
+  /* Select et options en thème sombre */
+  select {
+    @apply bg-[#2a2a2a] text-white;
+  }
+
+  select option {
+    @apply bg-[#2a2a2a] text-white;
+  }
 }
 
 /* Utility Classes */

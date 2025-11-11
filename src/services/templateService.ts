@@ -105,6 +105,11 @@ export async function getPhaseTemplatesByCategory(category: string): Promise<Pro
 }
 
 /**
+ * Met à jour un template
+ */
+export { updateTemplateFirestore };
+
+/**
  * Supprime un template
  */
 export async function deletePhaseTemplate(templateId: string): Promise<void> {

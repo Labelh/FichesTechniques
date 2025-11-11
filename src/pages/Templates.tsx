@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
-import { FolderKanban, Trash2, FileText, Clock, Wrench, Search, Plus } from 'lucide-react';
+import { FolderKanban, Trash2, FileText, Clock, Wrench, Search, Plus, Edit2 } from 'lucide-react';
 import { getAllPhaseTemplates, deletePhaseTemplate } from '@/services/templateService';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { toast } from 'sonner';
 import type { ProcedureTemplate } from '@/types';
+import TemplateEditor from '@/components/templates/TemplateEditor';
 
 export default function Templates() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [templates, setTemplates] = useState<ProcedureTemplate[]>([]);
+  const [editingTemplate, setEditingTemplate] = useState<ProcedureTemplate | null>(null);
 
   // Récupérer tous les templates depuis Firestore
   useEffect(() => {
@@ -195,6 +197,15 @@ export default function Templates() {
                   <Button
                     size="sm"
                     variant="ghost"
+                    onClick={() => setEditingTemplate(template)}
+                    className="flex-1"
+                  >
+                    <Edit2 className="h-4 w-4 mr-1" />
+                    Modifier
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
                     onClick={() => handleDeleteTemplate(template.id, template.name)}
                     className="flex-1 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                   >
@@ -215,6 +226,18 @@ export default function Templates() {
             <strong>Astuce :</strong> Pour créer un nouveau template, éditez une procédure et sauvegardez l'une de ses phases en tant que template.
           </p>
         </div>
+      )}
+
+      {/* Éditeur de template */}
+      {editingTemplate && (
+        <TemplateEditor
+          template={editingTemplate}
+          onClose={() => setEditingTemplate(null)}
+          onSave={async () => {
+            await refreshTemplates();
+            setEditingTemplate(null);
+          }}
+        />
       )}
     </div>
   );
