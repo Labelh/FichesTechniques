@@ -76,25 +76,6 @@ export async function updateProcedure(
     }
 
     const updatedData = { ...updates };
-    let coverImageToUpload: string | null = null;
-
-    // Gérer l'image de couverture
-    if (updatedData.coverImage) {
-      const coverImg = updatedData.coverImage as any;
-      // Vérifier si c'est un objet {data, name, type} ou une string
-      if (typeof coverImg === 'object' && 'data' in coverImg) {
-        // C'est un objet avec data (base64)
-        coverImageToUpload = coverImg.data as string;
-        delete updatedData.coverImage; // Ne pas mettre l'objet dans Firestore
-      } else if (typeof coverImg === 'string') {
-        // C'est une string, vérifier si c'est base64 ou URL
-        if (coverImg.startsWith('data:image')) {
-          coverImageToUpload = coverImg;
-          delete updatedData.coverImage; // Ne pas mettre la base64 dans Firestore
-        }
-        // Sinon c'est déjà une URL, on la garde
-      }
-    }
 
     // Recalculer les totaux si les phases sont fournies
     if (updates.phases) {
@@ -105,34 +86,6 @@ export async function updateProcedure(
 
     console.log('Updating procedure', id, 'with data size:', JSON.stringify(updatedData).length, 'bytes');
     await updateProcedureFirestore(id, updatedData);
-
-    // Upload de la nouvelle image de couverture (si présente)
-    if (coverImageToUpload) {
-      try {
-        console.log('Uploading new cover image to Firebase Storage...');
-
-        // Supprimer l'ancienne image si elle existe
-        if (procedure.coverImage && procedure.coverImage.includes('firebase')) {
-          await deleteImage(procedure.coverImage);
-        }
-
-        const blob = base64ToBlob(coverImageToUpload);
-        const imageUrl = await uploadCoverImage(blob, id);
-        console.log('Cover image uploaded, URL:', imageUrl);
-
-        // Mettre à jour la procédure avec l'URL de la nouvelle image
-        await updateProcedureFirestore(id, { coverImage: imageUrl });
-      } catch (error: any) {
-        console.error('Error uploading cover image:', error);
-
-        // Message d'erreur spécifique pour CORS
-        if (error?.code === 'storage/unauthorized' || error?.message?.includes('CORS')) {
-          console.error('⚠️ ERREUR CORS Firebase Storage détectée');
-          console.error('💡 Solution: Configurez CORS dans Firebase Storage');
-          console.error('   Voir la documentation dans FIREBASE_STORAGE_CORS.md');
-        }
-      }
-    }
   } catch (error) {
     console.error('Error updating procedure:', error);
     throw error;

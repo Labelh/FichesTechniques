@@ -44,7 +44,7 @@ export default function ProcedureEditor() {
           await updateProcedure(id, {
             title: reference,
             description: designation,
-            coverImage: coverImage,
+            coverImage: coverImage || undefined,
           });
         }
       },
@@ -65,14 +65,14 @@ export default function ProcedureEditor() {
         await updateProcedure(id, {
           title: reference,
           description: designation,
-          coverImage: coverImage,
+          coverImage: coverImage || undefined,
         });
         toast.success('Procédure mise à jour');
       } else {
         const newId = await createProcedure({
           title: reference,
           description: designation,
-          coverImage: coverImage,
+          coverImage: coverImage || undefined,
         });
         toast.success('Procédure créée');
         navigate(`/procedures/${newId}/edit`);
