@@ -1,13 +1,17 @@
 import jsPDF from 'jspdf';
 import { Procedure, Phase } from '../types';
 
-// Design sobre et minimaliste
+// Design avec touches de couleurs
 const COLORS = {
   primary: '#1a1a1a',
-  accent: '#4a4a4a',
+  accent: '#ff5722', // Orange
+  danger: '#d32f2f', // Rouge
+  warning: '#ff9800', // Orange vif
+  info: '#2196f3', // Bleu
   text: '#2a2a2a',
   textLight: '#666666',
   border: '#e0e0e0',
+  lightBg: '#fff3e0', // Fond orange clair
   background: '#ffffff',
 };
 
@@ -435,27 +439,28 @@ export class PDFGenerator {
       // Enregistrer la page de cette phase pour le sommaire
       this.phasePages.set(i, this.pageNumber);
 
+      // Bandeau coloré pour le titre de la phase
+      this.pdf.setFillColor(255, 87, 34); // Orange
+      this.pdf.roundedRect(
+        this.margin,
+        this.currentY - 5,
+        this.pageWidth - 2 * this.margin,
+        12,
+        2,
+        2,
+        'F'
+      );
+
       // Titre de la phase
       this.pdf.setFontSize(16);
       this.pdf.setFont('helvetica', 'bold');
-      this.pdf.setTextColor(COLORS.primary);
+      this.pdf.setTextColor(255, 255, 255); // Blanc
       this.pdf.text(
-        `${i + 1}. ${phase.title}`,
-        this.margin,
-        this.currentY
+        `Phase ${i + 1} : ${phase.title}`,
+        this.margin + 3,
+        this.currentY + 2
       );
-      this.currentY += 8;
-
-      // Ligne de séparation
-      this.pdf.setDrawColor(COLORS.border);
-      this.pdf.setLineWidth(0.3);
-      this.pdf.line(
-        this.margin,
-        this.currentY,
-        this.pageWidth - this.margin,
-        this.currentY
-      );
-      this.currentY += 8;
+      this.currentY += 10;
 
       // Description
       if (phase.description) {
@@ -532,8 +537,8 @@ export class PDFGenerator {
 
         this.pdf.setFontSize(11);
         this.pdf.setFont('helvetica', 'bold');
-        this.pdf.setTextColor(COLORS.text);
-        this.pdf.text('Outils nécessaires', this.margin, this.currentY);
+        this.pdf.setTextColor(COLORS.accent);
+        this.pdf.text('🔧 Outils nécessaires', this.margin, this.currentY);
         this.currentY += 6;
 
         this.pdf.setFontSize(9);
@@ -575,8 +580,8 @@ export class PDFGenerator {
 
         this.pdf.setFontSize(11);
         this.pdf.setFont('helvetica', 'bold');
-        this.pdf.setTextColor(COLORS.text);
-        this.pdf.text('Matériaux', this.margin, this.currentY);
+        this.pdf.setTextColor(COLORS.accent);
+        this.pdf.text('📦 Matériaux', this.margin, this.currentY);
         this.currentY += 6;
 
         this.pdf.setFontSize(9);
@@ -664,46 +669,94 @@ export class PDFGenerator {
         this.currentY += imageHeight + 12;
       }
 
-      // Étapes
+      // Étapes détaillées
       if (phase.steps && phase.steps.length > 0) {
         this.checkPageBreak(15);
 
         this.pdf.setFontSize(11);
         this.pdf.setFont('helvetica', 'bold');
-        this.pdf.setTextColor(COLORS.text);
-        this.pdf.text('Étapes', this.margin, this.currentY);
-        this.currentY += 6;
+        this.pdf.setTextColor(COLORS.accent);
+        this.pdf.text('📋 Étapes détaillées', this.margin, this.currentY);
+        this.currentY += 8;
 
-        for (const step of phase.steps) {
-          this.checkPageBreak(12);
+        for (let stepIdx = 0; stepIdx < phase.steps.length; stepIdx++) {
+          const step = phase.steps[stepIdx];
+          this.checkPageBreak(15);
 
-          // Numéro et titre de l'étape
+          // Numéro de l'étape avec fond coloré
+          const stepNumber = `${stepIdx + 1}`;
+
+          // Dessiner le badge numéroté
+          this.pdf.setFillColor(255, 87, 34); // Orange
+          this.pdf.circle(this.margin + 5, this.currentY - 2, 4, 'F');
+
+          this.pdf.setFontSize(9);
+          this.pdf.setFont('helvetica', 'bold');
+          this.pdf.setTextColor(255, 255, 255);
+          this.pdf.text(stepNumber, this.margin + 5 - (stepNumber.length * 1.2), this.currentY);
+
+          // Titre de l'étape
           this.pdf.setFontSize(10);
           this.pdf.setFont('helvetica', 'bold');
-          this.pdf.setTextColor(COLORS.text);
+          this.pdf.setTextColor(COLORS.primary);
 
-          // Afficher le titre si présent
           if (step.title) {
-            this.pdf.text(`${step.order + 1}. ${step.title}`, this.margin + 5, this.currentY);
+            this.pdf.text(step.title, this.margin + 12, this.currentY);
             this.currentY += 6;
           } else {
-            this.pdf.text(`${step.order + 1}.`, this.margin + 5, this.currentY);
+            this.currentY += 5;
           }
 
           // Description de l'étape
           this.pdf.setFont('helvetica', 'normal');
+          this.pdf.setTextColor(COLORS.text);
+          this.pdf.setFontSize(9);
+
           const stepLines = this.pdf.splitTextToSize(
             step.description,
-            this.pageWidth - 2 * this.margin - 10
+            this.pageWidth - 2 * this.margin - 12
           );
 
           stepLines.forEach((line: string, idx: number) => {
             if (idx > 0) this.checkPageBreak(6);
-            this.pdf.text(line, this.margin + (step.title ? 10 : 14), this.currentY);
+            this.pdf.text(line, this.margin + 12, this.currentY);
             this.currentY += 5;
           });
 
-          this.currentY += 2;
+          this.currentY += 3;
+
+          // Outil spécifique à cette sous-étape
+          if (step.toolId && step.tool) {
+            this.checkPageBreak(12);
+
+            // Encadré avec fond coloré
+            const toolBoxY = this.currentY;
+            this.pdf.setFillColor(255, 243, 224); // Fond orange clair
+            this.pdf.roundedRect(this.margin + 12, toolBoxY - 3, this.pageWidth - 2 * this.margin - 12, 12, 2, 2, 'F');
+
+            this.pdf.setFontSize(8);
+            this.pdf.setFont('helvetica', 'bold');
+            this.pdf.setTextColor(COLORS.accent);
+            this.pdf.text('🔧 Outil:', this.margin + 15, this.currentY);
+
+            this.pdf.setFont('helvetica', 'normal');
+            this.pdf.setTextColor(COLORS.text);
+            const toolText = step.tool.reference
+              ? `${step.tool.reference} - ${step.tool.name}`
+              : step.tool.name;
+            this.pdf.text(toolText, this.margin + 30, this.currentY);
+
+            this.currentY += 10;
+          }
+
+          // Temps estimé
+          if (step.estimatedTime) {
+            this.pdf.setFontSize(8);
+            this.pdf.setFont('helvetica', 'italic');
+            this.pdf.setTextColor(COLORS.textLight);
+            this.pdf.text(`⏱️ ${step.estimatedTime} min`, this.margin + 12, this.currentY);
+            this.currentY += 6;
+          }
 
           // Images de l'étape
           if (step.images && step.images.length > 0) {
@@ -772,6 +825,98 @@ export class PDFGenerator {
             }
 
             this.currentY += imageHeight + 12;
+          }
+
+          // Conseils de la sous-étape
+          if (step.tips && step.tips.length > 0) {
+            this.checkPageBreak(15);
+
+            step.tips.forEach((tip) => {
+              this.checkPageBreak(10);
+
+              // Encadré bleu clair pour les conseils
+              const tipBoxHeight = Math.ceil(tip.length / 80) * 5 + 6;
+              this.pdf.setFillColor(227, 242, 253); // Bleu clair
+              this.pdf.roundedRect(
+                this.margin + 12,
+                this.currentY - 3,
+                this.pageWidth - 2 * this.margin - 12,
+                tipBoxHeight,
+                2,
+                2,
+                'F'
+              );
+
+              this.pdf.setFontSize(8);
+              this.pdf.setFont('helvetica', 'bold');
+              this.pdf.setTextColor(COLORS.info);
+              this.pdf.text('💡', this.margin + 15, this.currentY);
+
+              this.pdf.setFont('helvetica', 'normal');
+              this.pdf.setTextColor(COLORS.text);
+              const tipLines = this.pdf.splitTextToSize(tip, this.pageWidth - 2 * this.margin - 20);
+              tipLines.forEach((line: string) => {
+                this.pdf.text(line, this.margin + 20, this.currentY);
+                this.currentY += 5;
+              });
+
+              this.currentY += 3;
+            });
+          }
+
+          // Consignes de sécurité de la sous-étape
+          if (step.safetyNotes && step.safetyNotes.length > 0) {
+            this.checkPageBreak(15);
+
+            step.safetyNotes.forEach((note) => {
+              this.checkPageBreak(10);
+
+              // Encadré rouge/orange selon le type
+              const noteColor = note.type === 'danger' ? [255, 235, 238] : [255, 243, 224];
+              const iconColor = note.type === 'danger' ? COLORS.danger : COLORS.warning;
+              const icon = note.type === 'danger' ? '🚨' : '⚠️';
+
+              const noteBoxHeight = Math.ceil(note.content.length / 80) * 5 + 6;
+              this.pdf.setFillColor(noteColor[0], noteColor[1], noteColor[2]);
+              this.pdf.roundedRect(
+                this.margin + 12,
+                this.currentY - 3,
+                this.pageWidth - 2 * this.margin - 12,
+                noteBoxHeight,
+                2,
+                2,
+                'F'
+              );
+
+              this.pdf.setFontSize(8);
+              this.pdf.setFont('helvetica', 'bold');
+              this.pdf.setTextColor(iconColor);
+              this.pdf.text(icon, this.margin + 15, this.currentY);
+
+              this.pdf.setFont('helvetica', 'normal');
+              this.pdf.setTextColor(COLORS.text);
+              const noteLines = this.pdf.splitTextToSize(note.content, this.pageWidth - 2 * this.margin - 20);
+              noteLines.forEach((line: string) => {
+                this.pdf.text(line, this.margin + 20, this.currentY);
+                this.currentY += 5;
+              });
+
+              this.currentY += 3;
+            });
+          }
+
+          // Séparateur entre sous-étapes
+          if (stepIdx < phase.steps.length - 1) {
+            this.currentY += 5;
+            this.pdf.setDrawColor(COLORS.border);
+            this.pdf.setLineWidth(0.2);
+            this.pdf.line(
+              this.margin + 12,
+              this.currentY,
+              this.pageWidth - this.margin,
+              this.currentY
+            );
+            this.currentY += 5;
           }
         }
 
