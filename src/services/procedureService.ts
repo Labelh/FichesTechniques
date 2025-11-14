@@ -129,16 +129,9 @@ export async function addPhase(
     procedureId,
     order: existingPhases.length,
     title: phaseData.title || 'Nouvelle Phase',
-    description: phaseData.description || '',
     difficulty: phaseData.difficulty || ('medium' as DifficultyLevel),
     estimatedTime: phaseData.estimatedTime || 30,
-    tools: phaseData.tools || [],
-    toolIds: phaseData.toolIds || [],
-    materials: phaseData.materials || [],
     steps: phaseData.steps || [],
-    images: phaseData.images || [],
-    safetyNotes: phaseData.safetyNotes || [],
-    tips: phaseData.tips || [],
     riskLevel: phaseData.riskLevel || ('low' as any),
     completed: false,
     ...phaseData,
@@ -298,19 +291,23 @@ function calculateCompletion(procedure: Procedure): number {
   totalPoints += 20;
   if (procedure.phases.length > 0) earnedPoints += 20;
 
-  // Chaque phase a une description (20 points)
+  // Chaque phase a des étapes (20 points)
   totalPoints += 20;
-  const phasesWithDesc = procedure.phases.filter((p) => p.description).length;
-  earnedPoints += (phasesWithDesc / Math.max(procedure.phases.length, 1)) * 20;
+  const phasesWithSteps = procedure.phases.filter((p) => p.steps && p.steps.length > 0).length;
+  earnedPoints += (phasesWithSteps / Math.max(procedure.phases.length, 1)) * 20;
 
   // Au moins une image (15 points)
   totalPoints += 15;
-  const hasImages = procedure.phases.some((p) => p.images.length > 0) || !!procedure.coverImage;
+  const hasImages = procedure.phases.some((p) =>
+    p.steps.some((s) => s.images && s.images.length > 0)
+  ) || !!procedure.coverImage;
   if (hasImages) earnedPoints += 15;
 
   // Outils definis (10 points)
   totalPoints += 10;
-  if (procedure.globalTools.length > 0 || procedure.phases.some((p) => p.tools.length > 0)) {
+  const hasTools = procedure.globalTools.length > 0 ||
+    procedure.phases.some((p) => p.steps.some((s) => s.tool !== undefined));
+  if (hasTools) {
     earnedPoints += 10;
   }
 

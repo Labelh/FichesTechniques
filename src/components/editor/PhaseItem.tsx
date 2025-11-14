@@ -7,9 +7,8 @@ import { updatePhase } from '@/services/procedureService';
 import { createPhaseTemplate } from '@/services/templateService';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useTools } from '@/hooks/useTools';
-import type { Phase, DifficultyLevel, Tool, SubStep, SafetyNote, AnnotatedImage, Annotation } from '@/types';
+import type { Phase, DifficultyLevel, SubStep, SafetyNote, AnnotatedImage, Tool } from '@/types';
 import { toast } from 'sonner';
-import ImageAnnotator from '@/components/phase/ImageAnnotator';
 
 interface PhaseItemProps {
   phase: Phase;
@@ -22,19 +21,10 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
   const [isExpanded, setIsExpanded] = useState(false);
   const [title, setTitle] = useState(phase.title);
   const [phaseNumber, setPhaseNumber] = useState(phase.phaseNumber || index + 1);
-  const [description, setDescription] = useState(phase.description);
   const [difficulty, setDifficulty] = useState<DifficultyLevel>(phase.difficulty);
   const [estimatedTime, setEstimatedTime] = useState(phase.estimatedTime);
   const [steps, setSteps] = useState<SubStep[]>(phase.steps || []);
-  const [images, setImages] = useState<AnnotatedImage[]>(phase.images || []);
-  const [editingImageId, setEditingImageId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'info' | 'steps'>('info');
-
-  // États pour tools, tips et safetyNotes au niveau de la phase
-  const [tools] = useState<Tool[]>(phase.tools || []);
-  const [toolIds] = useState<string[]>(phase.toolIds || []);
-  const [tips] = useState<string[]>(phase.tips || []);
-  const [safetyNotes] = useState<SafetyNote[]>(phase.safetyNotes || []);
 
   // Récupérer tous les outils disponibles depuis Firestore
   const availableTools = useTools();
@@ -44,15 +34,9 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
       await updatePhase(procedureId, phase.id, {
         title,
         phaseNumber,
-        description,
         difficulty,
         estimatedTime,
         steps,
-        images,
-        tools,
-        toolIds,
-        tips,
-        safetyNotes,
       });
       toast.success('Phase mise à jour');
     } catch (error) {
@@ -68,31 +52,16 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
         await updatePhase(procedureId, phase.id, {
           title,
           phaseNumber,
-          description,
           difficulty,
           estimatedTime,
           steps,
-          images,
-          tools,
-          toolIds,
-          tips,
-          safetyNotes,
         });
       },
       delay: 600000, // 10 minutes (600000 ms)
       enabled: true,
     },
-    [title, phaseNumber, description, difficulty, estimatedTime, steps, images, tools, toolIds, tips, safetyNotes]
+    [title, phaseNumber, difficulty, estimatedTime, steps]
   );
-
-  const handleSaveAnnotations = (imageId: string, annotations: Annotation[], description: string) => {
-    setImages(images.map(img =>
-      img.imageId === imageId
-        ? { ...img, annotations, description }
-        : img
-    ));
-    setEditingImageId(null);
-  };
 
   const handleSaveAsTemplate = async () => {
     const templateName = prompt('Nom du template:', title || 'Mon template');
@@ -106,11 +75,9 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
         ...phase,
         title,
         phaseNumber,
-        description,
         difficulty,
         estimatedTime,
         steps,
-        images,
       };
 
       await createPhaseTemplate(currentPhase, templateName, category);
@@ -333,19 +300,6 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Nom de la phase..."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Description détaillée de la phase..."
-                    rows={4}
-                    className="w-full rounded-md border border-gray-700/30 bg-transparent px-3 py-2 text-sm text-white"
                   />
                 </div>
 
@@ -676,17 +630,6 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
               </>
             )}
           </div>
-
-          {/* Image Annotator Modal */}
-          {editingImageId && (
-            <ImageAnnotator
-              annotatedImage={images.find(img => img.imageId === editingImageId)!}
-              tools={phase.tools || []}
-              onSave={(annotations, description) => handleSaveAnnotations(editingImageId, annotations, description)}
-              onCancel={() => setEditingImageId(null)}
-            />
-          )}
-
 
           {/* Footer Actions */}
           <div className="flex justify-between gap-2 p-4 bg-gray-900/50 border-t border-gray-700/50">

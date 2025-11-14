@@ -134,24 +134,12 @@ export default function ProcedureView() {
                 <h3 className="text-lg font-semibold mb-2">
                   Phase {index + 1}: {phase.title}
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-2">
-                  {phase.description}
-                </p>
                 <div className="flex gap-2 text-sm">
                   <Badge variant="secondary">{phase.difficulty}</Badge>
                   <Badge variant="secondary">
                     {formatDuration(phase.estimatedTime)}
                   </Badge>
                 </div>
-
-                {phase.tools.length > 0 && (
-                  <div className="mt-3">
-                    <strong className="text-sm">Outils: </strong>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {phase.tools.map((t) => t.name).join(', ')}
-                    </span>
-                  </div>
-                )}
               </div>
             ))}
           </div>

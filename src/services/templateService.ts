@@ -26,8 +26,8 @@ export async function createPhaseTemplate(
       procedureId: '', // Will be set when used
       completed: false,
     }],
-    defaultTools: phase.tools || [],
-    defaultMaterials: phase.materials || [],
+    defaultTools: [],
+    defaultMaterials: [],
     usageCount: 0,
   };
 
@@ -57,17 +57,10 @@ export async function applyPhaseTemplate(
     for (const templatePhase of template.defaultPhases) {
       const phaseData: Partial<Phase> = {
         title: templatePhase.title || 'Nouvelle phase',
-        description: templatePhase.description || '',
         difficulty: (templatePhase.difficulty as any) || 'medium',
         estimatedTime: templatePhase.estimatedTime || 30,
         riskLevel: (templatePhase.riskLevel as any) || 'low',
-        tools: templatePhase.tools || [],
-        toolIds: templatePhase.toolIds || [],
-        materials: templatePhase.materials || [],
         steps: templatePhase.steps || [],
-        images: templatePhase.images || [],
-        safetyNotes: templatePhase.safetyNotes || [],
-        tips: templatePhase.tips || [],
         completed: false,
       };
 

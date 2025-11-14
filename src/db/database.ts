@@ -6,14 +6,10 @@ import type {
   Material,
   Image,
   ProcedureTemplate,
-  Category,
-  Tag,
-  UserPreferences,
-  HistoryEntry,
 } from '@/types';
 
 // ==========================================
-// DATABASE CLASS
+// DATABASE CLASS (LEGACY - Firestore is now used)
 // ==========================================
 
 export class FichesTechniquesDB extends Dexie {
@@ -24,10 +20,10 @@ export class FichesTechniquesDB extends Dexie {
   materials!: Table<Material, string>;
   images!: Table<Image, string>;
   templates!: Table<ProcedureTemplate, string>;
-  categories!: Table<Category, string>;
-  tags!: Table<Tag, string>;
-  preferences!: Table<UserPreferences, string>;
-  history!: Table<HistoryEntry, string>;
+  categories!: Table<any, string>;
+  tags!: Table<any, string>;
+  preferences!: Table<any, string>;
+  history!: Table<any, string>;
 
   constructor() {
     super('FichesTechniquesDB');

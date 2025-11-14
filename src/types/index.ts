@@ -44,28 +44,6 @@ export enum AnnotationType {
   ZOOM_AREA = 'zoom_area',
 }
 
-export enum ViewMode {
-  GRID = 'grid',
-  LIST = 'list',
-  KANBAN = 'kanban',
-}
-
-export enum PDFPageSize {
-  A4 = 'a4',
-  LETTER = 'letter',
-  A5 = 'a5',
-}
-
-export enum PDFOrientation {
-  PORTRAIT = 'portrait',
-  LANDSCAPE = 'landscape',
-}
-
-export enum PDFQuality {
-  HIGH = 'high',
-  MEDIUM = 'medium',
-  LOW = 'low',
-}
 
 // ==========================================
 // TYPES DE BASE
@@ -163,23 +141,11 @@ export interface Phase extends BaseEntity {
   order: number;
   phaseNumber?: number; // Numéro de phase personnalisable
   title: string;
-  description: string;
   difficulty: DifficultyLevel;
   estimatedTime: number; // en minutes
 
-  // Outils et matériaux
-  tools: Tool[];
-  toolIds: string[];
-  materials: Material[];
-
   // Contenu
   steps: SubStep[];
-  images: AnnotatedImage[];
-
-  // Sécurité et conseils
-  safetyNotes: SafetyNote[];
-  tips: string[];
-  commonMistakes?: string[];
 
   // Métadonnées
   riskLevel: RiskLevel;
@@ -269,7 +235,7 @@ export interface Category extends BaseEntity {
   description?: string;
   color: string;
   icon?: string;
-  parentId?: string; // Pour catégories hiérarchiques
+  parentId?: string;
   procedureCount: number;
 }
 
@@ -279,18 +245,31 @@ export interface Tag extends BaseEntity {
   procedureCount: number;
 }
 
+export interface UserPreferences extends BaseEntity {
+  theme: 'light' | 'dark' | 'auto';
+  accentColor: string;
+  fontSize: 'compact' | 'normal' | 'comfortable';
+  density: 'compact' | 'normal' | 'spacious';
+  defaultView: 'grid' | 'list' | 'kanban';
+  autoSave: boolean;
+  autoSaveInterval: number;
+  confirmBeforeDelete: boolean;
+  defaultPDFConfig: PDFConfig;
+  keyboardShortcuts: Record<string, string>;
+}
+
 // ==========================================
 // CONFIGURATION PDF
 // ==========================================
 
 export interface PDFConfig {
   // Format
-  pageSize: PDFPageSize;
-  orientation: PDFOrientation;
+  pageSize: 'a4' | 'letter' | 'a5';
+  orientation: 'portrait' | 'landscape';
   columns: 1 | 2;
 
   // Qualité
-  imageQuality: PDFQuality;
+  imageQuality: 'high' | 'medium' | 'low';
 
   // Personnalisation
   includeTableOfContents: boolean;
@@ -329,60 +308,6 @@ export interface PDFConfig {
 }
 
 // ==========================================
-// SETTINGS & PREFERENCES
-// ==========================================
-
-export interface UserPreferences extends BaseEntity {
-  // Apparence
-  theme: 'light' | 'dark' | 'auto';
-  accentColor: string;
-  fontSize: 'compact' | 'normal' | 'comfortable';
-  density: 'compact' | 'normal' | 'spacious';
-
-  // Vue par défaut
-  defaultView: ViewMode;
-
-  // Comportement
-  autoSave: boolean;
-  autoSaveInterval: number; // secondes
-  confirmBeforeDelete: boolean;
-
-  // PDF par défaut
-  defaultPDFConfig: PDFConfig;
-
-  // Raccourcis clavier
-  keyboardShortcuts: Record<string, string>;
-}
-
-// ==========================================
-// STATISTIQUES ET ANALYTICS
-// ==========================================
-
-export interface Statistics {
-  totalProcedures: number;
-  proceduresByStatus: Record<ProcedureStatus, number>;
-  proceduresByDifficulty: Record<DifficultyLevel, number>;
-  proceduresByCategory: Record<string, number>;
-
-  totalPhases: number;
-  totalTools: number;
-  totalMaterials: number;
-  totalImages: number;
-
-  estimatedTotalTime: number;
-  estimatedTotalCost: number;
-
-  mostUsedTools: Tool[];
-  mostUsedCategories: string[];
-  mostUsedTags: string[];
-
-  recentlyModified: Procedure[];
-  recentlyCreated: Procedure[];
-
-  completionRate: number; // Pourcentage
-}
-
-// ==========================================
 // SEARCH & FILTERS
 // ==========================================
 
@@ -408,46 +333,4 @@ export interface SearchFilters {
 export interface SortOption {
   field: 'title' | 'createdAt' | 'updatedAt' | 'difficulty' | 'status' | 'priority' | 'estimatedTotalTime';
   direction: 'asc' | 'desc';
-}
-
-// ==========================================
-// HISTORY & VERSIONING
-// ==========================================
-
-export interface HistoryEntry extends BaseEntity {
-  procedureId: string;
-  action: 'created' | 'updated' | 'deleted' | 'exported' | 'duplicated';
-  changes?: Record<string, any>;
-  snapshot?: Partial<Procedure>; // Snapshot complet pour restoration
-  userId?: string; // Si multi-utilisateur dans le futur
-}
-
-// ==========================================
-// EXPORT
-// ==========================================
-
-export interface ExportOptions {
-  format: 'pdf' | 'json' | 'markdown' | 'html';
-  config?: PDFConfig;
-  includeImages: boolean;
-  includeHistory: boolean;
-}
-
-export interface ExportResult {
-  success: boolean;
-  data?: Blob;
-  error?: string;
-  exportedAt: Date;
-}
-
-// ==========================================
-// UI STATE
-// ==========================================
-
-export interface UIState {
-  sidebarOpen: boolean;
-  currentView: ViewMode;
-  selectedProcedureId?: string;
-  searchFilters: SearchFilters;
-  sortOption: SortOption;
 }

@@ -94,7 +94,6 @@ export default function ProcedureEditor() {
     try {
       await addPhase(id, {
         title: 'Nouvelle phase',
-        description: '',
       });
       toast.success('Phase ajoutée');
     } catch (error) {

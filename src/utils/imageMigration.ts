@@ -81,39 +81,6 @@ async function migrateProcedureImages(procedure: Procedure): Promise<boolean> {
 async function migratePhaseImages(_procedureId: string, phase: Phase): Promise<number> {
   let migratedCount = 0;
 
-  // Migrer les images de la phase
-  if (phase.images && phase.images.length > 0) {
-    const updatedImages: AnnotatedImage[] = [];
-    let hasChanges = false;
-
-    for (const img of phase.images) {
-      if (img.image.url && isFirebaseStorageUrl(img.image.url)) {
-        console.log(`Migrating phase image ${img.image.name}...`);
-        const newUrl = await reuploadImageToImgBB(img.image.url, img.image.name);
-
-        if (newUrl) {
-          updatedImages.push({
-            ...img,
-            image: {
-              ...img.image,
-              url: newUrl,
-            },
-          });
-          migratedCount++;
-          hasChanges = true;
-        } else {
-          updatedImages.push(img);
-        }
-      } else {
-        updatedImages.push(img);
-      }
-    }
-
-    if (hasChanges) {
-      await updatePhase(phase.id, { images: updatedImages });
-    }
-  }
-
   // Migrer les images des sous-étapes
   if (phase.steps && phase.steps.length > 0) {
     let hasStepChanges = false;
@@ -281,16 +248,6 @@ export async function countFirebaseImages(): Promise<{
     // Compter les images des phases
     const phases = await getPhasesByProcedure(procedure.id);
     for (const phase of phases) {
-      // Images de phase
-      if (phase.images) {
-        for (const img of phase.images) {
-          if (img.image.url && isFirebaseStorageUrl(img.image.url)) {
-            count.phaseImages++;
-            count.total++;
-          }
-        }
-      }
-
       // Images des sous-étapes
       if (phase.steps) {
         for (const step of phase.steps) {

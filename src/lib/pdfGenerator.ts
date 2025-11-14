@@ -1,18 +1,22 @@
 import jsPDF from 'jspdf';
 import { Procedure, Phase } from '../types';
 
-// Design avec touches de couleurs
+// Design professionnel avec touches de couleurs
 const COLORS = {
-  primary: '#1a1a1a',
-  accent: '#ff5722', // Orange
-  danger: '#d32f2f', // Rouge
-  warning: '#ff9800', // Orange vif
-  info: '#2196f3', // Bleu
-  text: '#2a2a2a',
-  textLight: '#666666',
-  border: '#e0e0e0',
-  lightBg: '#fff3e0', // Fond orange clair
+  primary: '#2c3e50',      // Bleu foncé
+  accent: '#e74c3c',       // Rouge/Orange
+  accentLight: '#ff7961',  // Rouge clair
+  success: '#27ae60',      // Vert
+  info: '#3498db',         // Bleu
+  warning: '#f39c12',      // Orange
+  danger: '#c0392b',       // Rouge foncé
+  text: '#2c3e50',
+  textLight: '#7f8c8d',
+  textMuted: '#95a5a6',
+  border: '#bdc3c7',
+  borderLight: '#ecf0f1',
   background: '#ffffff',
+  backgroundGrey: '#f8f9fa',
 };
 
 interface PDFOptions {
@@ -117,38 +121,54 @@ export class PDFGenerator {
       }
     }
 
-    // Ligne fine en haut
-    this.pdf.setDrawColor(COLORS.primary);
-    this.pdf.setLineWidth(0.5);
-    this.pdf.line(this.margin, currentYPos, this.pageWidth - this.margin, currentYPos);
-    currentYPos += 10;
+    // Bande colorée en haut
+    this.pdf.setFillColor(231, 76, 60); // Rouge/Orange
+    this.pdf.rect(0, currentYPos, this.pageWidth, 3, 'F');
+    currentYPos += 15;
 
-    // Tags
-    if (procedure.tags && procedure.tags.length > 0) {
-      this.pdf.setFontSize(8);
-      this.pdf.setFont('helvetica', 'normal');
-      this.pdf.setTextColor(COLORS.accent);
-
-      const tagsText = procedure.tags.join(' • ');
-      this.pdf.text(tagsText, this.margin, currentYPos);
-      currentYPos += 8;
-    }
-
-    // Titre principal
-    this.pdf.setTextColor(COLORS.primary);
-    this.pdf.setFontSize(28);
+    // Titre principal avec design moderne
+    this.pdf.setTextColor(44, 62, 80); // Bleu foncé
+    this.pdf.setFontSize(32);
     this.pdf.setFont('helvetica', 'bold');
 
     const titleLines = this.pdf.splitTextToSize(
-      procedure.title,
+      procedure.title.toUpperCase(),
       this.pageWidth - 2 * this.margin
     );
 
     titleLines.forEach((line: string) => {
       this.pdf.text(line, this.margin, currentYPos);
-      currentYPos += 12;
+      currentYPos += 14;
     });
-    currentYPos += 5;
+
+    // Ligne sous le titre
+    currentYPos += 3;
+    this.pdf.setDrawColor(231, 76, 60);
+    this.pdf.setLineWidth(1);
+    this.pdf.line(this.margin, currentYPos, this.margin + 60, currentYPos);
+    currentYPos += 15;
+
+    // Tags avec badges
+    if (procedure.tags && procedure.tags.length > 0) {
+      this.pdf.setFontSize(9);
+      this.pdf.setFont('helvetica', 'bold');
+
+      let xPos = this.margin;
+      procedure.tags.slice(0, 3).forEach((tag) => {
+        const tagWidth = this.pdf.getTextWidth(tag) + 8;
+
+        // Badge fond
+        this.pdf.setFillColor(236, 240, 241);
+        this.pdf.roundedRect(xPos, currentYPos - 5, tagWidth, 7, 2, 2, 'F');
+
+        // Texte du tag
+        this.pdf.setTextColor(127, 140, 141);
+        this.pdf.text(tag, xPos + 4, currentYPos);
+
+        xPos += tagWidth + 5;
+      });
+      currentYPos += 10;
+    }
 
     // Description
     if (procedure.description) {
@@ -168,66 +188,77 @@ export class PDFGenerator {
       currentYPos += 5;
     }
 
-    // Compétences requises
+    // Compétences requises avec encadré
     if (procedure.requiredSkills && procedure.requiredSkills.length > 0) {
-      this.pdf.setFontSize(10);
-      this.pdf.setFont('helvetica', 'bold');
-      this.pdf.setTextColor(COLORS.text);
-      this.pdf.text('🎯 Compétences requises:', this.margin, currentYPos);
-      currentYPos += 6;
+      this.pdf.setFillColor(236, 240, 241); // Gris clair
+      this.pdf.roundedRect(
+        this.margin,
+        currentYPos - 3,
+        this.pageWidth - 2 * this.margin,
+        20,
+        2,
+        2,
+        'F'
+      );
 
       this.pdf.setFontSize(9);
+      this.pdf.setFont('helvetica', 'bold');
+      this.pdf.setTextColor(44, 62, 80);
+      this.pdf.text('COMPETENCES REQUISES', this.margin + 5, currentYPos + 2);
+
+      this.pdf.setFontSize(8);
       this.pdf.setFont('helvetica', 'normal');
-      this.pdf.setTextColor(COLORS.textLight);
-      const skillsText = procedure.requiredSkills.join(', ');
-      const skillLines = this.pdf.splitTextToSize(skillsText, this.pageWidth - 2 * this.margin);
+      this.pdf.setTextColor(127, 140, 141);
+      const skillsText = procedure.requiredSkills.join(' • ');
+      const skillLines = this.pdf.splitTextToSize(skillsText, this.pageWidth - 2 * this.margin - 10);
       skillLines.forEach((line: string) => {
-        this.pdf.text(line, this.margin + 5, currentYPos);
+        this.pdf.text(line, this.margin + 5, currentYPos + 9);
         currentYPos += 5;
       });
-      currentYPos += 5;
+      currentYPos += 8;
     }
 
-    // Informations en bas
-    const infoY = this.pageHeight - 50;
-    this.pdf.setFontSize(9);
-    this.pdf.setTextColor(COLORS.text);
+    // Informations en bas dans un encadré
+    const infoY = this.pageHeight - 55;
+
+    // Fond gris pour les infos
+    this.pdf.setFillColor(248, 249, 250);
+    this.pdf.rect(0, infoY - 5, this.pageWidth, 40, 'F');
+    this.pdf.setFontSize(8);
+    this.pdf.setFont('helvetica', 'bold');
+    this.pdf.setTextColor(44, 62, 80);
 
     let infoCurrentY = infoY;
 
+    // Référence et catégorie sur la même ligne
     if (procedure.reference) {
-      this.pdf.text(`Référence: ${procedure.reference}`, this.margin, infoCurrentY);
-      infoCurrentY += 5;
-      this.pdf.text(`Désignation: ${procedure.title}`, this.margin, infoCurrentY);
+      this.pdf.text(`REF: ${procedure.reference}`, this.margin, infoCurrentY);
+
+      if (procedure.category) {
+        const refWidth = this.pdf.getTextWidth(`REF: ${procedure.reference}`);
+        this.pdf.setTextColor(127, 140, 141);
+        this.pdf.text(` | ${procedure.category}`, this.margin + refWidth + 3, infoCurrentY);
+      }
       infoCurrentY += 7;
     }
 
-    if (procedure.category) {
-      this.pdf.text(`Catégorie: ${procedure.category}`, this.margin, infoCurrentY);
-      infoCurrentY += 7;
-    }
-
+    // Coût si présent
     if (procedure.totalCost) {
+      this.pdf.setTextColor(39, 174, 96); // Vert
       this.pdf.text(`Coût estimé: ${procedure.totalCost}€`, this.margin, infoCurrentY);
+      infoCurrentY += 7;
     }
 
-    // Date de génération
-    this.pdf.setTextColor(COLORS.textLight);
-    this.pdf.setFontSize(8);
+    // Date de génération à droite
+    this.pdf.setTextColor(149, 165, 166);
+    this.pdf.setFont('helvetica', 'italic');
+    this.pdf.setFontSize(7);
+    const dateText = `Généré le ${new Date().toLocaleDateString('fr-FR')}`;
+    const dateWidth = this.pdf.getTextWidth(dateText);
     this.pdf.text(
-      `Généré le ${new Date().toLocaleDateString('fr-FR')}`,
-      this.margin,
-      this.pageHeight - 15
-    );
-
-    // Ligne fine en bas
-    this.pdf.setDrawColor(COLORS.border);
-    this.pdf.setLineWidth(0.3);
-    this.pdf.line(
-      this.margin,
-      this.pageHeight - 25,
-      this.pageWidth - this.margin,
-      this.pageHeight - 25
+      dateText,
+      this.pageWidth - this.margin - dateWidth,
+      this.pageHeight - 10
     );
   }
 
@@ -445,28 +476,9 @@ export class PDFGenerator {
         this.margin + 3,
         this.currentY + 2
       );
-      this.currentY += 10;
+      this.currentY += 12;
 
-      // Description
-      if (phase.description) {
-        this.pdf.setFontSize(10);
-        this.pdf.setFont('helvetica', 'normal');
-        this.pdf.setTextColor(COLORS.text);
-
-        const descLines = this.pdf.splitTextToSize(
-          phase.description,
-          this.pageWidth - 2 * this.margin
-        );
-
-        descLines.forEach((line: string) => {
-          this.checkPageBreak(10);
-          this.pdf.text(line, this.margin, this.currentY);
-          this.currentY += 5;
-        });
-        this.currentY += 3;
-      }
-
-      // Informations (difficulté, temps, risque, compétences, nombre de personnes)
+      // Informations (difficulté, temps, nombre de personnes)
       this.checkPageBreak(15);
 
       this.pdf.setFontSize(9);
@@ -515,144 +527,6 @@ export class PDFGenerator {
       }
 
       this.currentY += 2;
-
-      // Outils nécessaires
-      if (phase.tools && phase.tools.length > 0) {
-        this.checkPageBreak(15);
-
-        this.pdf.setFontSize(11);
-        this.pdf.setFont('helvetica', 'bold');
-        this.pdf.setTextColor(COLORS.accent);
-        this.pdf.text('OUTILS NECESSAIRES', this.margin, this.currentY);
-        this.currentY += 6;
-
-        this.pdf.setFontSize(9);
-
-        phase.tools.forEach((tool) => {
-          this.checkPageBreak(12);
-
-          // Référence + Désignation en gras
-          this.pdf.setFont('helvetica', 'bold');
-          const toolTitle = tool.reference
-            ? `• ${tool.reference} - ${tool.name}`
-            : `• ${tool.name}`;
-          this.pdf.text(toolTitle, this.margin + 5, this.currentY);
-          this.currentY += 5;
-
-          // Description si présente
-          if (tool.description) {
-            this.pdf.setFont('helvetica', 'normal');
-            this.pdf.setTextColor(COLORS.textLight);
-            const descLines = this.pdf.splitTextToSize(
-              tool.description,
-              this.pageWidth - 2 * this.margin - 12
-            );
-            descLines.forEach((line: string) => {
-              this.checkPageBreak(6);
-              this.pdf.text(line, this.margin + 10, this.currentY);
-              this.currentY += 4;
-            });
-            this.pdf.setTextColor(COLORS.text);
-            this.currentY += 1;
-          }
-        });
-        this.currentY += 3;
-      }
-
-      // Matériaux
-      if (phase.materials && phase.materials.length > 0) {
-        this.checkPageBreak(15);
-
-        this.pdf.setFontSize(11);
-        this.pdf.setFont('helvetica', 'bold');
-        this.pdf.setTextColor(COLORS.accent);
-        this.pdf.text('MATERIAUX', this.margin, this.currentY);
-        this.currentY += 6;
-
-        this.pdf.setFontSize(9);
-        this.pdf.setFont('helvetica', 'normal');
-
-        phase.materials.forEach((material) => {
-          this.checkPageBreak(8);
-          const matText = material.quantity
-            ? `• ${material.name} (${material.quantity})`
-            : `• ${material.name}`;
-          this.pdf.text(matText, this.margin + 5, this.currentY);
-          this.currentY += 5;
-        });
-        this.currentY += 3;
-      }
-
-      // Images de la phase (hors étapes)
-      if (phase.images && phase.images.length > 0) {
-        this.checkPageBreak(20);
-
-        this.pdf.setFontSize(11);
-        this.pdf.setFont('helvetica', 'bold');
-        this.pdf.setTextColor(COLORS.text);
-        this.pdf.text('Images de référence', this.margin, this.currentY);
-        this.currentY += 6;
-
-        const imageWidth = 70;
-        const imageHeight = 50;
-        const imagesPerRow = 2;
-
-        for (let imgIdx = 0; imgIdx < phase.images.length; imgIdx++) {
-          const img = phase.images[imgIdx];
-
-          if (imgIdx > 0 && imgIdx % imagesPerRow === 0) {
-            this.currentY += imageHeight + 8;
-            this.checkPageBreak(imageHeight + 15);
-          }
-
-          const xPos = this.margin + (imgIdx % imagesPerRow) * (imageWidth + 10);
-
-          try {
-            let imageData: string | null = null;
-
-            if (img.image && img.image.url) {
-              imageData = img.image.url;
-            } else if (img.image && img.image.blob) {
-              const reader = new FileReader();
-              const base64Promise = new Promise<string>((resolve) => {
-                reader.onload = () => resolve(reader.result as string);
-                reader.readAsDataURL(img.image.blob);
-              });
-              imageData = await base64Promise;
-            }
-
-            if (imageData) {
-              this.pdf.addImage(
-                imageData,
-                'JPEG',
-                xPos,
-                this.currentY,
-                imageWidth,
-                imageHeight
-              );
-
-              if (img.description) {
-                this.pdf.setFontSize(7);
-                this.pdf.setTextColor(COLORS.textLight);
-                const imgDescLines = this.pdf.splitTextToSize(
-                  img.description,
-                  imageWidth
-                );
-                this.pdf.text(
-                  imgDescLines[0] || '',
-                  xPos,
-                  this.currentY + imageHeight + 4
-                );
-                this.pdf.setTextColor(COLORS.text);
-              }
-            }
-          } catch (error) {
-            console.error('Error adding phase image to PDF:', error);
-          }
-        }
-
-        this.currentY += imageHeight + 12;
-      }
 
       // Étapes détaillées
       if (phase.steps && phase.steps.length > 0) {
@@ -905,90 +779,6 @@ export class PDFGenerator {
           }
         }
 
-        this.currentY += 5;
-      }
-
-      // Notes de sécurité
-      if (phase.safetyNotes && phase.safetyNotes.length > 0) {
-        this.checkPageBreak(20);
-
-        this.pdf.setFontSize(11);
-        this.pdf.setFont('helvetica', 'bold');
-        this.pdf.setTextColor('#d32f2f');
-        this.pdf.text('⚠ Consignes de sécurité', this.margin, this.currentY);
-        this.currentY += 6;
-
-        this.pdf.setFontSize(9);
-        this.pdf.setFont('helvetica', 'normal');
-        this.pdf.setTextColor(COLORS.text);
-
-        phase.safetyNotes.forEach((note) => {
-          this.checkPageBreak(10);
-          const noteLines = this.pdf.splitTextToSize(
-            `• ${note.content}`,
-            this.pageWidth - 2 * this.margin - 5
-          );
-          noteLines.forEach((line: string) => {
-            this.pdf.text(line, this.margin + 5, this.currentY);
-            this.currentY += 5;
-          });
-        });
-        this.currentY += 5;
-      }
-
-      // Conseils et astuces
-      if (phase.tips && phase.tips.length > 0) {
-        this.checkPageBreak(20);
-
-        this.pdf.setFontSize(11);
-        this.pdf.setFont('helvetica', 'bold');
-        this.pdf.setTextColor('#1976d2');
-        this.pdf.text('💡 Conseils et astuces', this.margin, this.currentY);
-        this.currentY += 6;
-
-        this.pdf.setFontSize(9);
-        this.pdf.setFont('helvetica', 'normal');
-        this.pdf.setTextColor(COLORS.text);
-
-        phase.tips.forEach((tip) => {
-          this.checkPageBreak(10);
-          const tipLines = this.pdf.splitTextToSize(
-            `• ${tip}`,
-            this.pageWidth - 2 * this.margin - 5
-          );
-          tipLines.forEach((line: string) => {
-            this.pdf.text(line, this.margin + 5, this.currentY);
-            this.currentY += 5;
-          });
-        });
-        this.currentY += 5;
-      }
-
-      // Erreurs courantes
-      if (phase.commonMistakes && phase.commonMistakes.length > 0) {
-        this.checkPageBreak(20);
-
-        this.pdf.setFontSize(11);
-        this.pdf.setFont('helvetica', 'bold');
-        this.pdf.setTextColor('#ff6f00');
-        this.pdf.text('⚡ Erreurs courantes à éviter', this.margin, this.currentY);
-        this.currentY += 6;
-
-        this.pdf.setFontSize(9);
-        this.pdf.setFont('helvetica', 'normal');
-        this.pdf.setTextColor(COLORS.text);
-
-        phase.commonMistakes.forEach((mistake) => {
-          this.checkPageBreak(10);
-          const mistakeLines = this.pdf.splitTextToSize(
-            `• ${mistake}`,
-            this.pageWidth - 2 * this.margin - 5
-          );
-          mistakeLines.forEach((line: string) => {
-            this.pdf.text(line, this.margin + 5, this.currentY);
-            this.currentY += 5;
-          });
-        });
         this.currentY += 5;
       }
 

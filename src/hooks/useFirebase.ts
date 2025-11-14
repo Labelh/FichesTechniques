@@ -98,7 +98,7 @@ export function useProcedures(filters?: SearchFilters, sort?: SortOption) {
           // Filtre par images
           if (filters.hasImages !== undefined) {
             results = results.filter(p =>
-              filters.hasImages ? p.phases.some(ph => ph.images.length > 0) : true
+              filters.hasImages ? p.phases.some(ph => ph.steps.some(s => s.images && s.images.length > 0)) : true
             );
           }
 

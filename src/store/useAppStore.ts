@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { ViewMode, SearchFilters, SortOption } from '@/types';
+import type { SearchFilters, SortOption } from '@/types';
 
 interface AppState {
   // Theme
@@ -13,8 +13,8 @@ interface AppState {
   toggleSidebar: () => void;
 
   // View mode
-  viewMode: ViewMode;
-  setViewMode: (mode: ViewMode) => void;
+  viewMode: 'grid' | 'list' | 'kanban';
+  setViewMode: (mode: 'grid' | 'list' | 'kanban') => void;
 
   // Search & Filters
   searchQuery: string;
@@ -48,7 +48,7 @@ export const useAppStore = create<AppState>()(
       toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
 
       // View mode
-      viewMode: 'grid' as ViewMode,
+      viewMode: 'grid',
       setViewMode: (mode) => set({ viewMode: mode }),
 
       // Search & Filters
