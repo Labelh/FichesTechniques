@@ -316,12 +316,34 @@ export class PDFGenerator {
         this.currentY += 6;
 
         this.pdf.setFontSize(9);
-        this.pdf.setFont('helvetica', 'normal');
 
         phase.tools.forEach((tool) => {
-          this.checkPageBreak(8);
-          this.pdf.text(`• ${tool.name}`, this.margin + 5, this.currentY);
+          this.checkPageBreak(12);
+
+          // Référence + Désignation en gras
+          this.pdf.setFont('helvetica', 'bold');
+          const toolTitle = tool.reference
+            ? `• ${tool.reference} - ${tool.name}`
+            : `• ${tool.name}`;
+          this.pdf.text(toolTitle, this.margin + 5, this.currentY);
           this.currentY += 5;
+
+          // Description si présente
+          if (tool.description) {
+            this.pdf.setFont('helvetica', 'normal');
+            this.pdf.setTextColor(COLORS.textLight);
+            const descLines = this.pdf.splitTextToSize(
+              tool.description,
+              this.pageWidth - 2 * this.margin - 12
+            );
+            descLines.forEach((line: string) => {
+              this.checkPageBreak(6);
+              this.pdf.text(line, this.margin + 10, this.currentY);
+              this.currentY += 4;
+            });
+            this.pdf.setTextColor(COLORS.text);
+            this.currentY += 1;
+          }
         });
         this.currentY += 3;
       }
@@ -401,17 +423,26 @@ export class PDFGenerator {
 
               const xPos = this.margin + 14 + (imgIdx % imagesPerRow) * (imageWidth + 10);
 
-              if (img.image && img.image.blob) {
-                try {
+              try {
+                let imageData: string | null = null;
+
+                // Si l'image a une URL hébergée (ImgBB), l'utiliser directement
+                if (img.image && img.image.url) {
+                  imageData = img.image.url;
+                }
+                // Sinon, utiliser le blob local (ancienne méthode)
+                else if (img.image && img.image.blob) {
                   const reader = new FileReader();
                   const base64Promise = new Promise<string>((resolve) => {
                     reader.onload = () => resolve(reader.result as string);
                     reader.readAsDataURL(img.image.blob);
                   });
+                  imageData = await base64Promise;
+                }
 
-                  const base64 = await base64Promise;
+                if (imageData) {
                   this.pdf.addImage(
-                    base64,
+                    imageData,
                     'JPEG',
                     xPos,
                     this.currentY,
@@ -434,9 +465,9 @@ export class PDFGenerator {
                     );
                     this.pdf.setTextColor(COLORS.text);
                   }
-                } catch (error) {
-                  console.error('Error adding image to PDF:', error);
                 }
+              } catch (error) {
+                console.error('Error adding image to PDF:', error);
               }
             }
 
@@ -454,7 +485,7 @@ export class PDFGenerator {
         this.pdf.setFontSize(11);
         this.pdf.setFont('helvetica', 'bold');
         this.pdf.setTextColor('#d32f2f');
-        this.pdf.text('Notes de sécurité', this.margin, this.currentY);
+        this.pdf.text('⚠ Consignes de sécurité', this.margin, this.currentY);
         this.currentY += 6;
 
         this.pdf.setFontSize(9);
@@ -468,6 +499,34 @@ export class PDFGenerator {
             this.pageWidth - 2 * this.margin - 5
           );
           noteLines.forEach((line: string) => {
+            this.pdf.text(line, this.margin + 5, this.currentY);
+            this.currentY += 5;
+          });
+        });
+        this.currentY += 5;
+      }
+
+      // Conseils et astuces
+      if (phase.tips && phase.tips.length > 0) {
+        this.checkPageBreak(20);
+
+        this.pdf.setFontSize(11);
+        this.pdf.setFont('helvetica', 'bold');
+        this.pdf.setTextColor('#1976d2');
+        this.pdf.text('💡 Conseils et astuces', this.margin, this.currentY);
+        this.currentY += 6;
+
+        this.pdf.setFontSize(9);
+        this.pdf.setFont('helvetica', 'normal');
+        this.pdf.setTextColor(COLORS.text);
+
+        phase.tips.forEach((tip) => {
+          this.checkPageBreak(10);
+          const tipLines = this.pdf.splitTextToSize(
+            `• ${tip.content}`,
+            this.pageWidth - 2 * this.margin - 5
+          );
+          tipLines.forEach((line: string) => {
             this.pdf.text(line, this.margin + 5, this.currentY);
             this.currentY += 5;
           });
