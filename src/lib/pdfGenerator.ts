@@ -523,7 +523,7 @@ export class PDFGenerator {
         phase.tips.forEach((tip) => {
           this.checkPageBreak(10);
           const tipLines = this.pdf.splitTextToSize(
-            `• ${tip.content}`,
+            `• ${tip}`,
             this.pageWidth - 2 * this.margin - 5
           );
           tipLines.forEach((line: string) => {
