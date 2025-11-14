@@ -24,7 +24,10 @@
       "Bash(/tmp/tools_tail.txt)",
       "Bash(cat:*)",
       "Bash(test:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(npm run deploy:*)",
+      "Bash(npm run:*)",
+      "Bash(gh run:*)"
     ],
     "deny": [],
     "ask": []

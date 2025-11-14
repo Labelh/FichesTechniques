@@ -30,6 +30,12 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
   const [editingImageId, setEditingImageId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'info' | 'steps'>('info');
 
+  // États manquants pour tools, tips et safetyNotes au niveau de la phase
+  const [tools] = useState<Tool[]>(phase.tools || []);
+  const [toolIds] = useState<string[]>(phase.toolIds || []);
+  const [tips] = useState<string[]>(phase.tips || []);
+  const [safetyNotes] = useState<SafetyNote[]>(phase.safetyNotes || []);
+
   // Récupérer tous les outils disponibles depuis Firestore
   const availableTools = useTools();
 
@@ -43,9 +49,14 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
         estimatedTime,
         steps,
         images,
+        tools,
+        toolIds,
+        tips,
+        safetyNotes,
       });
       toast.success('Phase mise à jour');
     } catch (error) {
+      console.error('Error updating phase:', error);
       toast.error('Erreur lors de la mise à jour');
     }
   };
@@ -62,12 +73,16 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
           estimatedTime,
           steps,
           images,
+          tools,
+          toolIds,
+          tips,
+          safetyNotes,
         });
       },
       delay: 600000, // 10 minutes (600000 ms)
       enabled: true,
     },
-    [title, phaseNumber, description, difficulty, estimatedTime, steps, images]
+    [title, phaseNumber, description, difficulty, estimatedTime, steps, images, tools, toolIds, tips, safetyNotes]
   );
 
   const handleSaveAnnotations = (imageId: string, annotations: Annotation[], description: string) => {
@@ -109,7 +124,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
   const addStep = () => {
     setSteps([...steps, {
       id: crypto.randomUUID(),
-      order: steps.length + 1,
+      order: steps.length, // Commence à 0
       title: '',
       description: '',
       estimatedTime: 0,
@@ -124,7 +139,11 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
   };
 
   const removeStep = (id: string) => {
-    setSteps(steps.filter(s => s.id !== id));
+    // Retirer le step et réorganiser les ordres
+    const newSteps = steps
+      .filter(s => s.id !== id)
+      .map((s, index) => ({ ...s, order: index })); // Réorganiser les ordres
+    setSteps(newSteps);
   };
 
   const addStepImage = (stepId: string, newImages: AnnotatedImage[]) => {
