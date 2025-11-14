@@ -85,6 +85,7 @@ export interface Image extends BaseEntity {
   width?: number;
   height?: number;
   thumbnail?: Blob; // Miniature pour performance
+  url?: string; // URL hébergée (ImgBB, etc.)
 }
 
 export interface Annotation {

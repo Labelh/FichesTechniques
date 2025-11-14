@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Upload, X, Pencil } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
-import { uploadImage, getImage, deleteImage, createImageUrl } from '@/services/imageService';
+import { uploadImageToHost } from '@/services/imageHostingService';
 import { Button } from '@/components/ui/Button';
 import { toast } from 'sonner';
 import type { AnnotatedImage } from '@/types';
@@ -28,17 +28,34 @@ export default function ImageUploader({ images, onImagesChange, onEditImage }: I
           continue;
         }
 
-        // Upload l'image
-        const imageId = await uploadImage(file);
-        const image = await getImage(imageId);
+        try {
+          // Upload l'image vers ImgBB
+          console.log(`Uploading ${file.name} to ImgBB...`);
+          const imageUrl = await uploadImageToHost(file);
+          console.log(`Image uploaded successfully: ${imageUrl}`);
 
-        if (image) {
+          // Créer l'objet Image avec l'URL
           newImages.push({
-            imageId,
-            image,
+            imageId: crypto.randomUUID(),
+            image: {
+              id: crypto.randomUUID(),
+              name: file.name,
+              blob: file, // Garder le blob pour la miniature locale
+              size: file.size,
+              mimeType: file.type,
+              width: 0, // Sera calculé à l'affichage
+              height: 0,
+              thumbnail: file, // Utiliser le fichier original comme miniature
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              url: imageUrl, // URL hébergée sur ImgBB
+            },
             annotations: [],
             description: '',
           });
+        } catch (error: any) {
+          console.error(`Error uploading ${file.name}:`, error);
+          toast.error(`Erreur pour ${file.name}: ${error.message}`);
         }
       }
 
@@ -65,7 +82,7 @@ export default function ImageUploader({ images, onImagesChange, onEditImage }: I
 
   const handleRemoveImage = async (imageId: string) => {
     try {
-      await deleteImage(imageId);
+      // Simplement retirer de la liste (pas de suppression côté ImgBB)
       onImagesChange(images.filter(img => img.imageId !== imageId));
       toast.success('Image supprimée');
     } catch (error) {
@@ -144,7 +161,14 @@ function ImageThumbnail({
 
   // Créer l'URL de l'image
   useState(() => {
-    const url = createImageUrl(annotatedImage.image.thumbnail || annotatedImage.image.blob);
+    // Si l'image a une URL hébergée, l'utiliser directement
+    if (annotatedImage.image.url) {
+      setImageUrl(annotatedImage.image.url);
+      return undefined;
+    }
+
+    // Sinon, créer une URL blob locale (ancienne méthode)
+    const url = URL.createObjectURL(annotatedImage.image.thumbnail || annotatedImage.image.blob);
     setImageUrl(url);
     return () => URL.revokeObjectURL(url);
   });

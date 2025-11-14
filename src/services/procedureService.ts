@@ -8,7 +8,6 @@ import {
   updatePhase as updatePhaseFirestore,
   deletePhase as deletePhaseFirestore,
 } from '@/lib/firestore';
-import { uploadCoverImage, base64ToBlob, deleteImage } from '@/services/storageService';
 import type { Procedure, Phase, DifficultyLevel } from '@/types';
 
 // ==========================================
@@ -54,43 +53,6 @@ export async function createProcedure(
     console.log('Data size (approx):', JSON.stringify(procedureData).length, 'bytes');
     const procedureId = await createProcedureFirestore(procedureData);
     console.log('Procedure created with ID:', procedureId);
-
-    // Upload de l'image de couverture vers Firebase Storage (si présente)
-    if (data.coverImage) {
-      try {
-        console.log('Uploading cover image to Firebase Storage...');
-
-        // Extraire la string base64
-        let base64Data: string;
-        const coverImg = data.coverImage as any;
-        if (typeof coverImg === 'object' && 'data' in coverImg) {
-          base64Data = coverImg.data as string;
-        } else if (typeof coverImg === 'string') {
-          base64Data = coverImg;
-        } else {
-          throw new Error('Format d\'image invalide');
-        }
-
-        const blob = base64ToBlob(base64Data);
-        const imageUrl = await uploadCoverImage(blob, procedureId);
-        console.log('Cover image uploaded, URL:', imageUrl);
-
-        // Mettre à jour la procédure avec l'URL de l'image
-        await updateProcedureFirestore(procedureId, { coverImage: imageUrl });
-      } catch (error: any) {
-        console.error('Error uploading cover image:', error);
-
-        // Message d'erreur spécifique pour CORS
-        if (error?.code === 'storage/unauthorized' || error?.message?.includes('CORS')) {
-          console.error('⚠️ ERREUR CORS Firebase Storage détectée');
-          console.error('💡 Solution: Configurez CORS dans Firebase Storage');
-          console.error('   Voir la documentation dans FIREBASE_STORAGE_CORS.md');
-        }
-
-        // Ne pas bloquer la création si l'upload échoue
-        // La procédure est créée mais sans image de couverture
-      }
-    }
 
     return procedureId;
   } catch (error) {

@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Save, Eye, Plus, Image, X, Cloud } from 'lucide-react';
 import { useProcedure } from '@/hooks/useProcedures';
 import { createProcedure, updateProcedure, addPhase, deletePhase } from '@/services/procedureService';
+import { uploadImageToHost } from '@/services/imageHostingService';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -19,13 +20,19 @@ export default function ProcedureEditor() {
   const [reference, setReference] = useState('');
   const [designation, setDesignation] = useState('');
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
-  const [coverImage, setCoverImage] = useState<any>(null);
+  const [coverImage, setCoverImage] = useState<string | null>(null); // URL hébergée
+  const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null); // Preview locale
 
   useEffect(() => {
     if (existingProcedure) {
       setReference(existingProcedure.title);
       setDesignation(existingProcedure.description);
-      setCoverImage(existingProcedure.coverImage || null);
+
+      // Si c'est une URL, l'utiliser directement
+      if (existingProcedure.coverImage) {
+        setCoverImage(existingProcedure.coverImage);
+        setCoverImagePreview(existingProcedure.coverImage);
+      }
     }
   }, [existingProcedure]);
 
@@ -120,16 +127,26 @@ export default function ProcedureEditor() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setCoverImage({
-        data: reader.result,
-        name: file.name,
-        type: file.type,
-      });
+    try {
+      // Créer une preview locale immédiatement
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCoverImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+
+      // Upload vers ImgBB en arrière-plan
+      toast.info('Upload de l\'image en cours...');
+      const imageUrl = await uploadImageToHost(file);
+
+      setCoverImage(imageUrl);
+      setCoverImagePreview(imageUrl);
       toast.success('Image de couverture ajoutée');
-    };
-    reader.readAsDataURL(file);
+    } catch (error: any) {
+      console.error('Error uploading cover image:', error);
+      toast.error(`Erreur: ${error.message}`);
+      setCoverImagePreview(null);
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -153,6 +170,7 @@ export default function ProcedureEditor() {
 
   const handleRemoveCoverImage = () => {
     setCoverImage(null);
+    setCoverImagePreview(null);
     toast.success('Image de couverture supprimée');
   };
 
@@ -238,22 +256,22 @@ export default function ProcedureEditor() {
                   Image de couverture (PDF)
                 </label>
 
-                {coverImage ? (
+                {coverImagePreview ? (
                   <div className="relative border-2 border-gray-700/30 rounded-lg p-4 bg-[#2a2a2a]">
                     <div className="flex items-center gap-4">
                       <div className="flex-shrink-0">
                         <img
-                          src={coverImage.data}
+                          src={coverImagePreview}
                           alt="Couverture"
                           className="h-24 w-24 object-cover rounded-lg border border-[#3a3a3a]"
                         />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-300 truncate">
-                          {coverImage.name}
+                          Image de couverture
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          Image de couverture pour le PDF
+                          {coverImage ? 'Hébergée sur ImgBB' : 'Upload en cours...'}
                         </p>
                       </div>
                       <Button
