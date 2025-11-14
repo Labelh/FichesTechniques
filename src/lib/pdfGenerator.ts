@@ -198,8 +198,6 @@ export class PDFGenerator {
     if (procedure.reference) {
       this.pdf.text(`Référence: ${procedure.reference}`, this.margin, infoCurrentY);
       infoCurrentY += 5;
-
-      // Désignation juste en dessous de la référence
       this.pdf.text(`Désignation: ${procedure.title}`, this.margin, infoCurrentY);
       infoCurrentY += 7;
     }
@@ -209,21 +207,8 @@ export class PDFGenerator {
       infoCurrentY += 7;
     }
 
-    if (procedure.estimatedTotalTime) {
-      this.pdf.text(
-        `Durée estimée: ${procedure.estimatedTotalTime} min`,
-        this.margin,
-        infoCurrentY
-      );
-      infoCurrentY += 7;
-    }
-
     if (procedure.totalCost) {
-      this.pdf.text(
-        `Coût estimé: ${procedure.totalCost}€`,
-        this.margin,
-        infoCurrentY
-      );
+      this.pdf.text(`Coût estimé: ${procedure.totalCost}€`, this.margin, infoCurrentY);
     }
 
     // Date de génération
@@ -358,7 +343,7 @@ export class PDFGenerator {
       this.pdf.setFontSize(12);
       this.pdf.setFont('helvetica', 'bold');
       this.pdf.setTextColor(COLORS.text);
-      this.pdf.text('🔧 Outils', this.margin, this.currentY);
+      this.pdf.text('OUTILS', this.margin, this.currentY);
       this.currentY += 7;
 
       this.pdf.setFontSize(9);
@@ -398,7 +383,7 @@ export class PDFGenerator {
       this.pdf.setFontSize(12);
       this.pdf.setFont('helvetica', 'bold');
       this.pdf.setTextColor(COLORS.text);
-      this.pdf.text('📦 Matériaux', this.margin, this.currentY);
+      this.pdf.text('MATERIAUX', this.margin, this.currentY);
       this.currentY += 7;
 
       this.pdf.setFontSize(9);
@@ -538,7 +523,7 @@ export class PDFGenerator {
         this.pdf.setFontSize(11);
         this.pdf.setFont('helvetica', 'bold');
         this.pdf.setTextColor(COLORS.accent);
-        this.pdf.text('🔧 Outils nécessaires', this.margin, this.currentY);
+        this.pdf.text('OUTILS NECESSAIRES', this.margin, this.currentY);
         this.currentY += 6;
 
         this.pdf.setFontSize(9);
@@ -581,7 +566,7 @@ export class PDFGenerator {
         this.pdf.setFontSize(11);
         this.pdf.setFont('helvetica', 'bold');
         this.pdf.setTextColor(COLORS.accent);
-        this.pdf.text('📦 Matériaux', this.margin, this.currentY);
+        this.pdf.text('MATERIAUX', this.margin, this.currentY);
         this.currentY += 6;
 
         this.pdf.setFontSize(9);
@@ -676,8 +661,8 @@ export class PDFGenerator {
         this.pdf.setFontSize(11);
         this.pdf.setFont('helvetica', 'bold');
         this.pdf.setTextColor(COLORS.accent);
-        this.pdf.text('📋 Étapes détaillées', this.margin, this.currentY);
-        this.currentY += 8;
+        this.pdf.text('ETAPES DETAILLEES', this.margin, this.currentY);
+        this.currentY += 10;
 
         for (let stepIdx = 0; stepIdx < phase.steps.length; stepIdx++) {
           const step = phase.steps[stepIdx];
@@ -737,7 +722,7 @@ export class PDFGenerator {
             this.pdf.setFontSize(8);
             this.pdf.setFont('helvetica', 'bold');
             this.pdf.setTextColor(COLORS.accent);
-            this.pdf.text('🔧 Outil:', this.margin + 15, this.currentY);
+            this.pdf.text('Outil:', this.margin + 15, this.currentY);
 
             this.pdf.setFont('helvetica', 'normal');
             this.pdf.setTextColor(COLORS.text);
@@ -754,7 +739,7 @@ export class PDFGenerator {
             this.pdf.setFontSize(8);
             this.pdf.setFont('helvetica', 'italic');
             this.pdf.setTextColor(COLORS.textLight);
-            this.pdf.text(`⏱️ ${step.estimatedTime} min`, this.margin + 12, this.currentY);
+            this.pdf.text(`Temps: ${step.estimatedTime} min`, this.margin + 12, this.currentY);
             this.currentY += 6;
           }
 
@@ -850,13 +835,13 @@ export class PDFGenerator {
               this.pdf.setFontSize(8);
               this.pdf.setFont('helvetica', 'bold');
               this.pdf.setTextColor(COLORS.info);
-              this.pdf.text('💡', this.margin + 15, this.currentY);
+              this.pdf.text('Conseil:', this.margin + 15, this.currentY);
 
               this.pdf.setFont('helvetica', 'normal');
               this.pdf.setTextColor(COLORS.text);
-              const tipLines = this.pdf.splitTextToSize(tip, this.pageWidth - 2 * this.margin - 20);
+              const tipLines = this.pdf.splitTextToSize(tip, this.pageWidth - 2 * this.margin - 35);
               tipLines.forEach((line: string) => {
-                this.pdf.text(line, this.margin + 20, this.currentY);
+                this.pdf.text(line, this.margin + 35, this.currentY);
                 this.currentY += 5;
               });
 
@@ -874,7 +859,7 @@ export class PDFGenerator {
               // Encadré rouge/orange selon le type
               const noteColor = note.type === 'danger' ? [255, 235, 238] : [255, 243, 224];
               const iconColor = note.type === 'danger' ? COLORS.danger : COLORS.warning;
-              const icon = note.type === 'danger' ? '🚨' : '⚠️';
+              const icon = note.type === 'danger' ? 'DANGER' : 'ATTENTION';
 
               const noteBoxHeight = Math.ceil(note.content.length / 80) * 5 + 6;
               this.pdf.setFillColor(noteColor[0], noteColor[1], noteColor[2]);
@@ -895,9 +880,9 @@ export class PDFGenerator {
 
               this.pdf.setFont('helvetica', 'normal');
               this.pdf.setTextColor(COLORS.text);
-              const noteLines = this.pdf.splitTextToSize(note.content, this.pageWidth - 2 * this.margin - 20);
+              const noteLines = this.pdf.splitTextToSize(note.content, this.pageWidth - 2 * this.margin - 40);
               noteLines.forEach((line: string) => {
-                this.pdf.text(line, this.margin + 20, this.currentY);
+                this.pdf.text(line, this.margin + 40, this.currentY);
                 this.currentY += 5;
               });
 

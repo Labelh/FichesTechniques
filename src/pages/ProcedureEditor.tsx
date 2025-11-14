@@ -18,7 +18,6 @@ export default function ProcedureEditor() {
   const existingProcedure = useProcedure(id);
 
   const [reference, setReference] = useState('');
-  const [designation, setDesignation] = useState('');
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [coverImage, setCoverImage] = useState<string | null>(null); // URL hébergée
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null); // Preview locale
@@ -26,7 +25,6 @@ export default function ProcedureEditor() {
   useEffect(() => {
     if (existingProcedure) {
       setReference(existingProcedure.title);
-      setDesignation(existingProcedure.description);
 
       // Si c'est une URL, l'utiliser directement
       if (existingProcedure.coverImage) {
@@ -43,7 +41,7 @@ export default function ProcedureEditor() {
         if (id && existingProcedure && reference.trim()) {
           await updateProcedure(id, {
             title: reference,
-            description: designation,
+            description: '',
             coverImage: coverImage || undefined,
           });
         }
@@ -51,7 +49,7 @@ export default function ProcedureEditor() {
       delay: 600000, // 10 minutes (600000 ms)
       enabled: !!id, // Actif seulement en mode édition
     },
-    [reference, designation, coverImage]
+    [reference, coverImage]
   );
 
   const handleSave = async () => {
@@ -64,14 +62,14 @@ export default function ProcedureEditor() {
       if (id && existingProcedure) {
         await updateProcedure(id, {
           title: reference,
-          description: designation,
+          description: '',
           coverImage: coverImage || undefined,
         });
         toast.success('Procédure mise à jour');
       } else {
         const newId = await createProcedure({
           title: reference,
-          description: designation,
+          description: '',
           coverImage: coverImage || undefined,
         });
         toast.success('Procédure créée');
@@ -236,17 +234,6 @@ export default function ProcedureEditor() {
                   value={reference}
                   onChange={(e) => setReference(e.target.value)}
                   placeholder="Référence de la procédure..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Désignation
-                </label>
-                <Input
-                  value={designation}
-                  onChange={(e) => setDesignation(e.target.value)}
-                  placeholder="Désignation de la procédure..."
                 />
               </div>
 
