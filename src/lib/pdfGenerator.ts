@@ -69,21 +69,44 @@ export class PDFGenerator {
   private async generateCoverPage(procedure: Procedure) {
     let currentYPos = 40;
 
-    // Image de couverture si présente
+    // Image de couverture si présente (dimensions originales, centrée)
     if (procedure.coverImage) {
       try {
-        const coverImageHeight = 80;
-        const coverImageWidth = this.pageWidth - 2 * this.margin;
+        const img = new Image();
+        img.src = procedure.coverImage;
+
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+        });
+
+        const imgWidth = img.width;
+        const imgHeight = img.height;
+
+        // Calculer la largeur max (80% de la page)
+        const maxWidth = (this.pageWidth - 2 * this.margin) * 0.8;
+        const ratio = imgHeight / imgWidth;
+
+        let finalWidth = imgWidth;
+        let finalHeight = imgHeight;
+
+        if (finalWidth > maxWidth) {
+          finalWidth = maxWidth;
+          finalHeight = finalWidth * ratio;
+        }
+
+        // Centrer horizontalement
+        const xPos = (this.pageWidth - finalWidth) / 2;
 
         this.pdf.addImage(
           procedure.coverImage,
           'JPEG',
-          this.margin,
+          xPos,
           currentYPos,
-          coverImageWidth,
-          coverImageHeight
+          finalWidth,
+          finalHeight
         );
-        currentYPos += coverImageHeight + 10;
+        currentYPos += finalHeight + 10;
       } catch (error) {
         console.error('Error adding cover image to PDF:', error);
         // Continue sans l'image si erreur
@@ -122,52 +145,6 @@ export class PDFGenerator {
       currentYPos += 12;
     });
     currentYPos += 5;
-
-    // Statut, Priorité et Niveau de Risque
-    this.pdf.setFontSize(9);
-    this.pdf.setFont('helvetica', 'bold');
-
-    const statusMap: any = {
-      draft: 'Brouillon',
-      en_cours: 'En cours',
-      in_review: 'En révision',
-      completed: 'Terminé',
-      archived: 'Archivé'
-    };
-
-    const priorityMap: any = {
-      low: 'Basse',
-      normal: 'Normale',
-      high: 'Haute',
-      urgent: 'Urgente'
-    };
-
-    const riskMap: any = {
-      none: 'Aucun',
-      low: 'Faible',
-      medium: 'Moyen',
-      high: 'Élevé',
-      critical: 'Critique'
-    };
-
-    let metaText = '';
-    if (procedure.status) {
-      metaText += `Statut: ${statusMap[procedure.status] || procedure.status}`;
-    }
-    if (procedure.priority) {
-      if (metaText) metaText += '  •  ';
-      metaText += `Priorité: ${priorityMap[procedure.priority] || procedure.priority}`;
-    }
-    if (procedure.riskLevel) {
-      if (metaText) metaText += '  •  ';
-      metaText += `Risque: ${riskMap[procedure.riskLevel] || procedure.riskLevel}`;
-    }
-
-    if (metaText) {
-      this.pdf.setTextColor(COLORS.accent);
-      this.pdf.text(metaText, this.margin, currentYPos);
-      currentYPos += 8;
-    }
 
     // Description
     if (procedure.description) {
@@ -216,6 +193,10 @@ export class PDFGenerator {
 
     if (procedure.reference) {
       this.pdf.text(`Référence: ${procedure.reference}`, this.margin, infoCurrentY);
+      infoCurrentY += 5;
+
+      // Désignation juste en dessous de la référence
+      this.pdf.text(`Désignation: ${procedure.title}`, this.margin, infoCurrentY);
       infoCurrentY += 7;
     }
 
@@ -513,17 +494,6 @@ export class PDFGenerator {
       if (phase.estimatedTime) {
         if (infoText) infoText += '  •  ';
         infoText += `Temps estimé: ${phase.estimatedTime} min`;
-      }
-      if (phase.riskLevel) {
-        const riskMap: any = {
-          none: 'Aucun',
-          low: 'Faible',
-          medium: 'Moyen',
-          high: 'Élevé',
-          critical: 'Critique'
-        };
-        if (infoText) infoText += '  •  ';
-        infoText += `Risque: ${riskMap[phase.riskLevel] || phase.riskLevel}`;
       }
       if (phase.numberOfPeople) {
         if (infoText) infoText += '  •  ';

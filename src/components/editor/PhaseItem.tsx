@@ -31,10 +31,10 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
   const [activeTab, setActiveTab] = useState<'info' | 'steps'>('info');
 
   // États pour tools, tips et safetyNotes au niveau de la phase
-  const [tools, setTools] = useState<Tool[]>(phase.tools || []);
-  const [toolIds, setToolIds] = useState<string[]>(phase.toolIds || []);
-  const [tips, setTips] = useState<string[]>(phase.tips || []);
-  const [safetyNotes, setSafetyNotes] = useState<SafetyNote[]>(phase.safetyNotes || []);
+  const [tools] = useState<Tool[]>(phase.tools || []);
+  const [toolIds] = useState<string[]>(phase.toolIds || []);
+  const [tips] = useState<string[]>(phase.tips || []);
+  const [safetyNotes] = useState<SafetyNote[]>(phase.safetyNotes || []);
 
   // Récupérer tous les outils disponibles depuis Firestore
   const availableTools = useTools();
@@ -226,46 +226,6 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
     ));
   };
 
-  // Handlers pour les outils de phase
-  const addPhaseTool = (tool: Tool) => {
-    if (!toolIds.includes(tool.id)) {
-      setTools([...tools, tool]);
-      setToolIds([...toolIds, tool.id]);
-    }
-  };
-
-  const removePhaseTool = (toolId: string) => {
-    setTools(tools.filter(t => t.id !== toolId));
-    setToolIds(toolIds.filter(id => id !== toolId));
-  };
-
-  // Handlers pour les conseils de phase
-  const addPhaseTip = () => {
-    setTips([...tips, '']);
-  };
-
-  const updatePhaseTip = (index: number, value: string) => {
-    const newTips = [...tips];
-    newTips[index] = value;
-    setTips(newTips);
-  };
-
-  const removePhaseTip = (index: number) => {
-    setTips(tips.filter((_, i) => i !== index));
-  };
-
-  // Handlers pour les consignes de sécurité de phase
-  const addPhaseSafetyNote = () => {
-    setSafetyNotes([...safetyNotes, { id: crypto.randomUUID(), type: 'warning', content: '' }]);
-  };
-
-  const updatePhaseSafetyNote = (noteId: string, updates: Partial<SafetyNote>) => {
-    setSafetyNotes(safetyNotes.map(n => n.id === noteId ? { ...n, ...updates } : n));
-  };
-
-  const removePhaseSafetyNote = (noteId: string) => {
-    setSafetyNotes(safetyNotes.filter(n => n.id !== noteId));
-  };
 
   const getDifficultyColor = (diff: DifficultyLevel) => {
     switch (diff) {
@@ -415,143 +375,6 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                       value={estimatedTime}
                       onChange={(e) => setEstimatedTime(parseInt(e.target.value) || 0)}
                     />
-                  </div>
-                </div>
-
-                {/* Outils de la phase */}
-                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    <Wrench className="h-4 w-4 inline mr-2" />
-                    Outils nécessaires pour cette phase
-                  </label>
-                  <div className="space-y-3">
-                    {tools.map((tool) => (
-                      <div key={tool.id} className="flex items-start gap-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700/30">
-                        <div className="flex-1">
-                          <div className="font-medium text-white">
-                            {tool.reference ? `${tool.reference} - ${tool.name}` : tool.name}
-                          </div>
-                          {tool.description && (
-                            <div className="text-sm text-gray-400 mt-1">{tool.description}</div>
-                          )}
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removePhaseTool(tool.id)}
-                          className="hover:bg-red-900/20 hover:text-red-500"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                    <select
-                      onChange={(e) => {
-                        const selectedTool = availableTools?.find(t => t.id === e.target.value);
-                        if (selectedTool) {
-                          addPhaseTool(selectedTool);
-                          e.target.value = '';
-                        }
-                      }}
-                      className="w-full rounded-md border border-gray-700/30 bg-transparent px-3 py-2 text-sm text-white"
-                      value=""
-                    >
-                      <option value="">+ Ajouter un outil</option>
-                      {availableTools
-                        ?.filter(t => !toolIds.includes(t.id))
-                        .map(tool => (
-                          <option key={tool.id} value={tool.id}>
-                            {tool.reference ? `${tool.reference} - ${tool.name}` : tool.name}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Conseils de la phase */}
-                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    <Lightbulb className="h-4 w-4 inline mr-2 text-yellow-500" />
-                    Conseils pratiques pour cette phase
-                  </label>
-                  <div className="space-y-3">
-                    {tips.map((tip, tipIdx) => (
-                      <div key={tipIdx} className="flex gap-2 items-start">
-                        <textarea
-                          value={tip}
-                          onChange={(e) => updatePhaseTip(tipIdx, e.target.value)}
-                          placeholder="Conseil pratique..."
-                          rows={2}
-                          className="flex-1 rounded-md border border-gray-700/30 bg-transparent px-3 py-2 text-sm text-white"
-                        />
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removePhaseTip(tipIdx)}
-                          className="hover:bg-red-900/20 hover:text-red-500"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={addPhaseTip}
-                      className="w-full"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Ajouter un conseil
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Consignes de sécurité de la phase */}
-                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    <AlertTriangle className="h-4 w-4 inline mr-2 text-orange-500" />
-                    Consignes de sécurité pour cette phase
-                  </label>
-                  <div className="space-y-3">
-                    {safetyNotes.map((note) => (
-                      <div key={note.id} className="p-4 bg-transparent border-2 border-orange-500/30 rounded-lg">
-                        <div className="flex gap-3 items-start mb-3">
-                          <select
-                            value={note.type}
-                            onChange={(e) => updatePhaseSafetyNote(note.id, { type: e.target.value as any })}
-                            className="rounded-md border border-gray-700/30 bg-transparent px-3 py-2 text-sm text-white"
-                          >
-                            <option value="warning">⚠️ Attention</option>
-                            <option value="danger">🚨 Danger</option>
-                            <option value="info">ℹ️ Information</option>
-                          </select>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removePhaseSafetyNote(note.id)}
-                            className="hover:bg-red-900/20 hover:text-red-500"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        <textarea
-                          value={note.content}
-                          onChange={(e) => updatePhaseSafetyNote(note.id, { content: e.target.value })}
-                          placeholder="Consigne de sécurité..."
-                          rows={2}
-                          className="w-full rounded-md border border-orange-500/30 bg-transparent px-3 py-2 text-sm text-white"
-                        />
-                      </div>
-                    ))}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={addPhaseSafetyNote}
-                      className="w-full border-orange-500/30 hover:bg-orange-500/10"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Ajouter une consigne de sécurité
-                    </Button>
                   </div>
                 </div>
 
