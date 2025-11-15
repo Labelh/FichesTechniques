@@ -48,10 +48,10 @@ export default function ProcedureList({ procedures }: ProcedureListProps) {
               className="cursor-pointer hover:bg-[#303030] transition-colors"
             >
               <td className="font-mono text-sm text-gray-400">
-                {procedure.reference || 'N/A'}
+                {procedure.reference || '-'}
               </td>
               <td className="font-medium text-white">
-                {procedure.title}
+                {procedure.designation || procedure.title}
               </td>
               <td className="text-sm text-gray-400">
                 {formatRelativeDate(procedure.updatedAt)}
@@ -72,7 +72,7 @@ export default function ProcedureList({ procedures }: ProcedureListProps) {
                     variant="ghost"
                     size="icon"
                     title="Supprimer"
-                    onClick={(e) => handleDelete(e, procedure.id, procedure.title)}
+                    onClick={(e) => handleDelete(e, procedure.id, procedure.designation || procedure.title)}
                   >
                     <Trash2 className="h-4 w-4 text-red-500" />
                   </Button>

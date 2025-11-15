@@ -161,6 +161,7 @@ export interface Procedure extends BaseEntity {
   // Informations de base
   reference?: string; // Référence de la procédure
   title: string;
+  designation?: string; // Nom descriptif de la procédure
   description: string;
   category: string;
   tags: string[];

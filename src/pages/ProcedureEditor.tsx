@@ -18,15 +18,16 @@ export default function ProcedureEditor() {
   const existingProcedure = useProcedure(id);
 
   const [reference, setReference] = useState('');
+  const [designation, setDesignation] = useState('');
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
-  const [coverImage, setCoverImage] = useState<string | null>(null); // URL hébergée
-  const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null); // Preview locale
+  const [coverImage, setCoverImage] = useState<string | null>(null);
+  const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
     if (existingProcedure) {
-      setReference(existingProcedure.title);
+      setReference(existingProcedure.reference || '');
+      setDesignation(existingProcedure.designation || existingProcedure.title || '');
 
-      // Si c'est une URL, l'utiliser directement
       if (existingProcedure.coverImage) {
         setCoverImage(existingProcedure.coverImage);
         setCoverImagePreview(existingProcedure.coverImage);
@@ -34,41 +35,47 @@ export default function ProcedureEditor() {
     }
   }, [existingProcedure]);
 
-  // Auto-save (seulement pour les procédures existantes)
+  // Auto-save
   const { isSaving, lastSaved } = useAutoSave(
     {
       onSave: async () => {
-        if (id && existingProcedure && reference.trim()) {
+        if (id && existingProcedure && (reference.trim() || designation.trim())) {
           await updateProcedure(id, {
-            title: reference,
+            reference: reference.trim() || undefined,
+            designation: designation.trim() || undefined,
+            title: designation.trim() || reference.trim() || 'Sans titre',
             description: '',
             coverImage: coverImage || undefined,
           });
         }
       },
-      delay: 600000, // 10 minutes (600000 ms)
-      enabled: !!id, // Actif seulement en mode édition
+      delay: 600000, // 10 minutes
+      enabled: !!id,
     },
-    [reference, coverImage]
+    [reference, designation, coverImage]
   );
 
   const handleSave = async () => {
-    if (!reference.trim()) {
-      toast.error('La référence est requise');
+    if (!reference.trim() && !designation.trim()) {
+      toast.error('La référence ou la désignation est requise');
       return;
     }
 
     try {
       if (id && existingProcedure) {
         await updateProcedure(id, {
-          title: reference,
+          reference: reference.trim() || undefined,
+          designation: designation.trim() || undefined,
+          title: designation.trim() || reference.trim() || 'Sans titre',
           description: '',
           coverImage: coverImage || undefined,
         });
         toast.success('Procédure mise à jour');
       } else {
         const newId = await createProcedure({
-          title: reference,
+          reference: reference.trim() || undefined,
+          designation: designation.trim() || undefined,
+          title: designation.trim() || reference.trim() || 'Nouvelle procédure',
           description: '',
           coverImage: coverImage || undefined,
         });
@@ -118,21 +125,18 @@ export default function ProcedureEditor() {
       return;
     }
 
-    // Vérifier la taille (15 MB max)
     if (file.size > 15 * 1024 * 1024) {
       toast.error('L\'image est trop volumineuse (max 15 MB)');
       return;
     }
 
     try {
-      // Créer une preview locale immédiatement
       const reader = new FileReader();
       reader.onloadend = () => {
         setCoverImagePreview(reader.result as string);
       };
       reader.readAsDataURL(file);
 
-      // Upload vers ImgBB en arrière-plan
       toast.info('Upload de l\'image en cours...');
       const imageUrl = await uploadImageToHost(file);
 
@@ -183,7 +187,7 @@ export default function ProcedureEditor() {
         </Link>
 
         <div className="flex items-center gap-3">
-          {/* Auto-save status indicator */}
+          {/* Auto-save status */}
           {id && (
             <div className="flex items-center gap-2 text-sm">
               {isSaving ? (
@@ -225,20 +229,35 @@ export default function ProcedureEditor() {
         <Card>
           <CardContent className="pt-6">
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Référence *
-                </label>
-                <Input
-                  value={reference}
-                  onChange={(e) => setReference(e.target.value)}
-                  placeholder="Référence de la procédure..."
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-300">
+                    Référence <span className="text-gray-500 font-normal">(optionnel)</span>
+                  </label>
+                  <Input
+                    value={reference}
+                    onChange={(e) => setReference(e.target.value)}
+                    placeholder="Ex: PROC-001"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Code ou numéro de référence</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-300">
+                    Désignation *
+                  </label>
+                  <Input
+                    value={designation}
+                    onChange={(e) => setDesignation(e.target.value)}
+                    placeholder="Ex: Procédure de montage échafaudage"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Nom descriptif de la procédure</p>
+                </div>
               </div>
 
               {/* Cover Image Upload */}
               <div>
-                <label className="block text-sm font-medium mb-2">
+                <label className="block text-sm font-medium mb-2 text-gray-300">
                   Image de couverture (PDF)
                 </label>
 

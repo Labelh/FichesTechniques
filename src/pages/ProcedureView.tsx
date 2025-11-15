@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit, Trash2, Download, Copy } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Download } from 'lucide-react';
 import { useProcedure } from '@/hooks/useProcedures';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -40,10 +40,6 @@ export default function ProcedureView() {
     }
   };
 
-  const handleDuplicate = async () => {
-    toast.info('Fonction de duplication temporairement désactivée');
-    // TODO: Réimplémenter la duplication avec Firestore
-  };
 
   const handleExportPDF = async () => {
     const toastId = toast.loading('Génération du PDF en cours...');
@@ -91,9 +87,6 @@ export default function ProcedureView() {
                 Modifier
               </Button>
             </Link>
-            <Button variant="secondary" onClick={handleDuplicate}>
-              <Copy className="h-4 w-4 mr-2" />
-              Dupliquer
             </Button>
             <Button variant="secondary" onClick={handleExportPDF}>
               <Download className="h-4 w-4 mr-2" />

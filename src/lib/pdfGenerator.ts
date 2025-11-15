@@ -132,7 +132,7 @@ export class PDFGenerator {
     this.pdf.setFont('helvetica', 'bold');
 
     const titleLines = this.pdf.splitTextToSize(
-      procedure.title.toUpperCase(),
+      (procedure.designation || procedure.title).toUpperCase(),
       this.pageWidth - 2 * this.margin
     );
 
@@ -472,7 +472,7 @@ export class PDFGenerator {
       this.pdf.setFont('helvetica', 'bold');
       this.pdf.setTextColor(255, 255, 255); // Blanc
       this.pdf.text(
-        `Phase ${i + 1} : ${phase.title}`,
+        `Phase ${phase.phaseNumber || i + 1} : ${phase.title}`,
         this.margin + 3,
         this.currentY + 2
       );
@@ -845,7 +845,7 @@ export class PDFGenerator {
       await this.generatePhases(phases);
 
       // Sauvegarder
-      this.pdf.save(`${procedure.title || 'procedure'}.pdf`);
+      this.pdf.save(`${procedure.designation || procedure.reference || procedure.title || 'procedure'}.pdf`);
     } catch (error) {
       console.error('Error generating PDF:', error);
       throw error;
