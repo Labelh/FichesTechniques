@@ -18,12 +18,15 @@ export function useTools() {
     const unsubscribe = onSnapshot(
       collection(db, 'tools'),
       (snapshot) => {
-        const results = snapshot.docs.map(doc =>
-          convertTimestamps<Tool>({
-            id: doc.id,
-            ...doc.data(),
-          })
-        );
+        const results = snapshot.docs
+          .map(doc =>
+            convertTimestamps<Tool>({
+              id: doc.id,
+              ...doc.data(),
+            })
+          )
+          // Filtrer les outils non supprimés
+          .filter(tool => !tool.deleted);
 
         setTools(results);
         setLoading(false);

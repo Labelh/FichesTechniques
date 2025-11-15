@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, AlertTriangle, Lightbulb, Save, Cloud, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -6,9 +6,10 @@ import { Badge } from '@/components/ui/Badge';
 import { updatePhase } from '@/services/procedureService';
 import { createPhaseTemplate } from '@/services/templateService';
 import { uploadImageToHost } from '@/services/imageHostingService';
+import { fetchConsumables } from '@/services/consumablesService';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useTools } from '@/hooks/useTools';
-import type { Phase, DifficultyLevel, SubStep, SafetyNote, AnnotatedImage, Tool } from '@/types';
+import type { Phase, DifficultyLevel, SubStep, SafetyNote, AnnotatedImage, Tool, Consumable } from '@/types';
 import { toast } from 'sonner';
 
 interface PhaseItemProps {
@@ -25,8 +26,22 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
   const [difficulty, setDifficulty] = useState<DifficultyLevel>(phase.difficulty);
   const [estimatedTime, setEstimatedTime] = useState(phase.estimatedTime);
   const [steps, setSteps] = useState<SubStep[]>(phase.steps || []);
+  const [consumables, setConsumables] = useState<Consumable[]>([]);
 
   const availableTools = useTools();
+
+  // Charger les consommables
+  useEffect(() => {
+    const loadConsumables = async () => {
+      try {
+        const data = await fetchConsumables();
+        setConsumables(data);
+      } catch (error) {
+        console.error('Error loading consumables:', error);
+      }
+    };
+    loadConsumables();
+  }, []);
 
   const handleSave = async () => {
     try {
@@ -333,6 +348,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                       step={step}
                       index={idx}
                       availableTools={availableTools}
+                      availableConsumables={consumables}
                       onUpdate={(updates) => updateStep(step.id, updates)}
                       onRemove={() => removeStep(step.id)}
                       onAddImage={(images) => addStepImage(step.id, images)}
@@ -374,6 +390,7 @@ interface SubStepItemProps {
   step: SubStep;
   index: number;
   availableTools?: Tool[];
+  availableConsumables?: Consumable[];
   onUpdate: (updates: Partial<SubStep>) => void;
   onRemove: () => void;
   onAddImage: (images: AnnotatedImage[]) => void;
@@ -391,6 +408,7 @@ function SubStepItem({
   step,
   index,
   availableTools,
+  availableConsumables,
   onUpdate,
   onRemove,
   onAddImage,
@@ -612,15 +630,48 @@ function SubStepItem({
                 value={step.toolId || ''}
                 onChange={(e) => {
                   const toolId = e.target.value;
-                  const tool = availableTools?.find(t => t.id === toolId);
+                  // Chercher d'abord dans les outils
+                  let tool = availableTools?.find(t => t.id === toolId);
+
+                  // Si pas trouvé, chercher dans les consommables et créer un objet Tool compatible
+                  if (!tool && toolId) {
+                    const consumable = availableConsumables?.find(c => c.id === toolId);
+                    if (consumable) {
+                      // Créer un objet Tool temporaire à partir du consommable
+                      tool = {
+                        id: consumable.id,
+                        name: consumable.designation,
+                        description: consumable.description || '',
+                        category: consumable.category || 'Consommable',
+                        reference: consumable.reference,
+                        price: consumable.price,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                      } as Tool;
+                    }
+                  }
+
                   onUpdateTool(tool || null);
                 }}
                 className="w-full rounded border border-gray-700/30 bg-transparent px-2 py-1.5 text-xs text-white"
               >
-                <option value="">Aucun outil</option>
-                {availableTools?.map(tool => (
-                  <option key={tool.id} value={tool.id}>{tool.name}</option>
-                ))}
+                <option value="">Aucun outil/consommable</option>
+                {availableTools && availableTools.length > 0 && (
+                  <optgroup label="Outils">
+                    {availableTools.map(tool => (
+                      <option key={tool.id} value={tool.id}>{tool.name}</option>
+                    ))}
+                  </optgroup>
+                )}
+                {availableConsumables && availableConsumables.length > 0 && (
+                  <optgroup label="Consommables">
+                    {availableConsumables.map(consumable => (
+                      <option key={consumable.id} value={consumable.id}>
+                        {consumable.designation}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
               </select>
             )}
           </div>

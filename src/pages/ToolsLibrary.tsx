@@ -8,7 +8,6 @@ import {
   Trash2,
   Edit,
   DollarSign,
-  ExternalLink,
   RefreshCw,
   Package
 } from 'lucide-react';
@@ -268,81 +267,85 @@ export default function ToolsLibrary() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredTools.map((tool) => (
-                <div
-                  key={tool.id}
-                  className="bg-[#2a2a2a] rounded-lg border border-[#3a3a3a] p-4 hover: transition-shadow"
-                >
-              {/* Header: Référence (gauche) et Emplacement (droite) avec boutons d'action */}
-              <div className="flex justify-between items-start mb-2">
-                <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  {tool.reference || 'Sans référence'}
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    {tool.location || ''}
-                  </div>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => {
-                        setEditingTool(tool);
-                        setIsAddDialogOpen(true);
-                      }}
-                      className="p-1 text-gray-400 hover:text-primary transition-colors"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteTool(tool.id)}
-                      className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Désignation */}
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                {tool.name}
-              </h3>
-
-              {/* Catégorie */}
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 mb-3">
-                {tool.category}
-              </span>
-
-              {/* Description */}
-              {tool.description && (
-                <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2 mt-2">
-                  {tool.description}
-                </p>
-              )}
-
-              {/* Prix */}
-              {tool.price && (
-                <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  <DollarSign className="h-4 w-4" />
-                  {tool.price} €
-                </div>
-              )}
-
-              {/* Lien d'achat */}
-              {tool.purchaseLink && (
-                <div className="mt-3">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => window.open(tool.purchaseLink, '_blank')}
-                    className="w-full"
+              {filteredTools.map((tool) => {
+                const imageUrl = tool.image?.url;
+                return (
+                  <div
+                    key={tool.id}
+                    className="bg-[#2a2a2a] rounded-lg border border-[#3a3a3a] p-4 flex gap-4"
                   >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Lien d'achat
-                  </Button>
-                </div>
-              )}
-            </div>
-          ))}
+                    {/* Photo à gauche - carré avec bords arrondis */}
+                    <div className="flex-shrink-0">
+                      {imageUrl ? (
+                        <img
+                          src={imageUrl}
+                          alt={tool.name}
+                          className="w-24 h-24 object-cover rounded-lg border border-[#3a3a3a]"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <div className="w-24 h-24 bg-[#1f1f1f] rounded-lg border border-[#3a3a3a] flex items-center justify-center">
+                          <Wrench className="h-8 w-8 text-gray-600" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Contenu à droite */}
+                    <div className="flex-1 min-w-0">
+                      {/* Header: Référence et actions */}
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                          {tool.reference || 'Sans référence'}
+                        </div>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => {
+                              setEditingTool(tool);
+                              setIsAddDialogOpen(true);
+                            }}
+                            className="p-1 text-gray-400 hover:text-primary transition-colors"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTool(tool.id)}
+                            className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Désignation */}
+                      <h3 className="font-semibold text-gray-900 dark:text-white mb-1 truncate">
+                        {tool.name}
+                      </h3>
+
+                      {/* Catégorie */}
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 mb-2">
+                        {tool.category}
+                      </span>
+
+                      {/* Emplacement */}
+                      {tool.location && (
+                        <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                          📍 {tool.location}
+                        </div>
+                      )}
+
+                      {/* Prix */}
+                      {tool.price && (
+                        <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+                          <DollarSign className="h-4 w-4" />
+                          {tool.price} €
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
         </div>
           )}
         </div>
