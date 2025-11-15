@@ -87,7 +87,6 @@ export default function ProcedureView() {
                 Modifier
               </Button>
             </Link>
-            </Button>
             <Button variant="secondary" onClick={handleExportPDF}>
               <Download className="h-4 w-4 mr-2" />
               Export PDF

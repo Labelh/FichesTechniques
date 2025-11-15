@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, Package, List, AlertTriangle, Lightbulb, Save, Cloud } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, AlertTriangle, Lightbulb, Save, Cloud, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -25,9 +25,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
   const [difficulty, setDifficulty] = useState<DifficultyLevel>(phase.difficulty);
   const [estimatedTime, setEstimatedTime] = useState(phase.estimatedTime);
   const [steps, setSteps] = useState<SubStep[]>(phase.steps || []);
-  const [activeTab, setActiveTab] = useState<'info' | 'steps'>('info');
 
-  // Récupérer tous les outils disponibles depuis Firestore
   const availableTools = useTools();
 
   const handleSave = async () => {
@@ -58,7 +56,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
           steps,
         });
       },
-      delay: 600000, // 10 minutes (600000 ms)
+      delay: 600000, // 10 minutes
       enabled: true,
     },
     [title, phaseNumber, difficulty, estimatedTime, steps]
@@ -71,7 +69,6 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
     const category = prompt('Catégorie du template:', 'Général') || 'Général';
 
     try {
-      // Créer une phase temporaire avec les données actuelles
       const currentPhase: Phase = {
         ...phase,
         title,
@@ -92,7 +89,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
   const addStep = () => {
     setSteps([...steps, {
       id: crypto.randomUUID(),
-      order: steps.length, // Commence à 0
+      order: steps.length,
       title: '',
       description: '',
       estimatedTime: 0,
@@ -107,10 +104,9 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
   };
 
   const removeStep = (id: string) => {
-    // Retirer le step et réorganiser les ordres
     const newSteps = steps
       .filter(s => s.id !== id)
-      .map((s, index) => ({ ...s, order: index })); // Réorganiser les ordres
+      .map((s, index) => ({ ...s, order: index }));
     setSteps(newSteps);
   };
 
@@ -130,7 +126,6 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
     ));
   };
 
-  // Gestion des conseils et sécurité au niveau des sous-étapes
   const addStepTip = (stepId: string) => {
     setSteps(steps.map(s =>
       s.id === stepId
@@ -194,7 +189,6 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
     ));
   };
 
-
   const getDifficultyColor = (diff: DifficultyLevel) => {
     switch (diff) {
       case 'easy': return 'bg-green-500';
@@ -215,20 +209,31 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
 
   return (
     <div className="border border-gray-700/50 rounded-lg bg-gray-900/30">
-      {/* Header - Collapsed View */}
+      {/* Header - Collapsible */}
       <div
-        className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-800/30 rounded-t-lg"
+        className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-800/30 rounded-t-lg transition-colors"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex-1 flex items-center gap-3">
-          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Phase {phaseNumber}</span>
-          <span className="font-semibold text-gray-900 dark:text-white">{phase.title}</span>
-          <Badge className={`${getDifficultyColor(phase.difficulty)} text-white text-xs`}>
-            {getDifficultyLabel(phase.difficulty)}
+          <GripVertical className="h-5 w-5 text-gray-500 cursor-move" />
+          <span className="text-sm font-medium text-gray-400">Phase {phaseNumber}</span>
+          <span className="font-semibold text-white">{title || 'Sans titre'}</span>
+          <Badge className={`${getDifficultyColor(difficulty)} text-white text-xs`}>
+            {getDifficultyLabel(difficulty)}
           </Badge>
+          <span className="text-sm text-gray-400">{estimatedTime} min</span>
+          {steps.length > 0 && (
+            <span className="text-xs text-gray-500">({steps.length} sous-étape{steps.length > 1 ? 's' : ''})</span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
+          {isSaving && (
+            <Cloud className="h-4 w-4 text-gray-400 animate-pulse" />
+          )}
+          {lastSaved && !isSaving && (
+            <Cloud className="h-4 w-4 text-green-500" />
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -247,446 +252,460 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
         </div>
       </div>
 
-      {/* Expanded View - Editor */}
+      {/* Expanded Content */}
       {isExpanded && (
-        <div className="border-t border-gray-200 dark:border-gray-700">
-          {/* Tabs */}
-          <div className="flex overflow-x-auto border-b border-gray-700/50 bg-gray-900/50">
-            <button
-              onClick={() => setActiveTab('info')}
-              className={`px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
-                activeTab === 'info'
-                  ? 'border-b-2 border-primary text-primary'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              <Package className="h-4 w-4 inline mr-2" />
-              Informations
-            </button>
-            <button
-              onClick={() => setActiveTab('steps')}
-              className={`px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
-                activeTab === 'steps'
-                  ? 'border-b-2 border-primary text-primary'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              <List className="h-4 w-4 inline mr-2" />
-              Sous-étapes ({steps.length})
-            </button>
-          </div>
+        <div className="border-t border-gray-700/50">
+          <div className="p-6 space-y-6">
+            {/* Informations de base */}
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Numéro de phase
+                </label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={phaseNumber}
+                  onChange={(e) => setPhaseNumber(parseInt(e.target.value) || 1)}
+                />
+              </div>
 
-          {/* Tab Content */}
-          <div className="p-4 space-y-4">
-            {activeTab === 'info' && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Numéro de phase
-                  </label>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={phaseNumber}
-                    onChange={(e) => setPhaseNumber(parseInt(e.target.value) || 1)}
-                    placeholder="Numéro de phase..."
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Difficulté
+                </label>
+                <select
+                  value={difficulty}
+                  onChange={(e) => setDifficulty(e.target.value as DifficultyLevel)}
+                  className="w-full rounded-md border border-gray-700/30 bg-transparent px-3 py-2 text-sm text-white"
+                >
+                  <option value="easy">Facile</option>
+                  <option value="medium">Moyen</option>
+                  <option value="hard">Difficile</option>
+                </select>
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Titre de la phase *
-                  </label>
-                  <Input
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Nom de la phase..."
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Temps estimé (min)
+                </label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={estimatedTime}
+                  onChange={(e) => setEstimatedTime(parseInt(e.target.value) || 0)}
+                />
+              </div>
+            </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Difficulté
-                    </label>
-                    <select
-                      value={difficulty}
-                      onChange={(e) => setDifficulty(e.target.value as DifficultyLevel)}
-                      className="w-full rounded-md border border-gray-700/30 bg-transparent px-3 py-2 text-sm text-white"
-                    >
-                      <option value="easy">Facile</option>
-                      <option value="medium">Moyen</option>
-                      <option value="hard">Difficile</option>
-                    </select>
-                  </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Titre de la phase *
+              </label>
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Nom de la phase..."
+              />
+            </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Temps estimé (min)
-                    </label>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={estimatedTime}
-                      onChange={(e) => setEstimatedTime(parseInt(e.target.value) || 0)}
+            {/* Sous-étapes */}
+            <div className="border-t border-gray-700/50 pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-white">
+                  Sous-étapes ({steps.length})
+                </h3>
+                <Button onClick={addStep} size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Ajouter une sous-étape
+                </Button>
+              </div>
+
+              {steps.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">
+                  Aucune sous-étape. Cliquez sur "Ajouter une sous-étape" pour commencer.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {steps.map((step, idx) => (
+                    <SubStepItem
+                      key={step.id}
+                      step={step}
+                      index={idx}
+                      availableTools={availableTools}
+                      onUpdate={(updates) => updateStep(step.id, updates)}
+                      onRemove={() => removeStep(step.id)}
+                      onAddImage={(images) => addStepImage(step.id, images)}
+                      onRemoveImage={(imageId) => removeStepImage(step.id, imageId)}
+                      onAddTip={() => addStepTip(step.id)}
+                      onUpdateTip={(tipIdx, value) => updateStepTip(step.id, tipIdx, value)}
+                      onRemoveTip={(tipIdx) => removeStepTip(step.id, tipIdx)}
+                      onAddSafetyNote={() => addStepSafetyNote(step.id)}
+                      onUpdateSafetyNote={(noteId, updates) => updateStepSafetyNote(step.id, noteId, updates)}
+                      onRemoveSafetyNote={(noteId) => removeStepSafetyNote(step.id, noteId)}
+                      onUpdateTool={(tool) => updateStepTool(step.id, tool)}
                     />
-                  </div>
+                  ))}
                 </div>
+              )}
+            </div>
 
-              </>
-            )}
-
-
-            {activeTab === 'steps' && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
-                    Sous-étapes détaillées
-                  </label>
-                  <div className="space-y-6">
-                    {steps.map((step, idx) => (
-                      <div key={step.id} className="p-6 bg-transparent rounded-xl border border-gray-700/30 hover:border-gray-600/50 transition-all">
-                        <div className="flex items-center gap-3 mb-4">
-                          <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-white text-sm font-bold">
-                            {idx + 1}
-                          </span>
-                          <Input
-                            value={step.title}
-                            onChange={(e) => updateStep(step.id, { title: e.target.value })}
-                            placeholder="Titre de la sous-étape..."
-                            className="flex-1"
-                          />
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeStep(step.id)}
-                            className="hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600"
-                          >
-                            <X className="h-5 w-5" />
-                          </Button>
-                        </div>
-                        <textarea
-                          value={step.description}
-                          onChange={(e) => updateStep(step.id, { description: e.target.value })}
-                          placeholder="Description détaillée de cette sous-étape..."
-                          rows={3}
-                          className="w-full rounded-lg border border-gray-700/30 bg-transparent px-4 py-3 text-sm text-white mb-4 focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                        />
-
-                        {/* Step Images */}
-                        <div className="mt-2">
-                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                            Images de l'étape
-                          </label>
-                          <div className="flex flex-wrap gap-2 mb-2">
-                            {(step.images || []).map((img) => (
-                              <div key={img.imageId} className="relative group">
-                                <img
-                                  src={img.image.url || URL.createObjectURL(img.image.blob)}
-                                  alt={img.description || 'Image'}
-                                  className="h-20 w-20 object-cover rounded border border-gray-300 dark:border-gray-600"
-                                />
-                                <button
-                                  onClick={() => removeStepImage(step.id, img.imageId)}
-                                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                          <div
-                            onClick={() => {
-                              const input = document.createElement('input');
-                              input.type = 'file';
-                              input.accept = 'image/*';
-                              input.multiple = true;
-                              input.onchange = async (e) => {
-                                const files = Array.from((e.target as HTMLInputElement).files || []);
-                                const validImages: AnnotatedImage[] = [];
-
-                                for (const file of files) {
-                                  // Vérifier la taille (15 MB max)
-                                  if (file.size > 15 * 1024 * 1024) {
-                                    toast.error(`${file.name} est trop volumineux (max 15 MB)`);
-                                    continue;
-                                  }
-
-                                  try {
-                                    // Upload l'image vers ImgBB
-                                    console.log(`Uploading ${file.name} to ImgBB...`);
-                                    const imageUrl = await uploadImageToHost(file);
-                                    console.log(`Image uploaded successfully: ${imageUrl}`);
-
-                                    const img = new Image();
-                                    const url = URL.createObjectURL(file);
-                                    await new Promise((resolve) => {
-                                      img.onload = resolve;
-                                      img.src = url;
-                                    });
-                                    URL.revokeObjectURL(url);
-
-                                    validImages.push({
-                                      imageId: crypto.randomUUID(),
-                                      image: {
-                                        id: crypto.randomUUID(),
-                                        name: file.name,
-                                        blob: file,
-                                        size: file.size,
-                                        mimeType: file.type,
-                                        width: img.width,
-                                        height: img.height,
-                                        createdAt: new Date(),
-                                        updatedAt: new Date(),
-                                        url: imageUrl, // URL hébergée sur ImgBB
-                                      },
-                                      annotations: [],
-                                      description: ''
-                                    });
-                                  } catch (error: any) {
-                                    console.error(`Error uploading ${file.name}:`, error);
-                                    toast.error(`Erreur pour ${file.name}: ${error.message}`);
-                                  }
-                                }
-
-                                if (validImages.length > 0) {
-                                  addStepImage(step.id, validImages);
-                                  toast.success(`${validImages.length} image(s) ajoutée(s)`);
-                                }
-                              };
-                              input.click();
-                            }}
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={async (e) => {
-                              e.preventDefault();
-                              const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
-                              const validImages: AnnotatedImage[] = [];
-
-                              for (const file of files) {
-                                // Vérifier la taille (15 MB max)
-                                if (file.size > 15 * 1024 * 1024) {
-                                  toast.error(`${file.name} est trop volumineux (max 15 MB)`);
-                                  continue;
-                                }
-
-                                try {
-                                  // Upload l'image vers ImgBB
-                                  console.log(`Uploading ${file.name} to ImgBB...`);
-                                  const imageUrl = await uploadImageToHost(file);
-                                  console.log(`Image uploaded successfully: ${imageUrl}`);
-
-                                  const img = new Image();
-                                  const url = URL.createObjectURL(file);
-                                  await new Promise((resolve) => {
-                                    img.onload = resolve;
-                                    img.src = url;
-                                  });
-                                  URL.revokeObjectURL(url);
-
-                                  validImages.push({
-                                    imageId: crypto.randomUUID(),
-                                    image: {
-                                      id: crypto.randomUUID(),
-                                      name: file.name,
-                                      blob: file,
-                                      size: file.size,
-                                      mimeType: file.type,
-                                      width: img.width,
-                                      height: img.height,
-                                      createdAt: new Date(),
-                                      updatedAt: new Date(),
-                                      url: imageUrl, // URL hébergée sur ImgBB
-                                    },
-                                    annotations: [],
-                                    description: ''
-                                  });
-                                } catch (error: any) {
-                                  console.error(`Error uploading ${file.name}:`, error);
-                                  toast.error(`Erreur pour ${file.name}: ${error.message}`);
-                                }
-                              }
-
-                              if (validImages.length > 0) {
-                                addStepImage(step.id, validImages);
-                                toast.success(`${validImages.length} image(s) ajoutée(s)`);
-                              }
-                            }}
-                            className="border-2 border-dashed border-gray-700/30 rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer"
-                          >
-                            <p className="text-sm text-gray-400">Cliquez ou glissez-déposez des images ici</p>
-                          </div>
-                        </div>
-
-                        {/* Outil pour cette sous-étape */}
-                        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                            <Wrench className="h-4 w-4 inline mr-2" />
-                            Outil requis (optionnel)
-                          </label>
-                          {step.tool ? (
-                            <div className="flex items-center justify-between p-4 bg-transparent rounded-lg border border-gray-700/30">
-                              <div className="flex items-center gap-3">
-                                <Wrench className="h-5 w-5 text-primary" />
-                                <div>
-                                  <div className="text-sm font-semibold text-gray-900 dark:text-white">{step.tool.name}</div>
-                                  <div className="text-xs text-gray-500 dark:text-gray-400">{step.tool.category}</div>
-                                </div>
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => updateStepTool(step.id, null)}
-                                className="hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600"
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <select
-                              value={step.toolId || ''}
-                              onChange={(e) => {
-                                const toolId = e.target.value;
-                                const tool = availableTools?.find(t => t.id === toolId);
-                                updateStepTool(step.id, tool || null);
-                              }}
-                              className="w-full rounded-lg border border-gray-700/30 bg-transparent px-4 py-3 text-sm font-medium text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                            >
-                              <option value="">Aucun outil</option>
-                              {availableTools?.map(tool => (
-                                <option key={tool.id} value={tool.id}>{tool.name}</option>
-                              ))}
-                            </select>
-                          )}
-                        </div>
-
-                        {/* Conseils pour cette sous-étape */}
-                        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                            <Lightbulb className="h-4 w-4 inline mr-2 text-yellow-500" />
-                            Conseils pratiques
-                          </label>
-                          <div className="space-y-3">
-                            {(step.tips || []).map((tip, tipIdx) => (
-                              <div key={tipIdx} className="flex gap-2">
-                                <Input
-                                  value={tip}
-                                  onChange={(e) => updateStepTip(step.id, tipIdx, e.target.value)}
-                                  placeholder="Conseil..."
-                                  className="text-sm"
-                                />
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => removeStepTip(step.id, tipIdx)}
-                                >
-                                  <X className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            ))}
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => addStepTip(step.id)}
-                              className="mt-1"
-                            >
-                              <Plus className="h-4 w-4 mr-2" />
-                              Ajouter un conseil
-                            </Button>
-                          </div>
-                        </div>
-
-                        {/* Consignes de sécurité pour cette sous-étape */}
-                        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                            <AlertTriangle className="h-4 w-4 inline mr-2 text-orange-500" />
-                            Consignes de sécurité
-                          </label>
-                          <div className="space-y-3">
-                            {(step.safetyNotes || []).map((note) => (
-                              <div key={note.id} className="p-4 bg-transparent border-2 border-orange-500/30 rounded-lg">
-                                <div className="flex gap-3 items-start mb-3">
-                                  <select
-                                    value={note.type}
-                                    onChange={(e) => updateStepSafetyNote(step.id, note.id, { type: e.target.value as any })}
-                                    className="rounded-md border border-orange-500/30 bg-transparent px-3 py-2 text-sm font-medium text-white"
-                                  >
-                                    <option value="info">Information</option>
-                                    <option value="warning">Attention</option>
-                                    <option value="danger">Danger</option>
-                                    <option value="mandatory">Obligatoire</option>
-                                    <option value="forbidden">Interdit</option>
-                                  </select>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => removeStepSafetyNote(step.id, note.id)}
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                                <Input
-                                  value={note.content}
-                                  onChange={(e) => updateStepSafetyNote(step.id, note.id, { content: e.target.value })}
-                                  placeholder="Consigne de sécurité..."
-                                  className="text-sm"
-                                />
-                              </div>
-                            ))}
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => addStepSafetyNote(step.id)}
-                              className="mt-1"
-                            >
-                              <Plus className="h-4 w-4 mr-2" />
-                              Ajouter une consigne
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    <Button
-                      variant="secondary"
-                      onClick={addStep}
-                      className="w-full mt-4 py-6 border-2 border-dashed hover:border-primary hover:bg-primary/5 transition-all"
-                    >
-                      <Plus className="h-5 w-5 mr-2" />
-                      Ajouter une sous-étape
-                    </Button>
-                  </div>
-                </div>
-
-              </>
-            )}
-          </div>
-
-          {/* Footer Actions */}
-          <div className="flex justify-between gap-2 p-4 bg-gray-900/50 border-t border-gray-700/50">
-            <div className="flex items-center gap-3">
+            {/* Actions */}
+            <div className="flex justify-between items-center pt-4 border-t border-gray-700/50">
               <Button variant="secondary" size="sm" onClick={handleSaveAsTemplate}>
                 <Save className="h-4 w-4 mr-2" />
                 Sauvegarder comme template
               </Button>
-              {/* Auto-save indicator */}
-              {isSaving ? (
-                <div className="flex items-center gap-2 text-sm text-gray-400">
-                  <Cloud className="h-4 w-4 animate-pulse" />
-                  <span>Sauvegarde...</span>
-                </div>
-              ) : lastSaved ? (
-                <div className="flex items-center gap-2 text-sm text-gray-400">
-                  <Cloud className="h-4 w-4 text-green-500" />
-                  <span>Sauvegardé</span>
-                </div>
-              ) : null}
-            </div>
-            <div className="flex gap-2">
-              <Button variant="ghost" onClick={() => setIsExpanded(false)}>
-                Annuler
-              </Button>
+
               <Button onClick={handleSave}>
-                <Plus className="h-4 w-4 mr-2" />
+                <Save className="h-4 w-4 mr-2" />
                 Enregistrer les modifications
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Composant pour une sous-étape (collapsible)
+interface SubStepItemProps {
+  step: SubStep;
+  index: number;
+  availableTools?: Tool[];
+  onUpdate: (updates: Partial<SubStep>) => void;
+  onRemove: () => void;
+  onAddImage: (images: AnnotatedImage[]) => void;
+  onRemoveImage: (imageId: string) => void;
+  onAddTip: () => void;
+  onUpdateTip: (index: number, value: string) => void;
+  onRemoveTip: (index: number) => void;
+  onAddSafetyNote: () => void;
+  onUpdateSafetyNote: (noteId: string, updates: Partial<SafetyNote>) => void;
+  onRemoveSafetyNote: (noteId: string) => void;
+  onUpdateTool: (tool: Tool | null) => void;
+}
+
+function SubStepItem({
+  step,
+  index,
+  availableTools,
+  onUpdate,
+  onRemove,
+  onAddImage,
+  onRemoveImage,
+  onAddTip,
+  onUpdateTip,
+  onRemoveTip,
+  onAddSafetyNote,
+  onUpdateSafetyNote,
+  onRemoveSafetyNote,
+  onUpdateTool,
+}: SubStepItemProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const handleImageUpload = async (files: File[]) => {
+    const validImages: AnnotatedImage[] = [];
+
+    for (const file of files) {
+      if (file.size > 15 * 1024 * 1024) {
+        toast.error(`${file.name} est trop volumineux (max 15 MB)`);
+        continue;
+      }
+
+      try {
+        console.log(`Uploading ${file.name} to ImgBB...`);
+        const imageUrl = await uploadImageToHost(file);
+        console.log(`Image uploaded successfully: ${imageUrl}`);
+
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        await new Promise((resolve) => {
+          img.onload = resolve;
+          img.src = url;
+        });
+        URL.revokeObjectURL(url);
+
+        validImages.push({
+          imageId: crypto.randomUUID(),
+          image: {
+            id: crypto.randomUUID(),
+            name: file.name,
+            blob: file,
+            size: file.size,
+            mimeType: file.type,
+            width: img.width,
+            height: img.height,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            url: imageUrl,
+          },
+          annotations: [],
+          description: ''
+        });
+      } catch (error: any) {
+        console.error(`Error uploading ${file.name}:`, error);
+        toast.error(`Erreur pour ${file.name}: ${error.message}`);
+      }
+    }
+
+    if (validImages.length > 0) {
+      onAddImage(validImages);
+      toast.success(`${validImages.length} image(s) ajoutée(s)`);
+    }
+  };
+
+  return (
+    <div className="border border-gray-700/30 rounded-lg bg-[#1a1a1a]">
+      {/* Header */}
+      <div
+        className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-800/20"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center gap-3 flex-1">
+          <span className="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-white text-sm font-bold">
+            {index + 1}
+          </span>
+          <Input
+            value={step.title}
+            onChange={(e) => {
+              e.stopPropagation();
+              onUpdate({ title: e.target.value });
+            }}
+            onClick={(e) => e.stopPropagation()}
+            placeholder="Titre de la sous-étape..."
+            className="flex-1"
+          />
+          {/* Indicateurs rapides */}
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            {(step.images?.length || 0) > 0 && (
+              <span className="flex items-center gap-1">
+                📷 {step.images?.length}
+              </span>
+            )}
+            {step.tool && (
+              <span className="flex items-center gap-1">
+                🔧
+              </span>
+            )}
+            {(step.tips?.length || 0) > 0 && (
+              <span className="flex items-center gap-1">
+                💡 {step.tips?.length}
+              </span>
+            )}
+            {(step.safetyNotes?.length || 0) > 0 && (
+              <span className="flex items-center gap-1">
+                ⚠️ {step.safetyNotes?.length}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+          >
+            <X className="h-4 w-4 text-red-500" />
+          </Button>
+          {isExpanded ? (
+            <ChevronUp className="h-4 w-4 text-gray-400" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-gray-400" />
+          )}
+        </div>
+      </div>
+
+      {/* Expanded Details */}
+      {isExpanded && (
+        <div className="px-4 pb-4 space-y-4 border-t border-gray-700/30 pt-4">
+          {/* Description */}
+          <div>
+            <label className="block text-xs font-medium text-gray-400 mb-1">
+              Description
+            </label>
+            <textarea
+              value={step.description}
+              onChange={(e) => onUpdate({ description: e.target.value })}
+              placeholder="Description détaillée de cette sous-étape..."
+              rows={3}
+              className="w-full rounded-lg border border-gray-700/30 bg-transparent px-3 py-2 text-sm text-white focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
+          </div>
+
+          {/* Images */}
+          <div>
+            <label className="block text-xs font-medium text-gray-400 mb-2">
+              Images ({step.images?.length || 0})
+            </label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {(step.images || []).map((img) => (
+                <div key={img.imageId} className="relative group">
+                  <img
+                    src={img.image.url || URL.createObjectURL(img.image.blob)}
+                    alt={img.description || 'Image'}
+                    className="h-16 w-16 object-cover rounded border border-gray-600"
+                  />
+                  <button
+                    onClick={() => onRemoveImage(img.imageId)}
+                    className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div
+              onClick={() => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.multiple = true;
+                input.onchange = async (e) => {
+                  const files = Array.from((e.target as HTMLInputElement).files || []);
+                  await handleImageUpload(files);
+                };
+                input.click();
+              }}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={async (e) => {
+                e.preventDefault();
+                const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+                await handleImageUpload(files);
+              }}
+              className="border-2 border-dashed border-gray-700/30 rounded-lg p-3 text-center hover:border-primary/50 transition-colors cursor-pointer"
+            >
+              <p className="text-xs text-gray-500">Cliquez ou glissez-déposez des images</p>
+            </div>
+          </div>
+
+          {/* Outil */}
+          <div>
+            <label className="block text-xs font-medium text-gray-400 mb-2">
+              <Wrench className="h-3 w-3 inline mr-1" />
+              Outil requis
+            </label>
+            {step.tool ? (
+              <div className="flex items-center justify-between p-2 bg-gray-800/30 rounded border border-gray-700/30">
+                <div className="flex items-center gap-2">
+                  <Wrench className="h-4 w-4 text-primary" />
+                  <div>
+                    <div className="text-xs font-medium text-white">{step.tool.name}</div>
+                    <div className="text-xs text-gray-500">{step.tool.category}</div>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onUpdateTool(null)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            ) : (
+              <select
+                value={step.toolId || ''}
+                onChange={(e) => {
+                  const toolId = e.target.value;
+                  const tool = availableTools?.find(t => t.id === toolId);
+                  onUpdateTool(tool || null);
+                }}
+                className="w-full rounded border border-gray-700/30 bg-transparent px-2 py-1.5 text-xs text-white"
+              >
+                <option value="">Aucun outil</option>
+                {availableTools?.map(tool => (
+                  <option key={tool.id} value={tool.id}>{tool.name}</option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {/* Conseils */}
+          <div>
+            <label className="block text-xs font-medium text-gray-400 mb-2">
+              <Lightbulb className="h-3 w-3 inline mr-1 text-yellow-500" />
+              Conseils pratiques
+            </label>
+            <div className="space-y-2">
+              {(step.tips || []).map((tip, tipIdx) => (
+                <div key={tipIdx} className="flex gap-2">
+                  <Input
+                    value={tip}
+                    onChange={(e) => onUpdateTip(tipIdx, e.target.value)}
+                    placeholder="Conseil..."
+                    className="text-xs"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onRemoveTip(tipIdx)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={onAddTip}
+                className="text-xs"
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Ajouter un conseil
+              </Button>
+            </div>
+          </div>
+
+          {/* Sécurité */}
+          <div>
+            <label className="block text-xs font-medium text-gray-400 mb-2">
+              <AlertTriangle className="h-3 w-3 inline mr-1 text-orange-500" />
+              Consignes de sécurité
+            </label>
+            <div className="space-y-2">
+              {(step.safetyNotes || []).map((note) => (
+                <div key={note.id} className="p-2 bg-orange-500/10 border border-orange-500/30 rounded">
+                  <div className="flex gap-2 items-start mb-2">
+                    <select
+                      value={note.type}
+                      onChange={(e) => onUpdateSafetyNote(note.id, { type: e.target.value as any })}
+                      className="rounded border border-orange-500/30 bg-transparent px-2 py-1 text-xs text-white"
+                    >
+                      <option value="info">Information</option>
+                      <option value="warning">Attention</option>
+                      <option value="danger">Danger</option>
+                      <option value="mandatory">Obligatoire</option>
+                      <option value="forbidden">Interdit</option>
+                    </select>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onRemoveSafetyNote(note.id)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <Input
+                    value={note.content}
+                    onChange={(e) => onUpdateSafetyNote(note.id, { content: e.target.value })}
+                    placeholder="Consigne de sécurité..."
+                    className="text-xs"
+                  />
+                </div>
+              ))}
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={onAddSafetyNote}
+                className="text-xs"
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Ajouter une consigne
               </Button>
             </div>
           </div>
