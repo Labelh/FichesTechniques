@@ -112,6 +112,21 @@ export interface Material extends BaseEntity {
   category?: string;
 }
 
+export interface Consumable {
+  id: string;
+  designation: string;
+  description?: string;
+  category?: string;
+  quantity?: number;
+  unit?: string;
+  price?: number;
+  reference?: string;
+  image_url?: string;
+  photo_url?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface SafetyNote {
   id: string;
   type: 'warning' | 'danger' | 'info' | 'mandatory' | 'forbidden';
