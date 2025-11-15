@@ -654,7 +654,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
-              className="max-w-full max-h-full cursor-crosshair shadow-2xl"
+              className="max-w-full max-h-full cursor-crosshair 2xl"
               style={{ imageRendering: 'crisp-edges' }}
             />
             <canvas
@@ -667,7 +667,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
               }}
             />
             {edgeDetectionEnabled && (
-              <div className="absolute top-4 left-4 bg-green-600 text-white px-3 py-1 rounded-full text-sm font-medium shadow-lg flex items-center gap-2">
+              <div className="absolute top-4 left-4 bg-green-600 text-white px-3 py-1 rounded-full text-sm font-medium  flex items-center gap-2">
                 <Scan className="h-4 w-4" />
                 <span>Détection d'arêtes activée</span>
               </div>

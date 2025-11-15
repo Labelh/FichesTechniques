@@ -1,7 +1,0 @@
-[
-  {
-    "origin": ["https://labelh.github.io", "http://localhost:5173", "http://localhost:4173"],
-    "method": ["GET", "POST", "PUT", "DELETE", "HEAD"],
-    "maxAgeSeconds": 3600
-  }
-]

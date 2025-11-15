@@ -44,7 +44,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
     }
   };
 
-  // Auto-save
+  // Auto-save avec délai de 2 secondes
   const { isSaving, lastSaved } = useAutoSave(
     {
       onSave: async () => {
@@ -56,7 +56,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
           steps,
         });
       },
-      delay: 600000, // 10 minutes
+      delay: 2000, // 2 secondes
       enabled: true,
     },
     [title, phaseNumber, difficulty, estimatedTime, steps]

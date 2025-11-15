@@ -11,7 +11,7 @@ export default function Header() {
   const { toggleSidebar } = useAppStore();
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-16 bg-[#1f1f1f] border-b border-[#3a3a3a] shadow-sm z-[1050]">
+    <header className="fixed top-0 left-0 right-0 h-16 bg-[#1f1f1f] border-b border-[#3a3a3a]  z-[1050]">
       <div className="container-fluid h-full px-4">
         <div className="flex items-center h-full">
           {/* Menu Button */}
@@ -26,7 +26,7 @@ export default function Header() {
 
           {/* Logo & Title */}
           <Link to="/" className="no-underline flex items-center gap-3 mr-auto">
-            <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/30">
+            <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-primary/80  /30">
               <FileText className="text-white" size={20} />
             </div>
             <div>

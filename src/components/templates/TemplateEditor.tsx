@@ -47,7 +47,7 @@ export default function TemplateEditor({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-      <div className="bg-[#2a2a2a] rounded-lg shadow-xl max-w-2xl w-full border border-[#3a3a3a]">
+      <div className="bg-[#2a2a2a] rounded-lg  max-w-2xl w-full border border-[#3a3a3a]">
         {/* Header */}
         <div className="p-6 border-b border-[#3a3a3a] flex items-center justify-between">
           <div>

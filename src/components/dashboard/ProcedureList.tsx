@@ -1,5 +1,5 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { Edit, Eye, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { formatRelativeDate } from '@/lib/utils';
 import { deleteProcedure } from '@/services/procedureService';
@@ -30,7 +30,7 @@ export default function ProcedureList({ procedures }: ProcedureListProps) {
   };
 
   return (
-    <div className="bg-[#2a2a2a] rounded-xl border border-[#3a3a3a] overflow-hidden">
+    <div className="bg-[#1a1a1a] rounded-xl border border-gray-700 overflow-hidden">
       <table className="table">
         <thead>
           <tr>
@@ -44,8 +44,8 @@ export default function ProcedureList({ procedures }: ProcedureListProps) {
           {procedures.map((procedure) => (
             <tr
               key={procedure.id}
-              onClick={() => navigate(`/procedures/${procedure.id}`)}
-              className="cursor-pointer hover:bg-[#303030] transition-colors"
+              onClick={() => navigate(`/procedures/${procedure.id}/edit`)}
+              className="cursor-pointer hover:bg-[#242424] transition-colors"
             >
               <td className="font-mono text-sm text-gray-400">
                 {procedure.reference || '-'}
@@ -58,16 +58,6 @@ export default function ProcedureList({ procedures }: ProcedureListProps) {
               </td>
               <td>
                 <div className="flex items-center justify-end gap-2">
-                  <Link to={`/procedures/${procedure.id}`} onClick={(e) => e.stopPropagation()}>
-                    <Button variant="ghost" size="icon" title="Voir">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </Link>
-                  <Link to={`/procedures/${procedure.id}/edit`} onClick={(e) => e.stopPropagation()}>
-                    <Button variant="ghost" size="icon" title="Modifier">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  </Link>
                   <Button
                     variant="ghost"
                     size="icon"

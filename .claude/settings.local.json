@@ -28,7 +28,9 @@
       "Bash(npm run deploy:*)",
       "Bash(npm run:*)",
       "Bash(gh run:*)",
-      "Bash(gh workflow:*)"
+      "Bash(gh workflow:*)",
+      "Bash(git clean:*)",
+      "Bash(xargs:*)"
     ],
     "deny": [],
     "ask": []

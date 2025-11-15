@@ -60,7 +60,7 @@ export default function Sidebar() {
         {/* New Procedure Button */}
         <div className="p-4">
           <Link to="/procedures/new" className="block">
-            <Button className="w-full shadow-md" size="lg">
+            <Button className="w-full " size="lg">
               <Plus className="mr-2" size={20} />
               Nouvelle Procédure
             </Button>

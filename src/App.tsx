@@ -6,7 +6,6 @@ import { testFirestoreConnection } from './test-firestore';
 import Layout from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
 import ProcedureEditor from './pages/ProcedureEditor';
-import ProcedureView from './pages/ProcedureView';
 import ToolsLibrary from './pages/ToolsLibrary';
 import Templates from './pages/Templates';
 import Settings from './pages/Settings';
@@ -36,7 +35,6 @@ function App() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
-          <Route path="procedures/:id" element={<ProcedureView />} />
           <Route path="procedures/:id/edit" element={<ProcedureEditor />} />
           <Route path="procedures/new" element={<ProcedureEditor />} />
           <Route path="tools" element={<ToolsLibrary />} />

@@ -73,7 +73,7 @@ export default {
       },
       boxShadow: {
         'glow': '0 0 0 3px rgba(249, 55, 5, 0.1)',
-        'lift': '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+        'none': 'none',
       },
       transitionProperty: {
         'height': 'height',

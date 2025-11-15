@@ -141,7 +141,7 @@ export default function Templates() {
             return (
               <div
                 key={template.id}
-                className="bg-[#2a2a2a] rounded-lg border border-[#3a3a3a] p-5 hover:shadow-lg transition-shadow"
+                className="bg-[#2a2a2a] rounded-lg border border-[#3a3a3a] p-5 hover: transition-shadow"
               >
                 {/* Header */}
                 <div className="flex items-start justify-between mb-3">
