@@ -8,31 +8,48 @@ export default {
   theme: {
     extend: {
       colors: {
-        // GestionDesStocks color palette
+        // Palette de gris neutres (sans teinte bleue)
+        gray: {
+          50: '#fafafa',
+          100: '#f5f5f5',
+          200: '#e5e5e5',
+          300: '#d4d4d4',
+          400: '#a3a3a3',
+          500: '#737373',
+          600: '#525252',
+          700: '#404040',
+          800: '#262626',
+          900: '#171717',
+        },
+        // Palette rouge-orange principale
         primary: {
           DEFAULT: 'rgb(249, 55, 5)',
           hover: 'rgb(230, 45, 0)',
         },
+        // Backgrounds en gris très foncé
         background: {
-          DEFAULT: '#1f1f1f',
-          surface: '#2a2a2a',
-          hover: '#303030',
+          DEFAULT: '#1a1a1a',
+          surface: '#242424',
+          hover: '#2e2e2e',
         },
+        // Textes en vrai gris neutre
         text: {
-          primary: '#f1f5f9',
-          secondary: '#808080',
-          muted: '#6b7280',
+          primary: '#f5f5f5',
+          secondary: '#a3a3a3',
+          muted: '#737373',
         },
+        // Bordures en vrai gris neutre
         border: {
-          DEFAULT: 'rgba(148, 163, 184, 0.1)',
-          dark: '#3a3a3a',
-          subtle: 'rgba(75, 85, 99, 0.3)',
+          DEFAULT: 'rgba(64, 64, 64, 0.3)',
+          dark: '#404040',
+          subtle: 'rgba(82, 82, 82, 0.3)',
         },
+        // Statuts avec rouge-orange pour danger
         status: {
           success: '#10b981',
           warning: '#f59e0b',
           danger: 'rgb(249, 55, 5)',
-          info: '#3b82f6',
+          info: '#737373',
         },
       },
       borderRadius: {

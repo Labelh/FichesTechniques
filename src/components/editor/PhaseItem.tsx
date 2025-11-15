@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { updatePhase } from '@/services/procedureService';
 import { createPhaseTemplate } from '@/services/templateService';
+import { uploadImageToHost } from '@/services/imageHostingService';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useTools } from '@/hooks/useTools';
 import type { Phase, DifficultyLevel, SubStep, SafetyNote, AnnotatedImage, Tool } from '@/types';
@@ -381,7 +382,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                             {(step.images || []).map((img) => (
                               <div key={img.imageId} className="relative group">
                                 <img
-                                  src={URL.createObjectURL(img.image.blob)}
+                                  src={img.image.url || URL.createObjectURL(img.image.blob)}
                                   alt={img.description || 'Image'}
                                   className="h-20 w-20 object-cover rounded border border-gray-300 dark:border-gray-600"
                                 />
@@ -411,32 +412,46 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                                     continue;
                                   }
 
-                                  const img = new Image();
-                                  const url = URL.createObjectURL(file);
-                                  await new Promise((resolve) => {
-                                    img.onload = resolve;
-                                    img.src = url;
-                                  });
-                                  validImages.push({
-                                    imageId: crypto.randomUUID(),
-                                    image: {
-                                      id: crypto.randomUUID(),
-                                      name: file.name,
-                                      blob: file,
-                                      size: file.size,
-                                      mimeType: file.type,
-                                      width: img.width,
-                                      height: img.height,
-                                      createdAt: new Date(),
-                                      updatedAt: new Date()
-                                    },
-                                    annotations: [],
-                                    description: ''
-                                  });
+                                  try {
+                                    // Upload l'image vers ImgBB
+                                    console.log(`Uploading ${file.name} to ImgBB...`);
+                                    const imageUrl = await uploadImageToHost(file);
+                                    console.log(`Image uploaded successfully: ${imageUrl}`);
+
+                                    const img = new Image();
+                                    const url = URL.createObjectURL(file);
+                                    await new Promise((resolve) => {
+                                      img.onload = resolve;
+                                      img.src = url;
+                                    });
+                                    URL.revokeObjectURL(url);
+
+                                    validImages.push({
+                                      imageId: crypto.randomUUID(),
+                                      image: {
+                                        id: crypto.randomUUID(),
+                                        name: file.name,
+                                        blob: file,
+                                        size: file.size,
+                                        mimeType: file.type,
+                                        width: img.width,
+                                        height: img.height,
+                                        createdAt: new Date(),
+                                        updatedAt: new Date(),
+                                        url: imageUrl, // URL hébergée sur ImgBB
+                                      },
+                                      annotations: [],
+                                      description: ''
+                                    });
+                                  } catch (error: any) {
+                                    console.error(`Error uploading ${file.name}:`, error);
+                                    toast.error(`Erreur pour ${file.name}: ${error.message}`);
+                                  }
                                 }
 
                                 if (validImages.length > 0) {
                                   addStepImage(step.id, validImages);
+                                  toast.success(`${validImages.length} image(s) ajoutée(s)`);
                                 }
                               };
                               input.click();
@@ -454,32 +469,46 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                                   continue;
                                 }
 
-                                const img = new Image();
-                                const url = URL.createObjectURL(file);
-                                await new Promise((resolve) => {
-                                  img.onload = resolve;
-                                  img.src = url;
-                                });
-                                validImages.push({
-                                  imageId: crypto.randomUUID(),
-                                  image: {
-                                    id: crypto.randomUUID(),
-                                    name: file.name,
-                                    blob: file,
-                                    size: file.size,
-                                    mimeType: file.type,
-                                    width: img.width,
-                                    height: img.height,
-                                    createdAt: new Date(),
-                                    updatedAt: new Date()
-                                  },
-                                  annotations: [],
-                                  description: ''
-                                });
+                                try {
+                                  // Upload l'image vers ImgBB
+                                  console.log(`Uploading ${file.name} to ImgBB...`);
+                                  const imageUrl = await uploadImageToHost(file);
+                                  console.log(`Image uploaded successfully: ${imageUrl}`);
+
+                                  const img = new Image();
+                                  const url = URL.createObjectURL(file);
+                                  await new Promise((resolve) => {
+                                    img.onload = resolve;
+                                    img.src = url;
+                                  });
+                                  URL.revokeObjectURL(url);
+
+                                  validImages.push({
+                                    imageId: crypto.randomUUID(),
+                                    image: {
+                                      id: crypto.randomUUID(),
+                                      name: file.name,
+                                      blob: file,
+                                      size: file.size,
+                                      mimeType: file.type,
+                                      width: img.width,
+                                      height: img.height,
+                                      createdAt: new Date(),
+                                      updatedAt: new Date(),
+                                      url: imageUrl, // URL hébergée sur ImgBB
+                                    },
+                                    annotations: [],
+                                    description: ''
+                                  });
+                                } catch (error: any) {
+                                  console.error(`Error uploading ${file.name}:`, error);
+                                  toast.error(`Erreur pour ${file.name}: ${error.message}`);
+                                }
                               }
 
                               if (validImages.length > 0) {
                                 addStepImage(step.id, validImages);
+                                toast.success(`${validImages.length} image(s) ajoutée(s)`);
                               }
                             }}
                             className="border-2 border-dashed border-gray-700/30 rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer"
