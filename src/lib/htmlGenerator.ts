@@ -35,7 +35,7 @@ export async function generateHTML(
             top: 0;
             bottom: 0;
             width: 280px;
-            background: white;
+            background: #f5f5f5;
             border-right: 1px solid #e0e0e0;
             overflow-y: auto;
             padding: 20px;
@@ -204,7 +204,6 @@ export async function generateHTML(
             background: #fff5f5;
             padding: 30px;
             margin-bottom: 30px;
-            border-left: 3px solid #ef4444;
             border-radius: 4px;
         }
 
@@ -213,21 +212,29 @@ export async function generateHTML(
             margin-bottom: 20px;
             font-size: 1.3rem;
             font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        }
+
+        .defects-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
         }
 
         .defect-item {
             background: white;
             padding: 15px;
-            margin-bottom: 15px;
-            border-left: 3px solid #f87171;
             border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         .defect-item:last-child {
             margin-bottom: 0;
+        }
+
+        @media print {
+            .defects-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
         .defect-description {
@@ -494,7 +501,7 @@ export async function generateHTML(
     <!-- Sidebar Navigation -->
     <div class="sidebar">
         <h2>Navigation</h2>
-        ${generateSidebarNav(phases)}
+        ${generateSidebarNav(phases, !!(procedure.defects && procedure.defects.length > 0))}
     </div>
 
     <!-- Contenu principal -->
@@ -546,12 +553,10 @@ export async function generateHTML(
 /**
  * Génère la navigation de la sidebar
  */
-function generateSidebarNav(phases: Phase[]): string {
-  if (!phases || phases.length === 0) {
-    return '<p style="color: #999;">Aucune phase</p>';
-  }
-
-  return phases.map((phase, phaseIndex) => `
+function generateSidebarNav(phases: Phase[], hasDefects: boolean = false): string {
+  const phasesNav = !phases || phases.length === 0
+    ? '<p style="color: #999;">Aucune phase</p>'
+    : phases.map((phase, phaseIndex) => `
     <div class="nav-phase">
         <a href="#phase-${phaseIndex + 1}" class="nav-phase-title">
             Phase ${phase.phaseNumber || phaseIndex + 1}: ${escapeHtml(phase.title)}
@@ -569,6 +574,16 @@ function generateSidebarNav(phases: Phase[]): string {
         ` : ''}
     </div>
   `).join('');
+
+  const defectsNav = hasDefects ? `
+    <div class="nav-phase">
+        <a href="#defautheque" class="nav-phase-title" style="color: #ff9800;">
+            Défauthèque
+        </a>
+    </div>
+  ` : '';
+
+  return phasesNav + defectsNav;
 }
 
 /**
@@ -626,26 +641,27 @@ function generateDefects(procedure: Procedure): string {
   }
 
   return `
-    <div class="defects-section">
-        <h2>⚠️ Défauthèque - Défauts possibles sur la pièce</h2>
-        <p style="color: #666; margin-bottom: 20px;">Attention particulière à porter sur les points suivants</p>
+    <div class="defects-section" id="defautheque">
+        <h2>Défauthèque</h2>
 
+        <div class="defects-grid">
         ${procedure.defects.map(defect => `
-        <div class="defect-item">
-            <div class="defect-description">${escapeHtml(defect.description)}</div>
+            <div class="defect-item">
+                <div class="defect-description">${escapeHtml(defect.description)}</div>
 
-            ${defect.images && defect.images.length > 0 ? `
-            <div class="step-images" style="margin-top: 15px;">
-                ${defect.images.map(img => `
-                <div class="step-image">
-                    <img src="${img.image.url}" alt="${escapeHtml(img.description || 'Image du défaut')}">
-                    ${img.description ? `<p class="image-caption">${escapeHtml(img.description)}</p>` : ''}
+                ${defect.images && defect.images.length > 0 ? `
+                <div class="step-images" style="margin-top: 15px;">
+                    ${defect.images.map(img => `
+                    <div class="step-image">
+                        <img src="${img.image.url}" alt="${escapeHtml(img.description || 'Image du défaut')}">
+                        ${img.description ? `<p class="image-caption">${escapeHtml(img.description)}</p>` : ''}
+                    </div>
+                    `).join('')}
                 </div>
-                `).join('')}
+                ` : ''}
             </div>
-            ` : ''}
-        </div>
         `).join('')}
+        </div>
     </div>
   `;
 }

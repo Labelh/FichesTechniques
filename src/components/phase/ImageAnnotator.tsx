@@ -62,10 +62,17 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
 
   // Charger l'image une seule fois
   useEffect(() => {
+    console.log('ImageAnnotator: Chargement image', {
+      hasUrl: !!annotatedImage.image.url,
+      hasBlob: !!annotatedImage.image.blob,
+      url: annotatedImage.image.url,
+    });
+
     const img = new Image();
     img.crossOrigin = 'anonymous';
 
     img.onload = () => {
+      console.log('ImageAnnotator: Image chargée avec succès', { width: img.width, height: img.height });
       imageRef.current = img;
 
       // Configurer les canvas
@@ -79,18 +86,26 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
       }
     };
 
-    img.onerror = () => {
-      console.error('Erreur de chargement de l\'image');
+    img.onerror = (error) => {
+      console.error('ImageAnnotator: Erreur de chargement de l\'image', error);
       toast.error('Erreur de chargement de l\'image');
+      // Ne pas rester bloqué sur l'écran de chargement
+      setImageLoaded(true);
     };
 
     // Déterminer l'URL de l'image
     if (annotatedImage.image.url) {
+      console.log('ImageAnnotator: Utilisation de l\'URL', annotatedImage.image.url);
       img.src = annotatedImage.image.url;
     } else if (annotatedImage.image.blob) {
+      console.log('ImageAnnotator: Utilisation du blob');
       const url = createImageUrl(annotatedImage.image.blob);
       img.src = url;
       return () => URL.revokeObjectURL(url);
+    } else {
+      console.error('ImageAnnotator: Aucune source d\'image disponible (ni url ni blob)');
+      toast.error('Aucune source d\'image disponible');
+      setImageLoaded(true); // Ne pas rester bloqué
     }
   }, [annotatedImage.image.url, annotatedImage.image.blob]);
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, AlertTriangle, Lightbulb, Save, Cloud, GripVertical, Pencil } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, AlertTriangle, Lightbulb, Save, Cloud, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -238,7 +238,6 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex-1 flex items-center gap-3">
-          <GripVertical className="h-5 w-5 text-gray-500 cursor-move" />
           <span className="text-sm font-medium text-gray-400">Phase {phaseNumber}</span>
           <span className="font-semibold text-white">{title || 'Sans titre'}</span>
           <Badge className={`${getDifficultyColor(difficulty)} text-white text-xs`}>
