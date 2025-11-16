@@ -119,32 +119,34 @@ export function prepareForFirestore(data: any): any {
   // Nettoyer les images dans les steps (sous-étapes)
   if (prepared.steps && Array.isArray(prepared.steps)) {
     prepared.steps = prepared.steps.map((step: any) => {
+      const cleanedStep = { ...step };
+
+      // Supprimer l'objet tool complet (on garde seulement toolId et toolName)
+      delete cleanedStep.tool;
+
       if (step.images && Array.isArray(step.images)) {
-        return {
-          ...step,
-          images: step.images.map((img: any) => {
-            if (img.image) {
-              return {
-                ...img,
-                image: {
-                  id: img.image.id,
-                  name: img.image.name,
-                  size: img.image.size,
-                  mimeType: img.image.mimeType,
-                  width: img.image.width,
-                  height: img.image.height,
-                  url: img.image.url, // URL hébergée (ImgBB)
-                  // blob et thumbnail sont retirés
-                  createdAt: img.image.createdAt,
-                  updatedAt: img.image.updatedAt,
-                },
-              };
-            }
-            return img;
-          }),
-        };
+        cleanedStep.images = step.images.map((img: any) => {
+          if (img.image) {
+            return {
+              ...img,
+              image: {
+                id: img.image.id,
+                name: img.image.name,
+                size: img.image.size,
+                mimeType: img.image.mimeType,
+                width: img.image.width,
+                height: img.image.height,
+                url: img.image.url, // URL hébergée (ImgBB)
+                // blob et thumbnail sont retirés
+                createdAt: img.image.createdAt,
+                updatedAt: img.image.updatedAt,
+              },
+            };
+          }
+          return img;
+        });
       }
-      return step;
+      return cleanedStep;
     });
   }
 

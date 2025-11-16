@@ -607,11 +607,10 @@ function generatePhasesHTML(phases: Phase[]): string {
                 </div>
                 <div class="step-description">${escapeHtml(step.description)}</div>
 
-                ${step.toolId && step.tool ? `
+                ${step.toolId && step.toolName ? `
                 <div class="step-tool">
                     <span class="step-tool-label">🔧 Outil:</span>
-                    ${step.tool.reference ? `<strong>${escapeHtml(step.tool.reference)}</strong> - ` : ''}
-                    ${escapeHtml(step.tool.name)}
+                    ${escapeHtml(step.toolName)}
                 </div>
                 ` : ''}
 

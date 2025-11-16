@@ -145,7 +145,8 @@ export interface SubStep {
 
   // Outil spécifique à cette sous-étape
   toolId?: string;
-  tool?: Tool;
+  toolName?: string; // Nom de l'outil (simplifié pour Firestore)
+  tool?: Tool; // Objet complet (uniquement en mémoire, pas sauvegardé)
 
   // Conseils et sécurité par sous-étape
   tips?: string[];

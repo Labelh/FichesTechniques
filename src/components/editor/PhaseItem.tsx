@@ -196,10 +196,15 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
     ));
   };
 
-  const updateStepTool = (stepId: string, tool: Tool | null) => {
+  const updateStepTool = (stepId: string, toolId: string | null, toolName: string | null) => {
     setSteps(steps.map(s =>
       s.id === stepId
-        ? { ...s, toolId: tool?.id, tool: tool || undefined }
+        ? {
+            ...s,
+            toolId: toolId || undefined,
+            toolName: toolName || undefined,
+            tool: undefined // On ne stocke plus l'objet complet
+          }
         : s
     ));
   };
@@ -359,7 +364,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                       onAddSafetyNote={() => addStepSafetyNote(step.id)}
                       onUpdateSafetyNote={(noteId, updates) => updateStepSafetyNote(step.id, noteId, updates)}
                       onRemoveSafetyNote={(noteId) => removeStepSafetyNote(step.id, noteId)}
-                      onUpdateTool={(tool) => updateStepTool(step.id, tool)}
+                      onUpdateTool={(toolId, toolName) => updateStepTool(step.id, toolId, toolName)}
                     />
                   ))}
                 </div>
@@ -401,7 +406,7 @@ interface SubStepItemProps {
   onAddSafetyNote: () => void;
   onUpdateSafetyNote: (noteId: string, updates: Partial<SafetyNote>) => void;
   onRemoveSafetyNote: (noteId: string) => void;
-  onUpdateTool: (tool: Tool | null) => void;
+  onUpdateTool: (toolId: string | null, toolName: string | null) => void;
 }
 
 function SubStepItem({
@@ -502,7 +507,7 @@ function SubStepItem({
                 📷 {step.images?.length}
               </span>
             )}
-            {step.tool && (
+            {step.toolId && (
               <span className="flex items-center gap-1">
                 🔧
               </span>
@@ -608,19 +613,16 @@ function SubStepItem({
               <Wrench className="h-3 w-3 inline mr-1" />
               Outil requis
             </label>
-            {step.tool ? (
+            {step.toolId && step.toolName ? (
               <div className="flex items-center justify-between p-2 bg-gray-800/30 rounded border border-gray-700/30">
                 <div className="flex items-center gap-2">
                   <Wrench className="h-4 w-4 text-primary" />
-                  <div>
-                    <div className="text-xs font-medium text-white">{step.tool.name}</div>
-                    <div className="text-xs text-gray-500">{step.tool.category}</div>
-                  </div>
+                  <div className="text-xs font-medium text-white">{step.toolName}</div>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => onUpdateTool(null)}
+                  onClick={() => onUpdateTool(null, null)}
                 >
                   <X className="h-3 w-3" />
                 </Button>
@@ -629,28 +631,24 @@ function SubStepItem({
               <select
                 value={step.toolId || ''}
                 onChange={(e) => {
-                  const toolId = e.target.value;
-                  // Chercher d'abord dans les outils
-                  let tool = availableTools?.find(t => t.id === toolId);
-
-                  // Si pas trouvé, chercher dans les consommables et créer un objet Tool compatible
-                  if (!tool && toolId) {
-                    const consumable = availableConsumables?.find(c => c.id === toolId);
-                    if (consumable) {
-                      // Créer un objet Tool temporaire à partir du consommable
-                      // Note: pas de createdAt/updatedAt pour éviter les erreurs Firestore
-                      tool = {
-                        id: consumable.id,
-                        name: consumable.designation,
-                        description: consumable.description || '',
-                        category: consumable.category || 'Consommable',
-                        reference: consumable.reference,
-                        price: consumable.price,
-                      } as Tool;
-                    }
+                  const selectedValue = e.target.value;
+                  if (!selectedValue) {
+                    onUpdateTool(null, null);
+                    return;
                   }
 
-                  onUpdateTool(tool || null);
+                  // Chercher d'abord dans les outils
+                  const tool = availableTools?.find(t => t.id === selectedValue);
+                  if (tool) {
+                    onUpdateTool(tool.id, tool.name);
+                    return;
+                  }
+
+                  // Sinon chercher dans les consommables
+                  const consumable = availableConsumables?.find(c => c.id === selectedValue);
+                  if (consumable) {
+                    onUpdateTool(consumable.id, consumable.designation);
+                  }
                 }}
                 className="w-full rounded border border-gray-700/30 bg-transparent px-2 py-1.5 text-xs text-white"
               >
