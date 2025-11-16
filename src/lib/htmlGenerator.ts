@@ -24,7 +24,7 @@ export async function generateHTML(
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             line-height: 1.6;
             color: #2c3e50;
-            background: #fafafa;
+            background: #f5f5f5;
             margin: 0;
         }
 
@@ -66,7 +66,7 @@ export async function generateHTML(
         }
 
         .nav-phase-title:hover {
-            background: #f8f9fa;
+            background: #f5f5f5;
         }
 
         .nav-steps {
@@ -90,20 +90,20 @@ export async function generateHTML(
         }
 
         .nav-step a:hover {
-            background: #f8f9fa;
+            background: #f5f5f5;
             color: rgb(249, 55, 5);
         }
 
         /* Container principal */
         .container {
             margin-left: 280px;
-            background: white;
+            background: #f5f5f5;
         }
 
         /* En-tête */
         .header {
-            background: #2c3e50;
-            color: white;
+            background: #e8e8e8;
+            color: #2c3e50;
             padding: 40px;
             border-bottom: 3px solid rgb(249, 55, 5);
         }
@@ -119,11 +119,12 @@ export async function generateHTML(
             font-size: 2.2rem;
             margin-bottom: 15px;
             font-weight: 600;
+            color: #2c3e50;
         }
 
         .description {
             font-size: 1rem;
-            opacity: 0.9;
+            color: #555;
             margin-bottom: 25px;
         }
 
@@ -146,7 +147,8 @@ export async function generateHTML(
         }
 
         .tag {
-            background: rgba(255,255,255,0.15);
+            background: #d0d0d0;
+            color: #2c3e50;
             padding: 4px 12px;
             border-radius: 3px;
             font-size: 0.85rem;
@@ -158,7 +160,7 @@ export async function generateHTML(
             gap: 20px;
             margin-top: 20px;
             padding-top: 20px;
-            border-top: 1px solid rgba(255,255,255,0.15);
+            border-top: 1px solid #d0d0d0;
         }
 
         .meta-item {
@@ -166,11 +168,11 @@ export async function generateHTML(
             align-items: center;
             gap: 6px;
             font-size: 0.9rem;
+            color: #555;
         }
 
         .meta-label {
             font-weight: 600;
-            opacity: 0.8;
         }
 
         /* Contenu */
@@ -180,10 +182,11 @@ export async function generateHTML(
 
         /* Ressources globales */
         .resources {
-            background: #f8f9fa;
+            background: white;
             padding: 30px;
             margin-bottom: 30px;
             border-left: 3px solid rgb(249, 55, 5);
+            border-radius: 4px;
         }
 
         .resources h2 {
@@ -235,13 +238,15 @@ export async function generateHTML(
         .phase {
             margin-bottom: 40px;
             break-inside: avoid;
+            background: white;
+            border-radius: 4px;
+            overflow: hidden;
         }
 
         .phase-header {
             background: rgb(249, 55, 5);
             color: white;
             padding: 20px 25px;
-            margin-bottom: 20px;
         }
 
         .phase-title {
@@ -266,14 +271,19 @@ export async function generateHTML(
 
         /* Étapes */
         .steps {
-            padding-left: 0;
+            padding: 20px;
         }
 
         .step {
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             padding: 20px;
-            background: #ffffff;
+            background: #fafafa;
             border: 1px solid #e0e0e0;
+            border-radius: 4px;
+        }
+
+        .step:last-child {
+            margin-bottom: 0;
         }
 
         .step-number {

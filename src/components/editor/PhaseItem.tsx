@@ -638,6 +638,7 @@ function SubStepItem({
                     const consumable = availableConsumables?.find(c => c.id === toolId);
                     if (consumable) {
                       // Créer un objet Tool temporaire à partir du consommable
+                      // Note: pas de createdAt/updatedAt pour éviter les erreurs Firestore
                       tool = {
                         id: consumable.id,
                         name: consumable.designation,
@@ -645,8 +646,6 @@ function SubStepItem({
                         category: consumable.category || 'Consommable',
                         reference: consumable.reference,
                         price: consumable.price,
-                        createdAt: new Date(),
-                        updatedAt: new Date(),
                       } as Tool;
                     }
                   }
