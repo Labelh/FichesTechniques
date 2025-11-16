@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Save, Undo, Redo, Pencil, ArrowRight, Circle, Square, Minus, Type, Palette, ZoomIn, ZoomOut } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { createImageUrl } from '@/services/imageService';
 import type { AnnotatedImage, Annotation, Tool } from '@/types';
 import { AnnotationType } from '@/types';
 import { toast } from 'sonner';
@@ -22,13 +21,11 @@ interface Point {
 }
 
 export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onCancel }: ImageAnnotatorProps) {
-  // Canvas refs
-  const baseCanvasRef = useRef<HTMLCanvasElement>(null);
-  const drawCanvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const imageObjRef = useRef<HTMLImageElement | null>(null);
 
-  // State
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const [currentTool, setCurrentTool] = useState<DrawingTool>(AnnotationType.TRAJECTORY);
   const [currentColor, setCurrentColor] = useState<string>('#ff5722');
   const [annotations, setAnnotations] = useState<Annotation[]>(annotatedImage.annotations || []);
@@ -38,14 +35,12 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [zoom, setZoom] = useState(1);
 
-  // Drawing state (not in React state to avoid re-renders)
-  const drawingState = useRef({
-    isDrawing: false,
+  // État de dessin (non React pour performance)
+  const drawing = useRef({
+    active: false,
     startPoint: null as Point | null,
-    currentPoints: [] as Point[],
+    points: [] as Point[],
   });
-
-  const imageRef = useRef<HTMLImageElement | null>(null);
 
   const toolColors = [
     { name: 'Orange-rouge', value: '#ff5722' },
@@ -60,220 +55,165 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     { name: 'Blanc', value: '#ffffff' },
   ];
 
-  // Charger l'image une seule fois
+  // Charger l'image
   useEffect(() => {
-    console.log('ImageAnnotator: Chargement image', {
-      hasUrl: !!annotatedImage.image.url,
-      hasBlob: !!annotatedImage.image.blob,
-      url: annotatedImage.image.url,
-    });
-
     const img = new Image();
     img.crossOrigin = 'anonymous';
 
     img.onload = () => {
-      console.log('ImageAnnotator: Image chargée avec succès', { width: img.width, height: img.height });
-      imageRef.current = img;
+      imageObjRef.current = img;
 
-      // Configurer les canvas
-      if (baseCanvasRef.current && drawCanvasRef.current) {
-        baseCanvasRef.current.width = img.width;
-        baseCanvasRef.current.height = img.height;
-        drawCanvasRef.current.width = img.width;
-        drawCanvasRef.current.height = img.height;
-
-        setImageLoaded(true);
+      if (canvasRef.current) {
+        canvasRef.current.width = img.width;
+        canvasRef.current.height = img.height;
+        redrawCanvas();
       }
+
+      setLoaded(true);
+      console.log('✅ Image chargée:', img.width, 'x', img.height);
     };
 
-    img.onerror = (error) => {
-      console.error('ImageAnnotator: Erreur de chargement de l\'image', error);
-      toast.error('Erreur de chargement de l\'image');
-      // Ne pas rester bloqué sur l'écran de chargement
-      setImageLoaded(true);
+    img.onerror = (e) => {
+      console.error('❌ Erreur chargement image:', e);
+      toast.error('Impossible de charger l\'image');
+      setLoaded(true);
     };
 
-    // Déterminer l'URL de l'image
-    if (annotatedImage.image.url) {
-      console.log('ImageAnnotator: Utilisation de l\'URL', annotatedImage.image.url);
-      img.src = annotatedImage.image.url;
-    } else if (annotatedImage.image.blob) {
-      console.log('ImageAnnotator: Utilisation du blob');
-      const url = createImageUrl(annotatedImage.image.blob);
-      img.src = url;
-      return () => URL.revokeObjectURL(url);
+    // Déterminer la source
+    const imageUrl = annotatedImage.image.url;
+    if (imageUrl) {
+      console.log('📥 Chargement depuis URL:', imageUrl);
+      img.src = imageUrl;
     } else {
-      console.error('ImageAnnotator: Aucune source d\'image disponible (ni url ni blob)');
-      toast.error('Aucune source d\'image disponible');
-      setImageLoaded(true); // Ne pas rester bloqué
+      console.error('❌ Pas d\'URL disponible');
+      toast.error('Image non disponible');
+      setLoaded(true);
     }
-  }, [annotatedImage.image.url, annotatedImage.image.blob]);
+  }, [annotatedImage.image.url]);
 
-  // Redessiner le canvas de base quand les annotations changent
-  useEffect(() => {
-    if (!imageLoaded || !imageRef.current || !baseCanvasRef.current) return;
+  // Redessiner le canvas
+  const redrawCanvas = () => {
+    const canvas = canvasRef.current;
+    const img = imageObjRef.current;
+    if (!canvas || !img) return;
 
-    const canvas = baseCanvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Effacer et redessiner
+    // Effacer
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(imageRef.current, 0, 0);
 
-    // Dessiner toutes les annotations
-    annotations.forEach(annotation => {
-      drawAnnotation(ctx, annotation);
-    });
-  }, [imageLoaded, annotations]);
+    // Dessiner l'image
+    ctx.drawImage(img, 0, 0);
 
-  // Bloquer le scroll et gérer le zoom à la molette
-  useEffect(() => {
-    const preventScroll = (e: Event) => e.preventDefault();
+    // Dessiner les annotations
+    annotations.forEach(ann => drawAnnotation(ctx, ann));
 
-    document.body.style.overflow = 'hidden';
-    window.addEventListener('wheel', preventScroll, { passive: false });
-    window.addEventListener('touchmove', preventScroll, { passive: false });
+    // Dessiner l'annotation en cours
+    if (drawing.current.active && drawing.current.points.length > 0) {
+      const tempAnn: Annotation = {
+        id: 'temp',
+        type: currentTool,
+        points: drawing.current.points,
+        color: currentColor,
+        createdAt: new Date(),
+      };
+      drawAnnotation(ctx, tempAnn);
+    }
+  };
 
-    return () => {
-      document.body.style.overflow = '';
-      window.removeEventListener('wheel', preventScroll);
-      window.removeEventListener('touchmove', preventScroll);
-    };
-  }, []);
+  // Dessiner une annotation
+  const drawAnnotation = (ctx: CanvasRenderingContext2D, ann: Annotation) => {
+    if (!ann.points || ann.points.length === 0) return;
 
-  // Gestion du zoom à la molette sur le container
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      setZoom(prev => {
-        const delta = e.deltaY > 0 ? -0.1 : 0.1;
-        return Math.max(0.25, Math.min(5, prev + delta));
-      });
-    };
-
-    container.addEventListener('wheel', handleWheel, { passive: false });
-    return () => container.removeEventListener('wheel', handleWheel);
-  }, []);
-
-  // Raccourcis clavier
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onCancel();
-      } else if ((e.key === '+' || e.key === '=') && !e.ctrlKey) {
-        e.preventDefault();
-        setZoom(prev => Math.min(5, prev + 0.25));
-      } else if (e.key === '-' && !e.ctrlKey) {
-        e.preventDefault();
-        setZoom(prev => Math.max(0.25, prev - 0.25));
-      } else if (e.key === '0' && !e.ctrlKey) {
-        e.preventDefault();
-        setZoom(1);
-      } else if (e.ctrlKey && e.key === 'z') {
-        e.preventDefault();
-        handleUndo();
-      } else if (e.ctrlKey && e.key === 'y') {
-        e.preventDefault();
-        handleRedo();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [historyIndex, history]);
-
-  const drawAnnotation = (ctx: CanvasRenderingContext2D, annotation: Annotation) => {
-    ctx.strokeStyle = annotation.color;
-    ctx.fillStyle = annotation.color;
+    ctx.strokeStyle = ann.color;
+    ctx.fillStyle = ann.color;
     ctx.lineWidth = 3;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    const points = annotation.points || [];
+    const pts = ann.points;
 
-    switch (annotation.type) {
+    switch (ann.type) {
       case AnnotationType.TRAJECTORY:
-        if (points.length > 1) {
+        if (pts.length > 1) {
           ctx.beginPath();
-          ctx.moveTo(points[0].x, points[0].y);
-          for (let i = 1; i < points.length; i++) {
-            ctx.lineTo(points[i].x, points[i].y);
-          }
+          ctx.moveTo(pts[0].x, pts[0].y);
+          pts.forEach((p, i) => i > 0 && ctx.lineTo(p.x, p.y));
           ctx.stroke();
         }
         break;
 
       case AnnotationType.LINE:
-        if (points.length === 2) {
+        if (pts.length === 2) {
           ctx.beginPath();
-          ctx.moveTo(points[0].x, points[0].y);
-          ctx.lineTo(points[1].x, points[1].y);
+          ctx.moveTo(pts[0].x, pts[0].y);
+          ctx.lineTo(pts[1].x, pts[1].y);
           ctx.stroke();
         }
         break;
 
       case AnnotationType.ARROW:
-        if (points.length === 2) {
-          drawArrow(ctx, points[0], points[1]);
+        if (pts.length === 2) {
+          const angle = Math.atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x);
+          const headLen = 15;
+
+          ctx.beginPath();
+          ctx.moveTo(pts[0].x, pts[0].y);
+          ctx.lineTo(pts[1].x, pts[1].y);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(pts[1].x, pts[1].y);
+          ctx.lineTo(
+            pts[1].x - headLen * Math.cos(angle - Math.PI / 6),
+            pts[1].y - headLen * Math.sin(angle - Math.PI / 6)
+          );
+          ctx.moveTo(pts[1].x, pts[1].y);
+          ctx.lineTo(
+            pts[1].x - headLen * Math.cos(angle + Math.PI / 6),
+            pts[1].y - headLen * Math.sin(angle + Math.PI / 6)
+          );
+          ctx.stroke();
         }
         break;
 
       case AnnotationType.CIRCLE:
-        if (points.length === 2) {
+        if (pts.length === 2) {
           const radius = Math.sqrt(
-            Math.pow(points[1].x - points[0].x, 2) + Math.pow(points[1].y - points[0].y, 2)
+            Math.pow(pts[1].x - pts[0].x, 2) + Math.pow(pts[1].y - pts[0].y, 2)
           );
           ctx.beginPath();
-          ctx.arc(points[0].x, points[0].y, radius, 0, 2 * Math.PI);
+          ctx.arc(pts[0].x, pts[0].y, radius, 0, 2 * Math.PI);
           ctx.stroke();
         }
         break;
 
       case AnnotationType.RECTANGLE:
-        if (points.length === 2) {
-          const width = points[1].x - points[0].x;
-          const height = points[1].y - points[0].y;
-          ctx.strokeRect(points[0].x, points[0].y, width, height);
+        if (pts.length === 2) {
+          ctx.strokeRect(pts[0].x, pts[0].y, pts[1].x - pts[0].x, pts[1].y - pts[0].y);
         }
         break;
 
       case AnnotationType.TEXT:
-        if (points.length > 0 && annotation.text) {
+        if (pts.length > 0 && ann.text) {
           ctx.font = '20px Arial';
-          ctx.fillText(annotation.text, points[0].x, points[0].y);
+          ctx.fillText(ann.text, pts[0].x, pts[0].y);
         }
         break;
     }
   };
 
-  const drawArrow = (ctx: CanvasRenderingContext2D, from: Point, to: Point) => {
-    const headLength = 15;
-    const angle = Math.atan2(to.y - from.y, to.x - from.x);
+  // Redessiner quand les annotations changent
+  useEffect(() => {
+    if (loaded) redrawCanvas();
+  }, [annotations, loaded]);
 
-    ctx.beginPath();
-    ctx.moveTo(from.x, from.y);
-    ctx.lineTo(to.x, to.y);
-    ctx.stroke();
+  // Convertir coordonnées écran → canvas
+  const getCanvasPoint = (e: MouseEvent): Point => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
 
-    ctx.beginPath();
-    ctx.moveTo(to.x, to.y);
-    ctx.lineTo(
-      to.x - headLength * Math.cos(angle - Math.PI / 6),
-      to.y - headLength * Math.sin(angle - Math.PI / 6)
-    );
-    ctx.moveTo(to.x, to.y);
-    ctx.lineTo(
-      to.x - headLength * Math.cos(angle + Math.PI / 6),
-      to.y - headLength * Math.sin(angle + Math.PI / 6)
-    );
-    ctx.stroke();
-  };
-
-  const getCanvasPoint = (e: MouseEvent, canvas: HTMLCanvasElement): Point => {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
@@ -284,132 +224,61 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     };
   };
 
-  const redrawTempCanvas = () => {
-    const canvas = drawCanvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const { isDrawing, startPoint, currentPoints } = drawingState.current;
-    if (!isDrawing || !startPoint) return;
-
-    ctx.strokeStyle = currentColor;
-    ctx.fillStyle = currentColor;
-    ctx.lineWidth = 3;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-
-    switch (currentTool) {
-      case AnnotationType.TRAJECTORY:
-        if (currentPoints.length > 1) {
-          ctx.beginPath();
-          ctx.moveTo(currentPoints[0].x, currentPoints[0].y);
-          for (let i = 1; i < currentPoints.length; i++) {
-            ctx.lineTo(currentPoints[i].x, currentPoints[i].y);
-          }
-          ctx.stroke();
-        }
-        break;
-
-      case AnnotationType.LINE:
-        if (currentPoints.length === 2) {
-          ctx.beginPath();
-          ctx.moveTo(currentPoints[0].x, currentPoints[0].y);
-          ctx.lineTo(currentPoints[1].x, currentPoints[1].y);
-          ctx.stroke();
-        }
-        break;
-
-      case AnnotationType.ARROW:
-        if (currentPoints.length === 2) {
-          drawArrow(ctx, currentPoints[0], currentPoints[1]);
-        }
-        break;
-
-      case AnnotationType.CIRCLE:
-        if (currentPoints.length === 2) {
-          const radius = Math.sqrt(
-            Math.pow(currentPoints[1].x - currentPoints[0].x, 2) +
-            Math.pow(currentPoints[1].y - currentPoints[0].y, 2)
-          );
-          ctx.beginPath();
-          ctx.arc(currentPoints[0].x, currentPoints[0].y, radius, 0, 2 * Math.PI);
-          ctx.stroke();
-        }
-        break;
-
-      case AnnotationType.RECTANGLE:
-        if (currentPoints.length === 2) {
-          const width = currentPoints[1].x - currentPoints[0].x;
-          const height = currentPoints[1].y - currentPoints[0].y;
-          ctx.strokeRect(currentPoints[0].x, currentPoints[0].y, width, height);
-        }
-        break;
-    }
-  };
-
-  // Event handlers avec event listeners natifs
+  // Gérer les événements de dessin
   useEffect(() => {
-    const canvas = drawCanvasRef.current;
-    if (!canvas || !imageLoaded) return;
+    const canvas = canvasRef.current;
+    if (!canvas || !loaded) return;
 
-    const handleMouseDown = (e: MouseEvent) => {
-      if (e.button !== 0) return; // Seulement clic gauche
+    const onMouseDown = (e: MouseEvent) => {
+      if (e.button !== 0) return;
 
-      const point = getCanvasPoint(e, canvas);
-      drawingState.current = {
-        isDrawing: true,
+      const point = getCanvasPoint(e);
+      drawing.current = {
+        active: true,
         startPoint: point,
-        currentPoints: [point],
+        points: [point],
       };
-
-      redrawTempCanvas();
+      redrawCanvas();
     };
 
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!drawingState.current.isDrawing) return;
+    const onMouseMove = (e: MouseEvent) => {
+      if (!drawing.current.active) return;
 
-      const point = getCanvasPoint(e, canvas);
+      const point = getCanvasPoint(e);
 
       if (currentTool === AnnotationType.TRAJECTORY) {
-        // Ajouter le point à la trajectoire
-        drawingState.current.currentPoints.push(point);
+        drawing.current.points.push(point);
       } else {
-        // Pour les autres outils, juste mettre à jour le point final
-        drawingState.current.currentPoints = [drawingState.current.startPoint!, point];
+        drawing.current.points = [drawing.current.startPoint!, point];
       }
 
-      redrawTempCanvas();
+      redrawCanvas();
     };
 
-    const handleMouseUp = (e: MouseEvent) => {
-      if (!drawingState.current.isDrawing) return;
+    const onMouseUp = (e: MouseEvent) => {
+      if (!drawing.current.active) return;
 
-      const point = getCanvasPoint(e, canvas);
-
-      // Finaliser l'annotation
-      let finalPoints = drawingState.current.currentPoints;
+      const point = getCanvasPoint(e);
+      let finalPoints = drawing.current.points;
 
       if (currentTool !== AnnotationType.TRAJECTORY) {
-        finalPoints = [drawingState.current.startPoint!, point];
+        finalPoints = [drawing.current.startPoint!, point];
       }
 
-      // Pour le texte, demander le texte
+      // Texte
       let text: string | undefined;
       if (currentTool === AnnotationType.TEXT) {
         text = prompt('Entrez le texte:') || undefined;
         if (!text) {
-          drawingState.current = { isDrawing: false, startPoint: null, currentPoints: [] };
-          redrawTempCanvas();
+          drawing.current.active = false;
+          redrawCanvas();
           return;
         }
-        finalPoints = [drawingState.current.startPoint!];
+        finalPoints = [drawing.current.startPoint!];
       }
 
-      const newAnnotation: Annotation = {
+      // Créer l'annotation
+      const newAnn: Annotation = {
         id: crypto.randomUUID(),
         type: currentTool,
         points: finalPoints,
@@ -418,59 +287,96 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
         createdAt: new Date(),
       };
 
-      // Ajouter l'annotation
-      const newAnnotations = [...annotations, newAnnotation];
+      const newAnnotations = [...annotations, newAnn];
       setAnnotations(newAnnotations);
-      addToHistory(newAnnotations);
 
-      // Réinitialiser l'état de dessin
-      drawingState.current = { isDrawing: false, startPoint: null, currentPoints: [] };
-      redrawTempCanvas();
+      // Historique
+      const newHistory = history.slice(0, historyIndex + 1);
+      newHistory.push(newAnnotations);
+      setHistory(newHistory);
+      setHistoryIndex(newHistory.length - 1);
+
+      drawing.current.active = false;
+      redrawCanvas();
     };
 
-    canvas.addEventListener('mousedown', handleMouseDown);
-    canvas.addEventListener('mousemove', handleMouseMove);
-    canvas.addEventListener('mouseup', handleMouseUp);
+    canvas.addEventListener('mousedown', onMouseDown);
+    canvas.addEventListener('mousemove', onMouseMove);
+    canvas.addEventListener('mouseup', onMouseUp);
 
     return () => {
-      canvas.removeEventListener('mousedown', handleMouseDown);
-      canvas.removeEventListener('mousemove', handleMouseMove);
-      canvas.removeEventListener('mouseup', handleMouseUp);
+      canvas.removeEventListener('mousedown', onMouseDown);
+      canvas.removeEventListener('mousemove', onMouseMove);
+      canvas.removeEventListener('mouseup', onMouseUp);
     };
-  }, [imageLoaded, currentTool, currentColor, annotations]);
+  }, [loaded, currentTool, currentColor, annotations, historyIndex, history]);
 
-  const addToHistory = (newAnnotations: Annotation[]) => {
-    const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push([...newAnnotations]);
-    setHistory(newHistory);
-    setHistoryIndex(newHistory.length - 1);
-  };
+  // Bloquer le scroll de la page
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
 
-  const handleUndo = () => {
-    if (historyIndex > 0) {
-      const newIndex = historyIndex - 1;
-      setHistoryIndex(newIndex);
-      setAnnotations([...history[newIndex]]);
-    }
-  };
+  // Zoom à la molette
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
 
-  const handleRedo = () => {
-    if (historyIndex < history.length - 1) {
-      const newIndex = historyIndex + 1;
-      setHistoryIndex(newIndex);
-      setAnnotations([...history[newIndex]]);
-    }
-  };
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      setZoom(prev => {
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        return Math.max(0.25, Math.min(5, prev + delta));
+      });
+    };
+
+    container.addEventListener('wheel', onWheel, { passive: false });
+    return () => container.removeEventListener('wheel', onWheel);
+  }, []);
+
+  // Raccourcis clavier
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel();
+      else if (e.key === '+' || e.key === '=') {
+        e.preventDefault();
+        setZoom(prev => Math.min(5, prev + 0.25));
+      } else if (e.key === '-') {
+        e.preventDefault();
+        setZoom(prev => Math.max(0.25, prev - 0.25));
+      } else if (e.key === '0') {
+        e.preventDefault();
+        setZoom(1);
+      } else if (e.ctrlKey && e.key === 'z') {
+        e.preventDefault();
+        if (historyIndex > 0) {
+          setHistoryIndex(historyIndex - 1);
+          setAnnotations([...history[historyIndex - 1]]);
+        }
+      } else if (e.ctrlKey && e.key === 'y') {
+        e.preventDefault();
+        if (historyIndex < history.length - 1) {
+          setHistoryIndex(historyIndex + 1);
+          setAnnotations([...history[historyIndex + 1]]);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [historyIndex, history, onCancel]);
 
   const handleSave = () => {
     onSave(annotations, description);
     toast.success('Annotations enregistrées');
   };
 
-  if (!imageLoaded) {
+  if (!loaded) {
     return createPortal(
       <div className="fixed inset-0 z-[9999] bg-black flex items-center justify-center">
-        <div className="text-white text-xl">Chargement de l'image...</div>
+        <div className="text-white text-xl">Chargement...</div>
       </div>,
       document.body
     );
@@ -481,46 +387,29 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
       {/* Header */}
       <div className="bg-gray-900 border-b border-gray-700 p-4 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-4">
-          <h2 className="text-xl font-bold text-white">Annotation : {annotatedImage.image.name}</h2>
+          <h2 className="text-xl font-bold text-white">Annotation</h2>
           <input
             type="text"
-            placeholder="Description de l'image..."
+            placeholder="Description..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white placeholder-gray-400 w-96"
+            className="px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white placeholder-gray-400 w-80"
           />
         </div>
         <div className="flex items-center gap-2">
-          {/* Zoom controls */}
+          {/* Zoom */}
           <div className="flex items-center gap-1 border-r border-gray-700 pr-3 mr-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setZoom(prev => Math.max(0.25, prev - 0.25))}
-              disabled={zoom <= 0.25}
-              title="Zoom arrière (-)"
-            >
+            <Button variant="ghost" size="sm" onClick={() => setZoom(prev => Math.max(0.25, prev - 0.25))}>
               <ZoomOut className="h-4 w-4" />
             </Button>
-            <span className="text-sm font-medium text-white bg-gray-800 px-3 py-1 rounded min-w-[60px] text-center">
+            <span className="text-sm text-white bg-gray-800 px-3 py-1 rounded min-w-[60px] text-center">
               {Math.round(zoom * 100)}%
             </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setZoom(prev => Math.min(5, prev + 0.25))}
-              disabled={zoom >= 5}
-              title="Zoom avant (+)"
-            >
+            <Button variant="ghost" size="sm" onClick={() => setZoom(prev => Math.min(5, prev + 0.25))}>
               <ZoomIn className="h-4 w-4" />
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setZoom(1)}
-              title="Réinitialiser (0)"
-            >
-              <span className="text-xs font-medium">1:1</span>
+            <Button variant="ghost" size="sm" onClick={() => setZoom(1)}>
+              <span className="text-xs">1:1</span>
             </Button>
           </div>
 
@@ -528,28 +417,35 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
           <Button
             variant="ghost"
             size="sm"
-            onClick={handleUndo}
+            onClick={() => {
+              if (historyIndex > 0) {
+                setHistoryIndex(historyIndex - 1);
+                setAnnotations([...history[historyIndex - 1]]);
+              }
+            }}
             disabled={historyIndex === 0}
-            title="Annuler (Ctrl+Z)"
           >
             <Undo className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            onClick={handleRedo}
+            onClick={() => {
+              if (historyIndex < history.length - 1) {
+                setHistoryIndex(historyIndex + 1);
+                setAnnotations([...history[historyIndex + 1]]);
+              }
+            }}
             disabled={historyIndex >= history.length - 1}
-            title="Rétablir (Ctrl+Y)"
           >
             <Redo className="h-4 w-4" />
           </Button>
 
-          {/* Save/Cancel */}
           <Button variant="default" size="sm" onClick={handleSave}>
             <Save className="h-4 w-4 mr-2" />
             Enregistrer
           </Button>
-          <Button variant="ghost" size="sm" onClick={onCancel} title="Fermer (Echap)">
+          <Button variant="ghost" size="sm" onClick={onCancel}>
             <X className="h-4 w-4" />
           </Button>
         </div>
@@ -561,66 +457,48 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
           <button
             onClick={() => setCurrentTool(AnnotationType.TRAJECTORY)}
             className={`p-3 rounded transition-colors ${
-              currentTool === AnnotationType.TRAJECTORY
-                ? 'bg-primary text-white'
-                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+              currentTool === AnnotationType.TRAJECTORY ? 'bg-primary text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
             }`}
-            title="Trajectoire"
           >
             <Pencil className="h-5 w-5" />
           </button>
           <button
             onClick={() => setCurrentTool(AnnotationType.LINE)}
             className={`p-3 rounded transition-colors ${
-              currentTool === AnnotationType.LINE
-                ? 'bg-primary text-white'
-                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+              currentTool === AnnotationType.LINE ? 'bg-primary text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
             }`}
-            title="Ligne"
           >
             <Minus className="h-5 w-5" />
           </button>
           <button
             onClick={() => setCurrentTool(AnnotationType.ARROW)}
             className={`p-3 rounded transition-colors ${
-              currentTool === AnnotationType.ARROW
-                ? 'bg-primary text-white'
-                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+              currentTool === AnnotationType.ARROW ? 'bg-primary text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
             }`}
-            title="Flèche"
           >
             <ArrowRight className="h-5 w-5" />
           </button>
           <button
             onClick={() => setCurrentTool(AnnotationType.CIRCLE)}
             className={`p-3 rounded transition-colors ${
-              currentTool === AnnotationType.CIRCLE
-                ? 'bg-primary text-white'
-                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+              currentTool === AnnotationType.CIRCLE ? 'bg-primary text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
             }`}
-            title="Cercle"
           >
             <Circle className="h-5 w-5" />
           </button>
           <button
             onClick={() => setCurrentTool(AnnotationType.RECTANGLE)}
             className={`p-3 rounded transition-colors ${
-              currentTool === AnnotationType.RECTANGLE
-                ? 'bg-primary text-white'
-                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+              currentTool === AnnotationType.RECTANGLE ? 'bg-primary text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
             }`}
-            title="Rectangle"
           >
             <Square className="h-5 w-5" />
           </button>
           <button
             onClick={() => setCurrentTool(AnnotationType.TEXT)}
             className={`p-3 rounded transition-colors ${
-              currentTool === AnnotationType.TEXT
-                ? 'bg-primary text-white'
-                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+              currentTool === AnnotationType.TEXT ? 'bg-primary text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
             }`}
-            title="Texte"
           >
             <Type className="h-5 w-5" />
           </button>
@@ -632,7 +510,6 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
             <button
               onClick={() => setShowColorPicker(!showColorPicker)}
               className="p-3 rounded bg-gray-800 hover:bg-gray-700 transition-colors w-full"
-              title="Couleur"
             >
               <Palette className="h-5 w-5" style={{ color: currentColor }} />
             </button>
@@ -678,7 +555,6 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
           className="flex-1 overflow-auto flex items-center justify-center bg-black p-8"
         >
           <div
-            className="relative"
             style={{
               transform: `scale(${zoom})`,
               transformOrigin: 'center center',
@@ -686,15 +562,8 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
             }}
           >
             <canvas
-              ref={baseCanvasRef}
-              className="block"
-              style={{
-                imageRendering: zoom > 2 ? 'auto' : 'crisp-edges',
-              }}
-            />
-            <canvas
-              ref={drawCanvasRef}
-              className="absolute top-0 left-0 cursor-crosshair"
+              ref={canvasRef}
+              className="block cursor-crosshair"
               style={{
                 imageRendering: zoom > 2 ? 'auto' : 'crisp-edges',
               }}
