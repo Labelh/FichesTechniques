@@ -8,11 +8,13 @@ import {
   Trash2,
   Edit,
   DollarSign,
-  RefreshCw
+  RefreshCw,
+  Package
 } from 'lucide-react';
-import { createTool, updateTool, deleteTool as deleteToolService, fetchToolsFromSupabase } from '@/services/toolService';
+import { createTool, updateTool, deleteTool as deleteToolService } from '@/services/toolService';
+import { fetchConsumables } from '@/services/consumablesService';
 import { useTools } from '@/hooks/useTools';
-import { Tool } from '../types';
+import { Tool, Consumable } from '../types';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { toast } from 'sonner';
@@ -24,69 +26,56 @@ export default function ToolsLibrary() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingTool, setEditingTool] = useState<Tool | null>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [supabaseTools, setSupabaseTools] = useState<any[]>([]);
-  const [isLoadingSupabaseTools, setIsLoadingSupabaseTools] = useState(false);
+  const [consumables, setConsumables] = useState<Consumable[]>([]);
+  const [isLoadingConsumables, setIsLoadingConsumables] = useState(false);
 
   // Récupération des outils depuis Firestore
-  const firestoreTools = useTools();
+  const tools = useTools();
 
-  // Récupération des outils depuis Supabase
-  const loadSupabaseTools = async () => {
-    setIsLoadingSupabaseTools(true);
+  // Récupération des consommables depuis Supabase (avec filtrage deleted_at)
+  const loadConsumables = async () => {
+    setIsLoadingConsumables(true);
     try {
-      const data = await fetchToolsFromSupabase();
-      setSupabaseTools(data);
-      toast.success(`${data.length} outils chargés depuis Supabase`);
+      const data = await fetchConsumables();
+      setConsumables(data);
+      toast.success(`${data.length} consommables chargés`);
     } catch (error: any) {
-      console.error('Error loading Supabase tools:', error);
+      console.error('Error loading consumables:', error);
       toast.error(`Erreur: ${error.message}`);
     } finally {
-      setIsLoadingSupabaseTools(false);
+      setIsLoadingConsumables(false);
     }
   };
 
   useEffect(() => {
-    loadSupabaseTools();
+    loadConsumables();
   }, []);
 
-  // Combiner les outils Firestore et Supabase
-  const allTools: any[] = [
-    ...(firestoreTools || []).map(t => ({ ...t, source: 'firestore' })),
-    ...supabaseTools.map(st => ({
-      id: st.id,
-      name: st.designation || st.nom || '',
-      description: st.description || '',
-      category: st.category || st.categorie || 'Autre',
-      reference: st.reference || '',
-      location: st.emplacement || st.location || '',
-      image: st.photo_url || st.image_url ? { url: st.photo_url || st.image_url } as any : undefined,
-      price: st.price || st.prix,
-      alternatives: [],
-      consumables: [],
-      createdAt: st.created_at || new Date().toISOString(),
-      updatedAt: st.updated_at || new Date().toISOString(),
-      source: 'supabase' // Pour distinguer la source
-    }))
-  ];
-
   // Filtrage des outils
-  const filteredTools = allTools.filter(tool => {
+  const filteredTools = tools?.filter(tool => {
     const matchesSearch = tool.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          tool.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || tool.category === selectedCategory;
 
     return matchesSearch && matchesCategory;
+  }) || [];
+
+  // Filtrage des consommables
+  const filteredConsumables = consumables.filter(consumable => {
+    const matchesSearch = consumable.designation.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (consumable.description?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+                         (consumable.reference?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
+    const matchesCategory = selectedCategory === 'all' || consumable.category === selectedCategory;
+
+    return matchesSearch && matchesCategory;
   });
 
-  // Récupération des catégories uniques
-  const categories = Array.from(new Set(allTools.map(t => t.category)));
+  // Récupération des catégories uniques (outils + consommables)
+  const toolCategories = tools?.map(t => t.category) || [];
+  const consumableCategories = consumables.map(c => c.category).filter(Boolean) as string[];
+  const categories = Array.from(new Set([...toolCategories, ...consumableCategories]));
 
-  const handleDeleteTool = async (id: string, source?: string) => {
-    if (source === 'supabase') {
-      toast.error('Les outils Supabase ne peuvent pas être supprimés depuis cette interface');
-      return;
-    }
-
+  const handleDeleteTool = async (id: string) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cet outil ?')) return;
 
     try {
@@ -162,12 +151,12 @@ export default function ToolsLibrary() {
   };
 
   const handleExportJSON = () => {
-    if (!allTools || allTools.length === 0) {
+    if (!tools || tools.length === 0) {
       toast.error('Aucun outil à exporter');
       return;
     }
 
-    const dataStr = JSON.stringify(allTools, null, 2);
+    const dataStr = JSON.stringify(tools, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
     const link = document.createElement('a');
@@ -184,19 +173,19 @@ export default function ToolsLibrary() {
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Bibliothèque d'outils
+            Bibliothèque d'outils et consommables
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
-            {filteredTools.length} outil{filteredTools.length > 1 ? 's' : ''}
+            {filteredTools.length} outil{filteredTools.length > 1 ? 's' : ''} • {filteredConsumables.length} consommable{filteredConsumables.length > 1 ? 's' : ''}
           </p>
         </div>
         <div className="flex gap-2">
           <Button
             variant="secondary"
-            onClick={loadSupabaseTools}
-            disabled={isLoadingSupabaseTools}
+            onClick={loadConsumables}
+            disabled={isLoadingConsumables}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingSupabaseTools ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingConsumables ? 'animate-spin' : ''}`} />
             Rafraîchir
           </Button>
           <Button
@@ -280,7 +269,6 @@ export default function ToolsLibrary() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredTools.map((tool) => {
                 const imageUrl = tool.image?.url;
-                const isSupabaseTool = (tool as any).source === 'supabase';
                 return (
                   <div
                     key={tool.id}
@@ -311,26 +299,23 @@ export default function ToolsLibrary() {
                         <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
                           {tool.reference || 'Sans référence'}
                         </div>
-                        {!isSupabaseTool && (
-                          <div className="flex gap-1">
-                            <button
-                              onClick={() => {
-                                const { source, ...toolWithoutSource } = tool as any;
-                                setEditingTool(toolWithoutSource);
-                                setIsAddDialogOpen(true);
-                              }}
-                              className="p-1 text-gray-400 hover:text-primary transition-colors"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteTool(tool.id, tool.source)}
-                              className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        )}
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => {
+                              setEditingTool(tool);
+                              setIsAddDialogOpen(true);
+                            }}
+                            className="p-1 text-gray-400 hover:text-primary transition-colors"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTool(tool.id)}
+                            className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
 
                       {/* Désignation */}
@@ -362,6 +347,104 @@ export default function ToolsLibrary() {
                 );
               })}
         </div>
+          )}
+        </div>
+
+        {/* Consumables Grid */}
+        <div>
+          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            Consommables (GestionDesStocks)
+          </h2>
+          {isLoadingConsumables ? (
+            <div className="text-center py-12 bg-[#2a2a2a] rounded-lg border border-[#3a3a3a]">
+              <RefreshCw className="h-16 w-16 mx-auto text-gray-400 mb-4 animate-spin" />
+              <p className="text-gray-500 dark:text-gray-400">
+                Chargement des consommables...
+              </p>
+            </div>
+          ) : filteredConsumables.length === 0 ? (
+            <div className="text-center py-12 bg-[#2a2a2a] rounded-lg border border-[#3a3a3a]">
+              <Package className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                {searchTerm || selectedCategory !== 'all'
+                  ? 'Aucun consommable trouvé'
+                  : 'Aucun consommable disponible'}
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400">
+                {searchTerm || selectedCategory !== 'all'
+                  ? 'Essayez de modifier vos filtres'
+                  : 'Cliquez sur Rafraîchir pour charger les consommables'}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredConsumables.map((consumable) => {
+                const imageUrl = consumable.image_url || consumable.photo_url;
+                return (
+                  <div
+                    key={consumable.id}
+                    className="bg-[#2a2a2a] rounded-lg border border-[#3a3a3a] p-4"
+                  >
+                    {/* Header: Référence */}
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                        {consumable.reference || 'Sans référence'}
+                      </div>
+                    </div>
+
+                    {/* Image */}
+                    {imageUrl && (
+                      <div className="mb-3">
+                        <img
+                          src={imageUrl}
+                          alt={consumable.designation}
+                          className="w-full h-48 object-cover rounded-lg border border-[#3a3a3a]"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Désignation */}
+                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                      {consumable.designation}
+                    </h3>
+
+                    {/* Catégorie */}
+                    {consumable.category && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 mb-3">
+                        {consumable.category}
+                      </span>
+                    )}
+
+                    {/* Description */}
+                    {consumable.description && (
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2 mt-2">
+                        {consumable.description}
+                      </p>
+                    )}
+
+                    {/* Quantité et Prix */}
+                    <div className="space-y-2 mt-3">
+                      {consumable.quantity !== undefined && (
+                        <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+                          <Package className="h-4 w-4" />
+                          {consumable.quantity} {consumable.unit || ''}
+                        </div>
+                      )}
+                      {consumable.price && (
+                        <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+                          <DollarSign className="h-4 w-4" />
+                          {consumable.price} €
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
       </div>

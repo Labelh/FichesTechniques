@@ -4,7 +4,6 @@ import {
   deleteTool as deleteToolFirestore,
   getAllTools as getAllToolsFirestore,
 } from '@/lib/firestore';
-import { supabase } from '@/lib/supabase';
 import type { Tool } from '@/types';
 
 /**
@@ -64,70 +63,6 @@ export async function getAllTools(): Promise<Tool[]> {
     return await getAllToolsFirestore();
   } catch (error) {
     console.error('Error getting tools:', error);
-    throw error;
-  }
-}
-
-// Liste des noms de tables possibles pour les outils dans Supabase
-const possibleToolTableNames = [
-  'outils',
-  'tools',
-  'equipements',
-  'equipment',
-];
-
-let cachedToolTableName: string | null = null;
-
-/**
- * Détermine le nom de la table des outils dans Supabase
- */
-async function findToolsTable(): Promise<string> {
-  if (cachedToolTableName) {
-    return cachedToolTableName;
-  }
-
-  for (const tableName of possibleToolTableNames) {
-    try {
-      const { error } = await supabase
-        .from(tableName)
-        .select('*')
-        .limit(1);
-
-      if (!error) {
-        cachedToolTableName = tableName;
-        console.log(`Found tools table: ${tableName}`);
-        return tableName;
-      }
-    } catch (err) {
-      // Continue to next table name
-      continue;
-    }
-  }
-
-  throw new Error('Could not find tools table in Supabase database');
-}
-
-/**
- * Récupère tous les outils depuis Supabase
- */
-export async function fetchToolsFromSupabase(): Promise<any[]> {
-  try {
-    const tableName = await findToolsTable();
-
-    const { data, error } = await supabase
-      .from(tableName)
-      .select('*')
-      .is('deleted_at', null)
-      .order('designation', { ascending: true });
-
-    if (error) {
-      console.error('Error fetching tools from Supabase:', error);
-      throw new Error(`Failed to fetch tools: ${error.message}`);
-    }
-
-    return data || [];
-  } catch (error: any) {
-    console.error('Error in fetchToolsFromSupabase:', error);
     throw error;
   }
 }
