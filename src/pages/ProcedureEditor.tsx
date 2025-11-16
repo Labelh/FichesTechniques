@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Eye, Plus, Image, X, Cloud } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Plus, Image, X, Cloud, Download } from 'lucide-react';
 import { useProcedure } from '@/hooks/useProcedures';
 import { createProcedure, updateProcedure, addPhase, deletePhase } from '@/services/procedureService';
 import { uploadImageToHost } from '@/services/imageHostingService';
@@ -11,6 +11,7 @@ import { Card, CardContent } from '@/components/ui/Card';
 import PhaseItem from '@/components/editor/PhaseItem';
 import PhaseTemplateSelector from '@/components/editor/PhaseTemplateSelector';
 import { toast } from 'sonner';
+import { generateHTML } from '@/lib/htmlGenerator';
 
 export default function ProcedureEditor() {
   const { id } = useParams<{ id: string }>();
@@ -175,6 +176,21 @@ export default function ProcedureEditor() {
     toast.success('Image de couverture supprimée');
   };
 
+  const handleExportHTML = async () => {
+    if (!existingProcedure) {
+      toast.error('Aucune procédure à exporter');
+      return;
+    }
+
+    try {
+      await generateHTML(existingProcedure, existingProcedure.phases || []);
+      toast.success('Procédure exportée en HTML');
+    } catch (error) {
+      console.error('Error exporting HTML:', error);
+      toast.error('Erreur lors de l\'export HTML');
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto pb-20">
       {/* Header */}
@@ -207,13 +223,19 @@ export default function ProcedureEditor() {
           )}
 
           <div className="flex gap-2">
-            {id && (
-              <Link to={`/procedures/${id}`}>
-                <Button variant="secondary">
-                  <Eye className="h-4 w-4 mr-2" />
-                  Aperçu
+            {id && existingProcedure && (
+              <>
+                <Button variant="secondary" onClick={handleExportHTML}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Exporter HTML
                 </Button>
-              </Link>
+                <Link to={`/procedures/${id}`}>
+                  <Button variant="secondary">
+                    <Eye className="h-4 w-4 mr-2" />
+                    Aperçu
+                  </Button>
+                </Link>
+              </>
             )}
             <Button onClick={handleSave}>
               <Save className="h-4 w-4 mr-2" />
