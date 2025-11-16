@@ -55,10 +55,10 @@ export default function ToolsLibrary() {
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Bibliothèque de consommables
+            Bibliothèque d'outils
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
-            {filteredConsumables.length} consommable{filteredConsumables.length > 1 ? 's' : ''}
+            {filteredConsumables.length} outil{filteredConsumables.length > 1 ? 's' : ''}
           </p>
         </div>
         <div className="flex gap-2">
@@ -129,13 +129,18 @@ export default function ToolsLibrary() {
                 return (
                   <div
                     key={consumable.id}
-                    className="bg-[#2a2a2a] rounded-lg border border-[#3a3a3a] p-4"
+                    className="bg-[#2a2a2a] rounded-lg border border-[#3a3a3a] p-4 relative"
                   >
-                    {/* Header: Référence */}
+                    {/* Header: Référence et Location */}
                     <div className="flex justify-between items-start mb-2">
-                      <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      <div className="text-sm font-medium" style={{ color: 'rgb(249, 55, 5)' }}>
                         {consumable.reference || 'Sans référence'}
                       </div>
+                      {(consumable as any).emplacement || (consumable as any).location ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                          📍 {(consumable as any).emplacement || (consumable as any).location}
+                        </span>
+                      ) : null}
                     </div>
 
                     {/* Image */}
