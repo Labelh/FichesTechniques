@@ -24,91 +24,148 @@ export async function generateHTML(
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             line-height: 1.6;
             color: #2c3e50;
-            background: #f8f9fa;
-            padding: 20px;
+            background: #fafafa;
+            margin: 0;
         }
 
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
+        /* Sidebar Navigation */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 280px;
             background: white;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            border-radius: 8px;
-            overflow: hidden;
+            border-right: 1px solid #e0e0e0;
+            overflow-y: auto;
+            padding: 20px;
+            z-index: 100;
+        }
+
+        .sidebar h2 {
+            font-size: 1.1rem;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .nav-phase {
+            margin-bottom: 20px;
+        }
+
+        .nav-phase-title {
+            display: block;
+            color: rgb(249, 55, 5);
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .nav-phase-title:hover {
+            background: #f8f9fa;
+        }
+
+        .nav-steps {
+            list-style: none;
+            padding-left: 12px;
+            margin-top: 5px;
+        }
+
+        .nav-step {
+            margin-bottom: 4px;
+        }
+
+        .nav-step a {
+            display: block;
+            color: #555;
+            text-decoration: none;
+            font-size: 0.85rem;
+            padding: 4px 8px;
+            border-radius: 3px;
+            transition: background 0.2s;
+        }
+
+        .nav-step a:hover {
+            background: #f8f9fa;
+            color: rgb(249, 55, 5);
+        }
+
+        /* Container principal */
+        .container {
+            margin-left: 280px;
+            background: white;
         }
 
         /* En-tête */
         .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            background: #2c3e50;
             color: white;
             padding: 40px;
-            position: relative;
+            border-bottom: 3px solid rgb(249, 55, 5);
         }
 
-        .header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: rgb(249, 55, 5);
+        .header-reference {
+            font-size: 0.9rem;
+            color: rgb(249, 55, 5);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .description {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin-bottom: 25px;
         }
 
         ${procedure.coverImage ? `
         .cover-image {
             width: 100%;
-            max-width: 600px;
+            max-width: 500px;
             height: auto;
-            margin: 20px auto;
+            margin: 25px auto 0;
             display: block;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            border-radius: 4px;
         }
         ` : ''}
-
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 15px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .description {
-            font-size: 1.1rem;
-            opacity: 0.9;
-            margin-bottom: 20px;
-        }
 
         .tags {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 20px;
+            gap: 8px;
+            margin-top: 15px;
         }
 
         .tag {
-            background: rgba(255,255,255,0.2);
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            backdrop-filter: blur(10px);
+            background: rgba(255,255,255,0.15);
+            padding: 4px 12px;
+            border-radius: 3px;
+            font-size: 0.85rem;
         }
 
         .meta-info {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
             margin-top: 20px;
             padding-top: 20px;
-            border-top: 1px solid rgba(255,255,255,0.2);
+            border-top: 1px solid rgba(255,255,255,0.15);
         }
 
         .meta-item {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+            font-size: 0.9rem;
         }
 
         .meta-label {
@@ -125,22 +182,23 @@ export async function generateHTML(
         .resources {
             background: #f8f9fa;
             padding: 30px;
-            margin-bottom: 40px;
-            border-radius: 8px;
-            border-left: 4px solid rgb(249, 55, 5);
+            margin-bottom: 30px;
+            border-left: 3px solid rgb(249, 55, 5);
         }
 
         .resources h2 {
-            color: rgb(249, 55, 5);
+            color: #2c3e50;
             margin-bottom: 20px;
-            font-size: 1.5rem;
+            font-size: 1.3rem;
+            font-weight: 600;
         }
 
         .resources h3 {
             color: #2c3e50;
             margin-top: 20px;
             margin-bottom: 10px;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
         }
 
         .resource-list {
@@ -168,28 +226,27 @@ export async function generateHTML(
         }
 
         .resource-desc {
-            color: #7f8c8d;
-            font-size: 0.95rem;
+            color: #666;
+            font-size: 0.9rem;
             margin-top: 5px;
         }
 
         /* Phases */
         .phase {
-            margin-bottom: 50px;
+            margin-bottom: 40px;
             break-inside: avoid;
         }
 
         .phase-header {
-            background: linear-gradient(135deg, rgb(249, 55, 5) 0%, #ff6b35 100%);
+            background: rgb(249, 55, 5);
             color: white;
-            padding: 20px 30px;
-            border-radius: 8px;
+            padding: 20px 25px;
             margin-bottom: 20px;
         }
 
         .phase-title {
-            font-size: 1.8rem;
-            font-weight: 700;
+            font-size: 1.6rem;
+            font-weight: 600;
             margin-bottom: 10px;
         }
 
@@ -197,8 +254,8 @@ export async function generateHTML(
             display: flex;
             flex-wrap: wrap;
             gap: 20px;
-            font-size: 0.95rem;
-            opacity: 0.9;
+            font-size: 0.9rem;
+            opacity: 0.95;
         }
 
         .phase-meta-item {
@@ -209,15 +266,14 @@ export async function generateHTML(
 
         /* Étapes */
         .steps {
-            padding-left: 20px;
+            padding-left: 0;
         }
 
         .step {
-            margin-bottom: 30px;
+            margin-bottom: 25px;
             padding: 20px;
             background: #ffffff;
             border: 1px solid #e0e0e0;
-            border-radius: 8px;
         }
 
         .step-number {
@@ -225,14 +281,14 @@ export async function generateHTML(
             background: rgb(249, 55, 5);
             color: white;
             padding: 4px 12px;
-            font-weight: 700;
+            font-weight: 600;
             font-size: 0.9rem;
             margin-right: 10px;
-            border-radius: 4px;
+            border-radius: 3px;
         }
 
         .step-title {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: 600;
             color: #2c3e50;
             margin-bottom: 10px;
@@ -242,13 +298,12 @@ export async function generateHTML(
         .step-description {
             color: #555;
             margin-bottom: 15px;
-            line-height: 1.8;
+            line-height: 1.7;
         }
 
         .step-tool {
-            background: #fff3e0;
+            background: #fff8f0;
             padding: 12px;
-            border-radius: 6px;
             border-left: 3px solid rgb(249, 55, 5);
             margin: 15px 0;
         }
@@ -260,9 +315,8 @@ export async function generateHTML(
         }
 
         .step-time {
-            color: #7f8c8d;
-            font-size: 0.9rem;
-            font-style: italic;
+            color: #666;
+            font-size: 0.85rem;
             margin-top: 10px;
         }
 
@@ -275,9 +329,8 @@ export async function generateHTML(
         }
 
         .step-image-wrapper {
-            border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0;
         }
 
         .step-image {
@@ -291,21 +344,19 @@ export async function generateHTML(
             background: #f8f9fa;
             font-size: 0.85rem;
             color: #666;
-            text-align: center;
         }
 
-        /* Conseils */
+        /* Conseils (touches de vert) */
         .tips {
-            background: #e3f2fd;
-            border-left: 3px solid #2196f3;
+            background: #f0f9f4;
+            border-left: 3px solid #10b981;
             padding: 15px;
             margin: 15px 0;
-            border-radius: 6px;
         }
 
         .tips-title {
             font-weight: 600;
-            color: #1976d2;
+            color: #059669;
             margin-bottom: 10px;
             display: flex;
             align-items: center;
@@ -317,25 +368,24 @@ export async function generateHTML(
             color: #555;
         }
 
-        /* Consignes de sécurité */
+        /* Consignes de sécurité (touches de rouge) */
         .safety-notes {
             margin: 15px 0;
         }
 
         .safety-note {
             padding: 15px;
-            border-radius: 6px;
             margin-bottom: 10px;
         }
 
         .safety-note.warning {
-            background: #fff3e0;
-            border-left: 3px solid #ff9800;
+            background: #fef2f2;
+            border-left: 3px solid #ef4444;
         }
 
         .safety-note.danger {
-            background: #ffebee;
-            border-left: 3px solid #f44336;
+            background: #fef2f2;
+            border-left: 3px solid #dc2626;
         }
 
         .safety-note-title {
@@ -347,23 +397,25 @@ export async function generateHTML(
         }
 
         .safety-note.warning .safety-note-title {
-            color: #f57c00;
+            color: #ef4444;
         }
 
         .safety-note.danger .safety-note-title {
-            color: #d32f2f;
+            color: #dc2626;
         }
 
         /* Impression */
         @media print {
-            body {
-                background: white;
-                padding: 0;
+            .sidebar {
+                display: none;
             }
 
             .container {
-                box-shadow: none;
-                max-width: 100%;
+                margin-left: 0;
+            }
+
+            body {
+                background: white;
             }
 
             .phase {
@@ -373,71 +425,21 @@ export async function generateHTML(
             .step {
                 page-break-inside: avoid;
             }
-
-            .no-print {
-                display: none;
-            }
-        }
-
-        /* Sommaire */
-        .table-of-contents {
-            background: #f8f9fa;
-            padding: 30px;
-            margin-bottom: 40px;
-            border-radius: 8px;
-            border-left: 4px solid rgb(249, 55, 5);
-        }
-
-        .table-of-contents h2 {
-            color: rgb(249, 55, 5);
-            margin-bottom: 20px;
-            font-size: 1.5rem;
-        }
-
-        .toc-list {
-            list-style: none;
-            padding: 0;
-        }
-
-        .toc-item {
-            padding: 10px 0;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        .toc-item:last-child {
-            border-bottom: none;
-        }
-
-        .toc-link {
-            color: #2c3e50;
-            text-decoration: none;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: color 0.2s;
-        }
-
-        .toc-link:hover {
-            color: rgb(249, 55, 5);
-        }
-
-        .toc-number {
-            font-weight: 700;
-            margin-right: 10px;
-            color: rgb(249, 55, 5);
-        }
-
-        .toc-meta {
-            font-size: 0.85rem;
-            color: #7f8c8d;
         }
     </style>
 </head>
 <body>
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+        <h2>Navigation</h2>
+        ${generateSidebarNav(phases)}
+    </div>
+
+    <!-- Contenu principal -->
     <div class="container">
         <!-- En-tête -->
         <div class="header">
-            ${procedure.coverImage ? `<img src="${procedure.coverImage}" alt="Cover" class="cover-image">` : ''}
+            ${procedure.reference ? `<div class="header-reference">Référence: ${escapeHtml(procedure.reference)}</div>` : ''}
             <h1>${escapeHtml(procedure.designation || procedure.title)}</h1>
             ${procedure.description ? `<p class="description">${escapeHtml(procedure.description)}</p>` : ''}
 
@@ -447,17 +449,16 @@ export async function generateHTML(
             </div>
             ` : ''}
 
+            ${procedure.coverImage ? `<img src="${procedure.coverImage}" alt="Cover" class="cover-image">` : ''}
+
             <div class="meta-info">
-                ${procedure.reference ? `<div class="meta-item"><span class="meta-label">Référence:</span> ${escapeHtml(procedure.reference)}</div>` : ''}
                 ${procedure.category ? `<div class="meta-item"><span class="meta-label">Catégorie:</span> ${escapeHtml(procedure.category)}</div>` : ''}
                 ${procedure.totalCost ? `<div class="meta-item"><span class="meta-label">Coût estimé:</span> ${procedure.totalCost}€</div>` : ''}
-                <div class="meta-item"><span class="meta-label">Généré le:</span> ${new Date().toLocaleDateString('fr-FR')}</div>
             </div>
         </div>
 
         <!-- Contenu -->
         <div class="content">
-            ${generateTableOfContents(phases)}
             ${generateGlobalResources(procedure)}
             ${generatePhasesHTML(phases)}
         </div>
@@ -478,34 +479,31 @@ export async function generateHTML(
 }
 
 /**
- * Génère le sommaire (table des matières)
+ * Génère la navigation de la sidebar
  */
-function generateTableOfContents(phases: Phase[]): string {
+function generateSidebarNav(phases: Phase[]): string {
   if (!phases || phases.length === 0) {
-    return '';
+    return '<p style="color: #999;">Aucune phase</p>';
   }
 
-  return `
-    <div class="table-of-contents">
-        <h2>📋 Sommaire</h2>
-        <ul class="toc-list">
-            ${phases.map((phase, index) => `
-            <li class="toc-item">
-                <a href="#phase-${index + 1}" class="toc-link">
-                    <div>
-                        <span class="toc-number">Phase ${phase.phaseNumber || index + 1}</span>
-                        <span>${escapeHtml(phase.title)}</span>
-                    </div>
-                    <span class="toc-meta">
-                        ${phase.estimatedTime ? `⏱️ ${phase.estimatedTime} min` : ''}
-                        ${phase.steps ? ` • ${phase.steps.length} étapes` : ''}
-                    </span>
+  return phases.map((phase, phaseIndex) => `
+    <div class="nav-phase">
+        <a href="#phase-${phaseIndex + 1}" class="nav-phase-title">
+            Phase ${phase.phaseNumber || phaseIndex + 1}: ${escapeHtml(phase.title)}
+        </a>
+        ${phase.steps && phase.steps.length > 0 ? `
+        <ul class="nav-steps">
+            ${phase.steps.map((step, stepIndex) => `
+            <li class="nav-step">
+                <a href="#phase-${phaseIndex + 1}-step-${stepIndex + 1}">
+                    ${stepIndex + 1}. ${escapeHtml(step.title || step.description.substring(0, 40) + '...')}
                 </a>
             </li>
             `).join('')}
         </ul>
+        ` : ''}
     </div>
-  `;
+  `).join('');
 }
 
 /**
@@ -558,10 +556,10 @@ function generateGlobalResources(procedure: Procedure): string {
  * Génère le HTML pour les phases
  */
 function generatePhasesHTML(phases: Phase[]): string {
-  return phases.map((phase, index) => `
-    <div class="phase" id="phase-${index + 1}">
+  return phases.map((phase, phaseIndex) => `
+    <div class="phase" id="phase-${phaseIndex + 1}">
         <div class="phase-header">
-            <div class="phase-title">Phase ${phase.phaseNumber || index + 1} : ${escapeHtml(phase.title)}</div>
+            <div class="phase-title">Phase ${phase.phaseNumber || phaseIndex + 1} : ${escapeHtml(phase.title)}</div>
             <div class="phase-meta">
                 ${phase.difficulty ? `
                 <div class="phase-meta-item">
@@ -583,7 +581,7 @@ function generatePhasesHTML(phases: Phase[]): string {
                 ` : ''}
             </div>
             ${phase.requiredSkills && phase.requiredSkills.length > 0 ? `
-            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2);">
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.15);">
                 <strong>Compétences requises:</strong> ${phase.requiredSkills.join(', ')}
             </div>
             ` : ''}
@@ -592,7 +590,7 @@ function generatePhasesHTML(phases: Phase[]): string {
         ${phase.steps && phase.steps.length > 0 ? `
         <div class="steps">
             ${phase.steps.map((step, stepIndex) => `
-            <div class="step">
+            <div class="step" id="phase-${phaseIndex + 1}-step-${stepIndex + 1}">
                 <div>
                     <span class="step-number">${stepIndex + 1}</span>
                     ${step.title ? `<span class="step-title">${escapeHtml(step.title)}</span>` : ''}
