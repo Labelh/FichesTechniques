@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Save, Undo, Redo, Pencil, ArrowRight, Circle, Square, Minus, Type, Palette, Scan, ZoomIn, ZoomOut } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { createImageUrl } from '@/services/imageService';
@@ -585,7 +586,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [zoom]);
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[9999] bg-black flex flex-col">
       {/* Header */}
       <div className="bg-gray-900 border-b border-gray-700 p-4 flex items-center justify-between flex-shrink-0">
@@ -809,6 +810,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
