@@ -199,6 +199,42 @@ export async function generateHTML(
             border-radius: 4px;
         }
 
+        /* Défauthèque */
+        .defects-section {
+            background: #fff5f5;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-left: 3px solid #ef4444;
+            border-radius: 4px;
+        }
+
+        .defects-section h2 {
+            color: #dc2626;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .defect-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 3px solid #f87171;
+            border-radius: 4px;
+        }
+
+        .defect-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .defect-description {
+            color: #555;
+            line-height: 1.6;
+        }
+
         .resources h2 {
             color: #2c3e50;
             margin-bottom: 20px;
@@ -488,6 +524,7 @@ export async function generateHTML(
         <!-- Contenu -->
         <div class="content">
             ${generateGlobalResources(procedure)}
+            ${generateDefects(procedure)}
             ${generatePhasesHTML(phases)}
         </div>
     </div>
@@ -576,6 +613,28 @@ function generateGlobalResources(procedure: Procedure): string {
             `).join('')}
         </ul>
         ` : ''}
+    </div>
+  `;
+}
+
+/**
+ * Génère le HTML pour la Défauthèque
+ */
+function generateDefects(procedure: Procedure): string {
+  if (!procedure.defects || procedure.defects.length === 0) {
+    return '';
+  }
+
+  return `
+    <div class="defects-section">
+        <h2>⚠️ Défauthèque - Défauts possibles sur la pièce</h2>
+        <p style="color: #666; margin-bottom: 20px;">Attention particulière à porter sur les points suivants</p>
+
+        ${procedure.defects.map(defect => `
+        <div class="defect-item">
+            <div class="defect-description">${escapeHtml(defect.description)}</div>
+        </div>
+        `).join('')}
     </div>
   `;
 }

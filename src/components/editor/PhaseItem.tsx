@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, AlertTriangle, Lightbulb, Save, Cloud, GripVertical } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, AlertTriangle, Lightbulb, Save, Cloud, GripVertical, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -9,7 +9,8 @@ import { uploadImageToHost } from '@/services/imageHostingService';
 import { fetchConsumables } from '@/services/consumablesService';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useTools } from '@/hooks/useTools';
-import type { Phase, DifficultyLevel, SubStep, SafetyNote, AnnotatedImage, Tool, Consumable } from '@/types';
+import ImageAnnotator from '@/components/phase/ImageAnnotator';
+import type { Phase, DifficultyLevel, SubStep, SafetyNote, AnnotatedImage, Tool, Consumable, Annotation } from '@/types';
 import { toast } from 'sonner';
 
 interface PhaseItemProps {
@@ -429,6 +430,7 @@ function SubStepItem({
   onUpdateTool,
 }: SubStepItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [imageToAnnotate, setImageToAnnotate] = useState<AnnotatedImage | null>(null);
 
   const handleImageUpload = async (files: File[]) => {
     const validImages: AnnotatedImage[] = [];
@@ -479,6 +481,21 @@ function SubStepItem({
       onAddImage(validImages);
       toast.success(`${validImages.length} image(s) ajoutée(s)`);
     }
+  };
+
+  const handleSaveAnnotations = (annotations: Annotation[], description: string) => {
+    if (!imageToAnnotate) return;
+
+    // Mettre à jour l'image avec les nouvelles annotations
+    const updatedImages = (step.images || []).map(img =>
+      img.imageId === imageToAnnotate.imageId
+        ? { ...img, annotations, description }
+        : img
+    );
+
+    onUpdate({ images: updatedImages });
+    setImageToAnnotate(null);
+    toast.success('Annotations sauvegardées');
   };
 
   return (
@@ -576,12 +593,27 @@ function SubStepItem({
                     alt={img.description || 'Image'}
                     className="h-16 w-16 object-cover rounded border border-gray-600"
                   />
-                  <button
-                    onClick={() => onRemoveImage(img.imageId)}
-                    className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                    <button
+                      onClick={() => setImageToAnnotate(img)}
+                      className="bg-primary text-white rounded p-1 hover:bg-primary/80"
+                      title="Annoter l'image"
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </button>
+                    <button
+                      onClick={() => onRemoveImage(img.imageId)}
+                      className="bg-red-500 text-white rounded p-1 hover:bg-red-600"
+                      title="Supprimer l'image"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                  {img.annotations && img.annotations.length > 0 && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-primary/80 text-white text-xs px-1 text-center">
+                      {img.annotations.length} annotation{img.annotations.length > 1 ? 's' : ''}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -758,6 +790,19 @@ function SubStepItem({
                 Ajouter une consigne
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ImageAnnotator Modal */}
+      {imageToAnnotate && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-900 rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden">
+            <ImageAnnotator
+              annotatedImage={imageToAnnotate}
+              onSave={handleSaveAnnotations}
+              onCancel={() => setImageToAnnotate(null)}
+            />
           </div>
         </div>
       )}

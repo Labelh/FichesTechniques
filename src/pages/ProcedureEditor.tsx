@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Plus, Image, X, Download } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Image, X, Download, AlertTriangle } from 'lucide-react';
 import { useProcedure } from '@/hooks/useProcedures';
 import { createProcedure, updateProcedure, addPhase, deletePhase } from '@/services/procedureService';
 import { uploadImageToHost } from '@/services/imageHostingService';
@@ -11,6 +11,7 @@ import PhaseItem from '@/components/editor/PhaseItem';
 import PhaseTemplateSelector from '@/components/editor/PhaseTemplateSelector';
 import { toast } from 'sonner';
 import { generateHTML } from '@/lib/htmlGenerator';
+import type { DefectItem } from '@/types';
 
 export default function ProcedureEditor() {
   const { id } = useParams<{ id: string }>();
@@ -22,11 +23,13 @@ export default function ProcedureEditor() {
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
+  const [defects, setDefects] = useState<DefectItem[]>([]);
 
   useEffect(() => {
     if (existingProcedure) {
       setReference(existingProcedure.reference || '');
       setDesignation(existingProcedure.designation || existingProcedure.title || '');
+      setDefects(existingProcedure.defects || []);
 
       if (existingProcedure.coverImage) {
         setCoverImage(existingProcedure.coverImage);
@@ -49,6 +52,7 @@ export default function ProcedureEditor() {
           title: designation.trim() || reference.trim() || 'Sans titre',
           description: '',
           coverImage: coverImage || undefined,
+          defects: defects,
         });
         toast.success('Procédure mise à jour');
       } else {
@@ -58,6 +62,7 @@ export default function ProcedureEditor() {
           title: designation.trim() || reference.trim() || 'Nouvelle procédure',
           description: '',
           coverImage: coverImage || undefined,
+          defects: defects,
         });
         toast.success('Procédure créée');
         navigate(`/procedures/${newId}/edit`);
@@ -65,6 +70,22 @@ export default function ProcedureEditor() {
     } catch (error) {
       toast.error('Erreur lors de la sauvegarde');
     }
+  };
+
+  const handleAddDefect = () => {
+    setDefects([...defects, {
+      id: crypto.randomUUID(),
+      description: '',
+      images: []
+    }]);
+  };
+
+  const handleUpdateDefect = (id: string, description: string) => {
+    setDefects(defects.map(d => d.id === id ? { ...d, description } : d));
+  };
+
+  const handleRemoveDefect = (id: string) => {
+    setDefects(defects.filter(d => d.id !== id));
   };
 
   const handleAddPhase = () => {
@@ -290,6 +311,59 @@ export default function ProcedureEditor() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Défauthèque */}
+        {id && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-xl font-bold flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-orange-500" />
+                    Défauthèque
+                  </h2>
+                  <p className="text-sm text-gray-500 mt-1">Défauts possibles sur la pièce</p>
+                </div>
+                <Button onClick={handleAddDefect} variant="secondary">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Ajouter un défaut
+                </Button>
+              </div>
+
+              {defects.length === 0 ? (
+                <p className="text-gray-400 text-center py-8">
+                  Aucun défaut répertorié. Cliquez sur "Ajouter un défaut" pour commencer.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {defects.map((defect) => (
+                    <div key={defect.id} className="border border-gray-700/50 rounded-lg bg-gray-900/30 p-4">
+                      <div className="flex items-start gap-3">
+                        <AlertTriangle className="h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <textarea
+                            value={defect.description}
+                            onChange={(e) => handleUpdateDefect(defect.id, e.target.value)}
+                            placeholder="Description du défaut..."
+                            rows={3}
+                            className="w-full rounded-lg border border-gray-700/30 bg-transparent px-3 py-2 text-sm text-white focus:ring-2 focus:ring-primary focus:border-transparent"
+                          />
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveDefect(defect.id)}
+                        >
+                          <X className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Phases */}
         {id && (
