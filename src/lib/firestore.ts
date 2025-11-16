@@ -96,8 +96,17 @@ export function prepareForFirestore(data: any): any {
   if (prepared.images && Array.isArray(prepared.images)) {
     prepared.images = prepared.images.map((img: any) => {
       if (img.image) {
+        // Nettoyer les annotations (convertir les dates)
+        const cleanedAnnotations = img.annotations?.map((annotation: any) => ({
+          ...annotation,
+          createdAt: annotation.createdAt instanceof Date
+            ? Timestamp.fromDate(annotation.createdAt)
+            : annotation.createdAt,
+        })) || [];
+
         return {
           ...img,
+          annotations: cleanedAnnotations,
           image: {
             id: img.image.id,
             name: img.image.name,
@@ -107,8 +116,12 @@ export function prepareForFirestore(data: any): any {
             height: img.image.height,
             url: img.image.url, // URL hébergée (ImgBB)
             // blob et thumbnail sont retirés
-            createdAt: img.image.createdAt,
-            updatedAt: img.image.updatedAt,
+            createdAt: img.image.createdAt instanceof Date
+              ? Timestamp.fromDate(img.image.createdAt)
+              : img.image.createdAt,
+            updatedAt: img.image.updatedAt instanceof Date
+              ? Timestamp.fromDate(img.image.updatedAt)
+              : img.image.updatedAt,
           },
         };
       }
@@ -127,8 +140,17 @@ export function prepareForFirestore(data: any): any {
       if (step.images && Array.isArray(step.images)) {
         cleanedStep.images = step.images.map((img: any) => {
           if (img.image) {
+            // Nettoyer les annotations (convertir les dates)
+            const cleanedAnnotations = img.annotations?.map((annotation: any) => ({
+              ...annotation,
+              createdAt: annotation.createdAt instanceof Date
+                ? Timestamp.fromDate(annotation.createdAt)
+                : annotation.createdAt,
+            })) || [];
+
             return {
               ...img,
+              annotations: cleanedAnnotations,
               image: {
                 id: img.image.id,
                 name: img.image.name,
@@ -138,8 +160,12 @@ export function prepareForFirestore(data: any): any {
                 height: img.image.height,
                 url: img.image.url, // URL hébergée (ImgBB)
                 // blob et thumbnail sont retirés
-                createdAt: img.image.createdAt,
-                updatedAt: img.image.updatedAt,
+                createdAt: img.image.createdAt instanceof Date
+                  ? Timestamp.fromDate(img.image.createdAt)
+                  : img.image.createdAt,
+                updatedAt: img.image.updatedAt instanceof Date
+                  ? Timestamp.fromDate(img.image.updatedAt)
+                  : img.image.updatedAt,
               },
             };
           }
@@ -147,6 +173,50 @@ export function prepareForFirestore(data: any): any {
         });
       }
       return cleanedStep;
+    });
+  }
+
+  // Nettoyer les images dans les défauts (défauthèque)
+  if (prepared.defects && Array.isArray(prepared.defects)) {
+    prepared.defects = prepared.defects.map((defect: any) => {
+      const cleanedDefect = { ...defect };
+
+      if (defect.images && Array.isArray(defect.images)) {
+        cleanedDefect.images = defect.images.map((img: any) => {
+          if (img.image) {
+            // Nettoyer les annotations (convertir les dates)
+            const cleanedAnnotations = img.annotations?.map((annotation: any) => ({
+              ...annotation,
+              createdAt: annotation.createdAt instanceof Date
+                ? Timestamp.fromDate(annotation.createdAt)
+                : annotation.createdAt,
+            })) || [];
+
+            return {
+              ...img,
+              annotations: cleanedAnnotations,
+              image: {
+                id: img.image.id,
+                name: img.image.name,
+                size: img.image.size,
+                mimeType: img.image.mimeType,
+                width: img.image.width,
+                height: img.image.height,
+                url: img.image.url, // URL hébergée (ImgBB)
+                // blob et thumbnail sont retirés
+                createdAt: img.image.createdAt instanceof Date
+                  ? Timestamp.fromDate(img.image.createdAt)
+                  : img.image.createdAt,
+                updatedAt: img.image.updatedAt instanceof Date
+                  ? Timestamp.fromDate(img.image.updatedAt)
+                  : img.image.updatedAt,
+              },
+            };
+          }
+          return img;
+        });
+      }
+      return cleanedDefect;
     });
   }
 
