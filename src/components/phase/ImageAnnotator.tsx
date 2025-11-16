@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Save, Undo, Redo, Pencil, ArrowRight, Circle, Square, Minus, Type, Palette, Scan, ZoomIn, ZoomOut } from 'lucide-react';
+import { X, Save, Undo, Redo, Pencil, ArrowRight, Circle, Square, Minus, Type, Palette, ZoomIn, ZoomOut } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { createImageUrl } from '@/services/imageService';
 import type { AnnotatedImage, Annotation, Tool } from '@/types';
@@ -22,23 +22,30 @@ interface Point {
 }
 
 export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onCancel }: ImageAnnotatorProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const edgeCanvasRef = useRef<HTMLCanvasElement>(null);
-  const [imageUrl, setImageUrl] = useState<string>('');
+  // Canvas refs
+  const baseCanvasRef = useRef<HTMLCanvasElement>(null);
+  const drawCanvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // State
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [currentTool, setCurrentTool] = useState<DrawingTool>(AnnotationType.TRAJECTORY);
   const [currentColor, setCurrentColor] = useState<string>('#ff5722');
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [startPoint, setStartPoint] = useState<Point | null>(null);
   const [annotations, setAnnotations] = useState<Annotation[]>(annotatedImage.annotations || []);
   const [history, setHistory] = useState<Annotation[][]>([annotatedImage.annotations || []]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [description, setDescription] = useState(annotatedImage.description || '');
   const [showColorPicker, setShowColorPicker] = useState(false);
-  const [edgeDetectionEnabled, setEdgeDetectionEnabled] = useState(false);
-  const [showEdgeOverlay, setShowEdgeOverlay] = useState(false);
-  const [edgeMap, setEdgeMap] = useState<number[][]>([]);
   const [zoom, setZoom] = useState(1);
-  const canvasContainerRef = useRef<HTMLDivElement>(null);
+
+  // Drawing state (not in React state to avoid re-renders)
+  const drawingState = useRef({
+    isDrawing: false,
+    startPoint: null as Point | null,
+    currentPoints: [] as Point[],
+  });
+
+  const imageRef = useRef<HTMLImageElement | null>(null);
 
   const toolColors = [
     { name: 'Orange-rouge', value: '#ff5722' },
@@ -53,203 +60,116 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     { name: 'Blanc', value: '#ffffff' },
   ];
 
-  // Charger l'image
+  // Charger l'image une seule fois
   useEffect(() => {
-    // Utiliser l'URL hébergée si disponible, sinon créer une URL à partir du blob
-    if (annotatedImage.image.url) {
-      setImageUrl(annotatedImage.image.url);
-    } else if (annotatedImage.image.blob) {
-      const url = createImageUrl(annotatedImage.image.blob);
-      setImageUrl(url);
-      return () => URL.revokeObjectURL(url);
-    }
-  }, [annotatedImage.image.blob, annotatedImage.image.url]);
-
-  // Fonction de détection d'arêtes avec filtre de Sobel
-  const detectEdges = (imageData: ImageData): number[][] => {
-    const width = imageData.width;
-    const height = imageData.height;
-    const data = imageData.data;
-
-    // Convertir en niveaux de gris
-    const gray: number[][] = [];
-    for (let y = 0; y < height; y++) {
-      gray[y] = [];
-      for (let x = 0; x < width; x++) {
-        const i = (y * width + x) * 4;
-        // Conversion en niveaux de gris (luminosité)
-        gray[y][x] = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-      }
-    }
-
-    // Opérateurs de Sobel
-    const sobelX = [
-      [-1, 0, 1],
-      [-2, 0, 2],
-      [-1, 0, 1]
-    ];
-
-    const sobelY = [
-      [-1, -2, -1],
-      [0, 0, 0],
-      [1, 2, 1]
-    ];
-
-    // Calculer les gradients
-    const edges: number[][] = [];
-    for (let y = 0; y < height; y++) {
-      edges[y] = [];
-      for (let x = 0; x < width; x++) {
-        if (x === 0 || x === width - 1 || y === 0 || y === height - 1) {
-          edges[y][x] = 0;
-          continue;
-        }
-
-        let gx = 0;
-        let gy = 0;
-
-        // Appliquer les filtres de Sobel
-        for (let ky = -1; ky <= 1; ky++) {
-          for (let kx = -1; kx <= 1; kx++) {
-            const pixel = gray[y + ky][x + kx];
-            gx += pixel * sobelX[ky + 1][kx + 1];
-            gy += pixel * sobelY[ky + 1][kx + 1];
-          }
-        }
-
-        // Magnitude du gradient
-        const magnitude = Math.sqrt(gx * gx + gy * gy);
-
-        // Seuillage (ajustable selon les besoins)
-        edges[y][x] = magnitude > 50 ? magnitude : 0;
-      }
-    }
-
-    return edges;
-  };
-
-  // Trouver l'arête la plus proche d'un point
-  const findNearestEdge = (point: Point, searchRadius: number = 20): Point | null => {
-    if (!edgeDetectionEnabled || edgeMap.length === 0) return null;
-
-    const x = Math.round(point.x);
-    const y = Math.round(point.y);
-
-    let maxEdgeStrength = 0;
-    let bestPoint: Point | null = null;
-
-    // Rechercher dans un rayon autour du point
-    for (let dy = -searchRadius; dy <= searchRadius; dy++) {
-      for (let dx = -searchRadius; dx <= searchRadius; dx++) {
-        const nx = x + dx;
-        const ny = y + dy;
-
-        if (ny >= 0 && ny < edgeMap.length && nx >= 0 && nx < edgeMap[0].length) {
-          const edgeStrength = edgeMap[ny][nx];
-
-          // Trouver l'arête la plus forte dans le rayon
-          if (edgeStrength > maxEdgeStrength) {
-            maxEdgeStrength = edgeStrength;
-            bestPoint = { x: nx, y: ny };
-          }
-        }
-      }
-    }
-
-    // Seuil minimum pour considérer qu'il y a une arête
-    return maxEdgeStrength > 50 ? bestPoint : null;
-  };
-
-  // Dessiner l'overlay des arêtes
-  const drawEdgeOverlay = () => {
-    if (!edgeCanvasRef.current || edgeMap.length === 0) return;
-
-    const canvas = edgeCanvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const imageData = ctx.createImageData(canvas.width, canvas.height);
-    const data = imageData.data;
-
-    for (let y = 0; y < edgeMap.length; y++) {
-      for (let x = 0; x < edgeMap[0].length; x++) {
-        const i = (y * canvas.width + x) * 4;
-        const edgeStrength = edgeMap[y][x];
-
-        if (edgeStrength > 50) {
-          // Arêtes en cyan semi-transparent
-          data[i] = 0;
-          data[i + 1] = 255;
-          data[i + 2] = 255;
-          data[i + 3] = Math.min(edgeStrength, 150);
-        }
-      }
-    }
-
-    ctx.putImageData(imageData, 0, 0);
-  };
-
-  // Dessiner sur le canvas
-  useEffect(() => {
-    if (!canvasRef.current || !imageUrl) {
-      console.log('ImageAnnotator: Pas de canvas ou imageUrl', { canvas: !!canvasRef.current, imageUrl });
-      return;
-    }
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
     const img = new Image();
-    img.crossOrigin = 'anonymous'; // Pour les images hébergées
+    img.crossOrigin = 'anonymous';
 
     img.onload = () => {
-      console.log('ImageAnnotator: Image chargée', { width: img.width, height: img.height });
+      imageRef.current = img;
 
-      // Ajuster la taille du canvas à l'image
-      canvas.width = img.width;
-      canvas.height = img.height;
+      // Configurer les canvas
+      if (baseCanvasRef.current && drawCanvasRef.current) {
+        baseCanvasRef.current.width = img.width;
+        baseCanvasRef.current.height = img.height;
+        drawCanvasRef.current.width = img.width;
+        drawCanvasRef.current.height = img.height;
 
-      // Ajuster la taille du canvas d'arêtes
-      if (edgeCanvasRef.current) {
-        edgeCanvasRef.current.width = img.width;
-        edgeCanvasRef.current.height = img.height;
+        setImageLoaded(true);
       }
+    };
 
-      // Dessiner l'image
-      ctx.drawImage(img, 0, 0);
+    img.onerror = () => {
+      console.error('Erreur de chargement de l\'image');
+      toast.error('Erreur de chargement de l\'image');
+    };
 
-      // Effectuer la détection d'arêtes si le mode est activé
-      if (edgeDetectionEnabled && edgeMap.length === 0) {
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const edges = detectEdges(imageData);
-        setEdgeMap(edges);
-      }
+    // Déterminer l'URL de l'image
+    if (annotatedImage.image.url) {
+      img.src = annotatedImage.image.url;
+    } else if (annotatedImage.image.blob) {
+      const url = createImageUrl(annotatedImage.image.blob);
+      img.src = url;
+      return () => URL.revokeObjectURL(url);
+    }
+  }, [annotatedImage.image.url, annotatedImage.image.blob]);
 
-      // Dessiner les annotations
-      annotations.forEach(annotation => {
-        drawAnnotation(ctx, annotation);
+  // Redessiner le canvas de base quand les annotations changent
+  useEffect(() => {
+    if (!imageLoaded || !imageRef.current || !baseCanvasRef.current) return;
+
+    const canvas = baseCanvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Effacer et redessiner
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(imageRef.current, 0, 0);
+
+    // Dessiner toutes les annotations
+    annotations.forEach(annotation => {
+      drawAnnotation(ctx, annotation);
+    });
+  }, [imageLoaded, annotations]);
+
+  // Bloquer le scroll et gérer le zoom à la molette
+  useEffect(() => {
+    const preventScroll = (e: Event) => e.preventDefault();
+
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('wheel', preventScroll, { passive: false });
+    window.addEventListener('touchmove', preventScroll, { passive: false });
+
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('wheel', preventScroll);
+      window.removeEventListener('touchmove', preventScroll);
+    };
+  }, []);
+
+  // Gestion du zoom à la molette sur le container
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      setZoom(prev => {
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        return Math.max(0.25, Math.min(5, prev + delta));
       });
     };
 
-    img.onerror = (error) => {
-      console.error('ImageAnnotator: Erreur chargement image', error, imageUrl);
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => container.removeEventListener('wheel', handleWheel);
+  }, []);
+
+  // Raccourcis clavier
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onCancel();
+      } else if ((e.key === '+' || e.key === '=') && !e.ctrlKey) {
+        e.preventDefault();
+        setZoom(prev => Math.min(5, prev + 0.25));
+      } else if (e.key === '-' && !e.ctrlKey) {
+        e.preventDefault();
+        setZoom(prev => Math.max(0.25, prev - 0.25));
+      } else if (e.key === '0' && !e.ctrlKey) {
+        e.preventDefault();
+        setZoom(1);
+      } else if (e.ctrlKey && e.key === 'z') {
+        e.preventDefault();
+        handleUndo();
+      } else if (e.ctrlKey && e.key === 'y') {
+        e.preventDefault();
+        handleRedo();
+      }
     };
 
-    img.src = imageUrl;
-  }, [imageUrl, annotations, edgeDetectionEnabled]);
-
-  // Mettre à jour l'overlay des arêtes
-  useEffect(() => {
-    if (showEdgeOverlay && edgeMap.length > 0) {
-      drawEdgeOverlay();
-    } else if (edgeCanvasRef.current) {
-      const ctx = edgeCanvasRef.current.getContext('2d');
-      if (ctx) {
-        ctx.clearRect(0, 0, edgeCanvasRef.current.width, edgeCanvasRef.current.height);
-      }
-    }
-  }, [showEdgeOverlay, edgeMap]);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [historyIndex, history]);
 
   const drawAnnotation = (ctx: CanvasRenderingContext2D, annotation: Annotation) => {
     ctx.strokeStyle = annotation.color;
@@ -313,41 +233,17 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
         }
         break;
     }
-
-    // Dessiner le label si présent
-    if (annotation.label && points.length > 0) {
-      const labelPoint = points[points.length - 1];
-      ctx.font = 'bold 14px Arial';
-      ctx.fillStyle = annotation.color;
-      const metrics = ctx.measureText(annotation.label);
-      const padding = 4;
-
-      // Fond du label
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-      ctx.fillRect(
-        labelPoint.x - padding,
-        labelPoint.y - 20 - padding,
-        metrics.width + padding * 2,
-        20 + padding * 2
-      );
-
-      // Texte du label
-      ctx.fillStyle = annotation.color;
-      ctx.fillText(annotation.label, labelPoint.x, labelPoint.y - 5);
-    }
   };
 
   const drawArrow = (ctx: CanvasRenderingContext2D, from: Point, to: Point) => {
     const headLength = 15;
     const angle = Math.atan2(to.y - from.y, to.x - from.x);
 
-    // Ligne
     ctx.beginPath();
     ctx.moveTo(from.x, from.y);
     ctx.lineTo(to.x, to.y);
     ctx.stroke();
 
-    // Pointe de la flèche
     ctx.beginPath();
     ctx.moveTo(to.x, to.y);
     ctx.lineTo(
@@ -362,106 +258,171 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     ctx.stroke();
   };
 
-  const getCanvasPoint = (e: React.MouseEvent<HTMLCanvasElement>): Point => {
-    const canvas = canvasRef.current;
-    if (!canvas) return { x: 0, y: 0 };
-
+  const getCanvasPoint = (e: MouseEvent, canvas: HTMLCanvasElement): Point => {
     const rect = canvas.getBoundingClientRect();
-
-    // Position relative au canvas affiché
-    const relX = e.clientX - rect.left;
-    const relY = e.clientY - rect.top;
-
-    // Convertir en coordonnées canvas réelles (sans tenir compte du zoom CSS)
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
 
     return {
-      x: relX * scaleX,
-      y: relY * scaleY,
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
     };
   };
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    // Dessin normal avec clic gauche
-    if (e.button === 0) {
-      const point = getCanvasPoint(e);
-      setIsDrawing(true);
-      setStartPoint(point);
+  const redrawTempCanvas = () => {
+    const canvas = drawCanvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const { isDrawing, startPoint, currentPoints } = drawingState.current;
+    if (!isDrawing || !startPoint) return;
+
+    ctx.strokeStyle = currentColor;
+    ctx.fillStyle = currentColor;
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    switch (currentTool) {
+      case AnnotationType.TRAJECTORY:
+        if (currentPoints.length > 1) {
+          ctx.beginPath();
+          ctx.moveTo(currentPoints[0].x, currentPoints[0].y);
+          for (let i = 1; i < currentPoints.length; i++) {
+            ctx.lineTo(currentPoints[i].x, currentPoints[i].y);
+          }
+          ctx.stroke();
+        }
+        break;
+
+      case AnnotationType.LINE:
+        if (currentPoints.length === 2) {
+          ctx.beginPath();
+          ctx.moveTo(currentPoints[0].x, currentPoints[0].y);
+          ctx.lineTo(currentPoints[1].x, currentPoints[1].y);
+          ctx.stroke();
+        }
+        break;
+
+      case AnnotationType.ARROW:
+        if (currentPoints.length === 2) {
+          drawArrow(ctx, currentPoints[0], currentPoints[1]);
+        }
+        break;
+
+      case AnnotationType.CIRCLE:
+        if (currentPoints.length === 2) {
+          const radius = Math.sqrt(
+            Math.pow(currentPoints[1].x - currentPoints[0].x, 2) +
+            Math.pow(currentPoints[1].y - currentPoints[0].y, 2)
+          );
+          ctx.beginPath();
+          ctx.arc(currentPoints[0].x, currentPoints[0].y, radius, 0, 2 * Math.PI);
+          ctx.stroke();
+        }
+        break;
+
+      case AnnotationType.RECTANGLE:
+        if (currentPoints.length === 2) {
+          const width = currentPoints[1].x - currentPoints[0].x;
+          const height = currentPoints[1].y - currentPoints[0].y;
+          ctx.strokeRect(currentPoints[0].x, currentPoints[0].y, width, height);
+        }
+        break;
+    }
+  };
+
+  // Event handlers avec event listeners natifs
+  useEffect(() => {
+    const canvas = drawCanvasRef.current;
+    if (!canvas || !imageLoaded) return;
+
+    const handleMouseDown = (e: MouseEvent) => {
+      if (e.button !== 0) return; // Seulement clic gauche
+
+      const point = getCanvasPoint(e, canvas);
+      drawingState.current = {
+        isDrawing: true,
+        startPoint: point,
+        currentPoints: [point],
+      };
+
+      redrawTempCanvas();
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!drawingState.current.isDrawing) return;
+
+      const point = getCanvasPoint(e, canvas);
 
       if (currentTool === AnnotationType.TRAJECTORY) {
-        const newAnnotation: Annotation = {
-          id: crypto.randomUUID(),
-          type: AnnotationType.TRAJECTORY,
-          points: [point],
-          color: currentColor,
-          createdAt: new Date(),
-        };
-        setAnnotations([...annotations, newAnnotation]);
+        // Ajouter le point à la trajectoire
+        drawingState.current.currentPoints.push(point);
+      } else {
+        // Pour les autres outils, juste mettre à jour le point final
+        drawingState.current.currentPoints = [drawingState.current.startPoint!, point];
       }
-    }
-  };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !startPoint) return;
+      redrawTempCanvas();
+    };
 
-    let point = getCanvasPoint(e);
+    const handleMouseUp = (e: MouseEvent) => {
+      if (!drawingState.current.isDrawing) return;
 
-    // Appliquer le snapping aux arêtes pour le mode TRAJECTORY
-    if (currentTool === AnnotationType.TRAJECTORY && edgeDetectionEnabled) {
-      const snappedPoint = findNearestEdge(point, 20);
-      if (snappedPoint) {
-        point = snappedPoint;
+      const point = getCanvasPoint(e, canvas);
+
+      // Finaliser l'annotation
+      let finalPoints = drawingState.current.currentPoints;
+
+      if (currentTool !== AnnotationType.TRAJECTORY) {
+        finalPoints = [drawingState.current.startPoint!, point];
       }
-    }
 
-    if (currentTool === AnnotationType.TRAJECTORY) {
-      setAnnotations(prev => {
-        const updated = [...prev];
-        const lastAnnotation = updated[updated.length - 1];
-        if (lastAnnotation && lastAnnotation.type === AnnotationType.TRAJECTORY && lastAnnotation.points) {
-          lastAnnotation.points.push(point);
-        }
-        return updated;
-      });
-    }
-  };
-
-  const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !startPoint) return;
-
-    const endPoint = getCanvasPoint(e);
-
-    if (currentTool !== AnnotationType.TRAJECTORY) {
+      // Pour le texte, demander le texte
       let text: string | undefined;
       if (currentTool === AnnotationType.TEXT) {
         text = prompt('Entrez le texte:') || undefined;
         if (!text) {
-          setIsDrawing(false);
-          setStartPoint(null);
+          drawingState.current = { isDrawing: false, startPoint: null, currentPoints: [] };
+          redrawTempCanvas();
           return;
         }
+        finalPoints = [drawingState.current.startPoint!];
       }
 
       const newAnnotation: Annotation = {
         id: crypto.randomUUID(),
         type: currentTool,
-        points: currentTool === AnnotationType.TEXT ? [startPoint] : [startPoint, endPoint],
+        points: finalPoints,
         color: currentColor,
         text,
         createdAt: new Date(),
       };
 
-      const updatedAnnotations = [...annotations, newAnnotation];
-      setAnnotations(updatedAnnotations);
-      addToHistory(updatedAnnotations);
-    } else {
-      addToHistory(annotations);
-    }
+      // Ajouter l'annotation
+      const newAnnotations = [...annotations, newAnnotation];
+      setAnnotations(newAnnotations);
+      addToHistory(newAnnotations);
 
-    setIsDrawing(false);
-    setStartPoint(null);
-  };
+      // Réinitialiser l'état de dessin
+      drawingState.current = { isDrawing: false, startPoint: null, currentPoints: [] };
+      redrawTempCanvas();
+    };
+
+    canvas.addEventListener('mousedown', handleMouseDown);
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      canvas.removeEventListener('mousedown', handleMouseDown);
+      canvas.removeEventListener('mousemove', handleMouseMove);
+      canvas.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [imageLoaded, currentTool, currentColor, annotations]);
 
   const addToHistory = (newAnnotations: Annotation[]) => {
     const newHistory = history.slice(0, historyIndex + 1);
@@ -472,15 +433,17 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
 
   const handleUndo = () => {
     if (historyIndex > 0) {
-      setHistoryIndex(historyIndex - 1);
-      setAnnotations([...history[historyIndex - 1]]);
+      const newIndex = historyIndex - 1;
+      setHistoryIndex(newIndex);
+      setAnnotations([...history[newIndex]]);
     }
   };
 
   const handleRedo = () => {
     if (historyIndex < history.length - 1) {
-      setHistoryIndex(historyIndex + 1);
-      setAnnotations([...history[historyIndex + 1]]);
+      const newIndex = historyIndex + 1;
+      setHistoryIndex(newIndex);
+      setAnnotations([...history[newIndex]]);
     }
   };
 
@@ -489,142 +452,84 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     toast.success('Annotations enregistrées');
   };
 
-  const toggleEdgeDetection = () => {
-    const newState = !edgeDetectionEnabled;
-    setEdgeDetectionEnabled(newState);
-
-    if (newState) {
-      // Activer la détection d'arêtes
-      if (canvasRef.current && edgeMap.length === 0) {
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const edges = detectEdges(imageData);
-          setEdgeMap(edges);
-          toast.success('Détection d\'arêtes activée');
-        }
-      }
-      setShowEdgeOverlay(true);
-    } else {
-      // Désactiver la détection d'arêtes
-      setShowEdgeOverlay(false);
-      toast.info('Détection d\'arêtes désactivée');
-    }
-  };
-
-  const handleZoomIn = () => {
-    setZoom(prev => Math.min(prev + 0.25, 5));
-  };
-
-  const handleZoomOut = () => {
-    setZoom(prev => Math.max(prev - 0.25, 0.25));
-  };
-
-  const handleResetZoom = () => {
-    setZoom(1);
-  };
-
-  // Bloquer le scroll de la page et gérer le zoom à la molette
-  useEffect(() => {
-    // Bloquer le scroll de la page
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
-
-    const container = canvasContainerRef.current;
-    if (!container) return;
-
-    // Empêcher le scroll sur toute la fenêtre
-    const preventScroll = (e: WheelEvent | TouchEvent) => {
-      e.preventDefault();
-    };
-
-    const handleWheelNative = (e: WheelEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (e.deltaY < 0) {
-        setZoom(prev => Math.min(prev + 0.25, 5));
-      } else {
-        setZoom(prev => Math.max(prev - 0.25, 0.25));
-      }
-    };
-
-    // Bloquer le scroll sur window
-    window.addEventListener('wheel', preventScroll, { passive: false });
-    window.addEventListener('touchmove', preventScroll, { passive: false });
-
-    container.addEventListener('wheel', handleWheelNative, { passive: false });
-
-    return () => {
-      container.removeEventListener('wheel', handleWheelNative);
-      window.removeEventListener('wheel', preventScroll);
-      window.removeEventListener('touchmove', preventScroll);
-      // Restaurer le scroll de la page
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
-    };
-  }, []);
-
-  // Raccourcis clavier
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onCancel();
-      } else if (e.key === '+' || e.key === '=') {
-        e.preventDefault();
-        handleZoomIn();
-      } else if (e.key === '-' || e.key === '_') {
-        e.preventDefault();
-        handleZoomOut();
-      } else if (e.key === '0') {
-        e.preventDefault();
-        handleResetZoom();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [zoom]);
+  if (!imageLoaded) {
+    return createPortal(
+      <div className="fixed inset-0 z-[9999] bg-black flex items-center justify-center">
+        <div className="text-white text-xl">Chargement de l'image...</div>
+      </div>,
+      document.body
+    );
+  }
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] bg-black flex flex-col">
       {/* Header */}
       <div className="bg-gray-900 border-b border-gray-700 p-4 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-4">
-          <h2 className="text-xl font-bold text-white">{annotatedImage.image.name}</h2>
+          <h2 className="text-xl font-bold text-white">Annotation : {annotatedImage.image.name}</h2>
           <input
             type="text"
             placeholder="Description de l'image..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="px-3 py-1 bg-gray-800 border border-gray-700 rounded text-white placeholder-gray-400"
+            className="px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white placeholder-gray-400 w-96"
           />
         </div>
         <div className="flex items-center gap-2">
+          {/* Zoom controls */}
           <div className="flex items-center gap-1 border-r border-gray-700 pr-3 mr-2">
-            <Button variant="ghost" size="sm" onClick={handleZoomOut} disabled={zoom <= 0.25} title="Zoom arrière (-)">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setZoom(prev => Math.max(0.25, prev - 0.25))}
+              disabled={zoom <= 0.25}
+              title="Zoom arrière (-)"
+            >
               <ZoomOut className="h-4 w-4" />
             </Button>
             <span className="text-sm font-medium text-white bg-gray-800 px-3 py-1 rounded min-w-[60px] text-center">
               {Math.round(zoom * 100)}%
             </span>
-            <Button variant="ghost" size="sm" onClick={handleZoomIn} disabled={zoom >= 5} title="Zoom avant (+)">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setZoom(prev => Math.min(5, prev + 0.25))}
+              disabled={zoom >= 5}
+              title="Zoom avant (+)"
+            >
               <ZoomIn className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={handleResetZoom} title="Réinitialiser la vue (0)">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setZoom(1)}
+              title="Réinitialiser (0)"
+            >
               <span className="text-xs font-medium">1:1</span>
             </Button>
           </div>
-          <div className="text-xs text-gray-400 border-r border-gray-700 pr-3 mr-2">
-            <div>Molette : Zoom</div>
-            <div>+/- : Zoom</div>
-          </div>
-          <Button variant="ghost" size="sm" onClick={handleUndo} disabled={historyIndex === 0} title="Annuler">
+
+          {/* Undo/Redo */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleUndo}
+            disabled={historyIndex === 0}
+            title="Annuler (Ctrl+Z)"
+          >
             <Undo className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="sm" onClick={handleRedo} disabled={historyIndex >= history.length - 1} title="Rétablir">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRedo}
+            disabled={historyIndex >= history.length - 1}
+            title="Rétablir (Ctrl+Y)"
+          >
             <Redo className="h-4 w-4" />
           </Button>
+
+          {/* Save/Cancel */}
           <Button variant="default" size="sm" onClick={handleSave}>
             <Save className="h-4 w-4 mr-2" />
             Enregistrer
@@ -635,23 +540,9 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
         </div>
       </div>
 
-      <div className="flex-1 flex">
+      <div className="flex-1 flex overflow-hidden">
         {/* Toolbar */}
-        <div className="bg-gray-900 border-r border-gray-700 p-4 w-20 flex flex-col gap-2">
-          <button
-            onClick={toggleEdgeDetection}
-            className={`p-3 rounded transition-colors ${
-              edgeDetectionEnabled
-                ? 'bg-green-600 text-white'
-                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-            }`}
-            title="Détection d'arêtes"
-          >
-            <Scan className="h-5 w-5" />
-          </button>
-
-          <div className="h-px bg-gray-700 my-2" />
-
+        <div className="bg-gray-900 border-r border-gray-700 p-4 w-20 flex flex-col gap-2 flex-shrink-0">
           <button
             onClick={() => setCurrentTool(AnnotationType.TRAJECTORY)}
             className={`p-3 rounded transition-colors ${
@@ -766,47 +657,33 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
           )}
         </div>
 
-        {/* Canvas */}
+        {/* Canvas area */}
         <div
-          ref={canvasContainerRef}
-          className="flex-1 overflow-hidden flex items-center justify-center p-8 bg-black relative"
+          ref={containerRef}
+          className="flex-1 overflow-auto flex items-center justify-center bg-black p-8"
         >
           <div
             className="relative"
             style={{
               transform: `scale(${zoom})`,
               transformOrigin: 'center center',
-              transition: 'transform 0.2s ease-out'
+              transition: 'transform 0.15s ease-out',
             }}
           >
             <canvas
-              ref={canvasRef}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onContextMenu={(e) => e.preventDefault()}
-              className="cursor-crosshair"
+              ref={baseCanvasRef}
+              className="block"
               style={{
-                imageRendering: zoom > 1 ? 'auto' : 'crisp-edges',
-                maxWidth: '100%',
-                maxHeight: '100%'
+                imageRendering: zoom > 2 ? 'auto' : 'crisp-edges',
               }}
             />
             <canvas
-              ref={edgeCanvasRef}
-              className="absolute top-0 left-0 pointer-events-none"
+              ref={drawCanvasRef}
+              className="absolute top-0 left-0 cursor-crosshair"
               style={{
-                imageRendering: zoom > 1 ? 'auto' : 'crisp-edges',
-                opacity: showEdgeOverlay ? 0.6 : 0,
-                transition: 'opacity 0.3s'
+                imageRendering: zoom > 2 ? 'auto' : 'crisp-edges',
               }}
             />
-            {edgeDetectionEnabled && (
-              <div className="absolute top-4 left-4 bg-green-600 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2">
-                <Scan className="h-4 w-4" />
-                <span>Détection d'arêtes activée</span>
-              </div>
-            )}
           </div>
         </div>
       </div>

@@ -30,7 +30,10 @@
       "Bash(gh run:*)",
       "Bash(gh workflow:*)",
       "Bash(git clean:*)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(firebase deploy:*)",
+      "Bash(npx firebase:*)",
+      "Bash(git restore:*)"
     ],
     "deny": [],
     "ask": []
