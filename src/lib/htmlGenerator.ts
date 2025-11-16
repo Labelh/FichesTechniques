@@ -633,6 +633,17 @@ function generateDefects(procedure: Procedure): string {
         ${procedure.defects.map(defect => `
         <div class="defect-item">
             <div class="defect-description">${escapeHtml(defect.description)}</div>
+
+            ${defect.images && defect.images.length > 0 ? `
+            <div class="step-images" style="margin-top: 15px;">
+                ${defect.images.map(img => `
+                <div class="step-image">
+                    <img src="${img.image.url}" alt="${escapeHtml(img.description || 'Image du défaut')}">
+                    ${img.description ? `<p class="image-caption">${escapeHtml(img.description)}</p>` : ''}
+                </div>
+                `).join('')}
+            </div>
+            ` : ''}
         </div>
         `).join('')}
     </div>

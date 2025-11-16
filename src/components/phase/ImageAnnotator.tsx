@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Save, Undo, Redo, Pencil, ArrowRight, Circle, Square, Minus, Type, Palette, Scan } from 'lucide-react';
+import { X, Save, Undo, Redo, Pencil, ArrowRight, Circle, Square, Minus, Type, Palette, Scan, ZoomIn, ZoomOut } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { createImageUrl } from '@/services/imageService';
 import type { AnnotatedImage, Annotation, Tool } from '@/types';
@@ -36,6 +36,8 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
   const [edgeDetectionEnabled, setEdgeDetectionEnabled] = useState(false);
   const [showEdgeOverlay, setShowEdgeOverlay] = useState(false);
   const [edgeMap, setEdgeMap] = useState<number[][]>([]);
+  const [zoom, setZoom] = useState(1);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
 
   const toolColors = [
     { name: 'Orange-rouge', value: '#ff5722' },
@@ -484,6 +486,28 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     }
   };
 
+  const handleZoomIn = () => {
+    setZoom(prev => Math.min(prev + 0.25, 5));
+  };
+
+  const handleZoomOut = () => {
+    setZoom(prev => Math.max(prev - 0.25, 0.25));
+  };
+
+  const handleResetZoom = () => {
+    setZoom(1);
+    setPanOffset({ x: 0, y: 0 });
+  };
+
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (e.deltaY < 0) {
+      handleZoomIn();
+    } else {
+      handleZoomOut();
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black/90 flex flex-col">
       {/* Header */}
@@ -499,6 +523,18 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
           />
         </div>
         <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 border-r border-gray-700 pr-2 mr-2">
+            <Button variant="ghost" size="sm" onClick={handleZoomOut} disabled={zoom <= 0.25}>
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+            <span className="text-sm text-gray-300 w-16 text-center">{Math.round(zoom * 100)}%</span>
+            <Button variant="ghost" size="sm" onClick={handleZoomIn} disabled={zoom >= 5}>
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={handleResetZoom} title="Réinitialiser le zoom">
+              <span className="text-xs">1:1</span>
+            </Button>
+          </div>
           <Button variant="ghost" size="sm" onClick={handleUndo} disabled={historyIndex === 0}>
             <Undo className="h-4 w-4" />
           </Button>
@@ -647,27 +683,41 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
         </div>
 
         {/* Canvas */}
-        <div className="flex-1 overflow-auto flex items-center justify-center p-8">
-          <div className="relative">
+        <div
+          className="flex-1 overflow-auto flex items-center justify-center p-8 bg-gray-950"
+          onWheel={handleWheel}
+        >
+          <div
+            className="relative"
+            style={{
+              transform: `scale(${zoom}) translate(${panOffset.x}px, ${panOffset.y}px)`,
+              transformOrigin: 'center center',
+              transition: 'transform 0.1s ease-out'
+            }}
+          >
             <canvas
               ref={canvasRef}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
-              className="max-w-full max-h-full cursor-crosshair 2xl"
-              style={{ imageRendering: 'crisp-edges' }}
+              className="cursor-crosshair"
+              style={{
+                imageRendering: zoom > 1 ? 'auto' : 'crisp-edges',
+                maxWidth: '100%',
+                maxHeight: '100%'
+              }}
             />
             <canvas
               ref={edgeCanvasRef}
               className="absolute top-0 left-0 pointer-events-none"
               style={{
-                imageRendering: 'crisp-edges',
+                imageRendering: zoom > 1 ? 'auto' : 'crisp-edges',
                 opacity: showEdgeOverlay ? 0.6 : 0,
                 transition: 'opacity 0.3s'
               }}
             />
             {edgeDetectionEnabled && (
-              <div className="absolute top-4 left-4 bg-green-600 text-white px-3 py-1 rounded-full text-sm font-medium  flex items-center gap-2">
+              <div className="absolute top-4 left-4 bg-green-600 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2">
                 <Scan className="h-4 w-4" />
                 <span>Détection d'arêtes activée</span>
               </div>

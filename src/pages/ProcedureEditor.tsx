@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Plus, Image, X, Download, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Image as ImageIcon, X, Download, AlertTriangle, Pencil } from 'lucide-react';
 import { useProcedure } from '@/hooks/useProcedures';
 import { createProcedure, updateProcedure, addPhase, deletePhase } from '@/services/procedureService';
 import { uploadImageToHost } from '@/services/imageHostingService';
@@ -9,9 +9,10 @@ import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
 import PhaseItem from '@/components/editor/PhaseItem';
 import PhaseTemplateSelector from '@/components/editor/PhaseTemplateSelector';
+import ImageAnnotator from '@/components/phase/ImageAnnotator';
 import { toast } from 'sonner';
 import { generateHTML } from '@/lib/htmlGenerator';
-import type { DefectItem } from '@/types';
+import type { DefectItem, AnnotatedImage, Annotation } from '@/types';
 
 export default function ProcedureEditor() {
   const { id } = useParams<{ id: string }>();
@@ -24,6 +25,7 @@ export default function ProcedureEditor() {
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
   const [defects, setDefects] = useState<DefectItem[]>([]);
+  const [imageToAnnotate, setImageToAnnotate] = useState<{ defectId: string, image: AnnotatedImage } | null>(null);
 
   useEffect(() => {
     if (existingProcedure) {
@@ -86,6 +88,86 @@ export default function ProcedureEditor() {
 
   const handleRemoveDefect = (id: string) => {
     setDefects(defects.filter(d => d.id !== id));
+  };
+
+  const handleAddDefectImage = async (defectId: string, files: File[]) => {
+    const validImages: AnnotatedImage[] = [];
+
+    for (const file of files) {
+      if (file.size > 15 * 1024 * 1024) {
+        toast.error(`${file.name} est trop volumineux (max 15 MB)`);
+        continue;
+      }
+
+      try {
+        const imageUrl = await uploadImageToHost(file);
+
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        await new Promise((resolve) => {
+          img.onload = resolve;
+          img.src = url;
+        });
+        URL.revokeObjectURL(url);
+
+        validImages.push({
+          imageId: crypto.randomUUID(),
+          image: {
+            id: crypto.randomUUID(),
+            name: file.name,
+            blob: file,
+            size: file.size,
+            mimeType: file.type,
+            width: img.width,
+            height: img.height,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            url: imageUrl,
+          },
+          annotations: [],
+          description: ''
+        });
+      } catch (error: any) {
+        console.error(`Error uploading ${file.name}:`, error);
+        toast.error(`Erreur pour ${file.name}: ${error.message}`);
+      }
+    }
+
+    if (validImages.length > 0) {
+      setDefects(defects.map(d =>
+        d.id === defectId
+          ? { ...d, images: [...(d.images || []), ...validImages] }
+          : d
+      ));
+      toast.success(`${validImages.length} image(s) ajoutée(s)`);
+    }
+  };
+
+  const handleRemoveDefectImage = (defectId: string, imageId: string) => {
+    setDefects(defects.map(d =>
+      d.id === defectId
+        ? { ...d, images: (d.images || []).filter(img => img.imageId !== imageId) }
+        : d
+    ));
+  };
+
+  const handleSaveDefectAnnotations = (annotations: Annotation[], description: string) => {
+    if (!imageToAnnotate) return;
+
+    setDefects(defects.map(d =>
+      d.id === imageToAnnotate.defectId
+        ? {
+            ...d,
+            images: (d.images || []).map(img =>
+              img.imageId === imageToAnnotate.image.imageId
+                ? { ...img, annotations, description }
+                : img
+            )
+          }
+        : d
+    ));
+    setImageToAnnotate(null);
+    toast.success('Annotations sauvegardées');
   };
 
   const handleAddPhase = () => {
@@ -291,7 +373,7 @@ export default function ProcedureEditor() {
                     className="border-2 border-dashed border-gray-700/30 rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer bg-[#2a2a2a]"
                     onClick={() => document.getElementById('cover-image-input')?.click()}
                   >
-                    <Image className="h-12 w-12 mx-auto mb-3 text-gray-600" />
+                    <ImageIcon className="h-12 w-12 mx-auto mb-3 text-gray-600" />
                     <p className="text-sm text-gray-400 mb-1">
                       Glissez-déposez une image ici
                     </p>
@@ -338,9 +420,9 @@ export default function ProcedureEditor() {
                 <div className="space-y-3">
                   {defects.map((defect) => (
                     <div key={defect.id} className="border border-gray-700/50 rounded-lg bg-gray-900/30 p-4">
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-3 mb-3">
                         <AlertTriangle className="h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
-                        <div className="flex-1">
+                        <div className="flex-1 space-y-3">
                           <textarea
                             value={defect.description}
                             onChange={(e) => handleUpdateDefect(defect.id, e.target.value)}
@@ -348,11 +430,73 @@ export default function ProcedureEditor() {
                             rows={3}
                             className="w-full rounded-lg border border-gray-700/30 bg-transparent px-3 py-2 text-sm text-white focus:ring-2 focus:ring-primary focus:border-transparent"
                           />
+
+                          {/* Images */}
+                          <div>
+                            <label className="block text-xs font-medium text-gray-400 mb-2">
+                              Images ({defect.images?.length || 0})
+                            </label>
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              {(defect.images || []).map((img) => (
+                                <div key={img.imageId} className="relative group">
+                                  <img
+                                    src={img.image.url || URL.createObjectURL(img.image.blob)}
+                                    alt={img.description || 'Image du défaut'}
+                                    className="h-16 w-16 object-cover rounded border border-gray-600"
+                                  />
+                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                                    <button
+                                      onClick={() => setImageToAnnotate({ defectId: defect.id, image: img })}
+                                      className="bg-primary text-white rounded p-1 hover:bg-primary/80"
+                                      title="Annoter l'image"
+                                    >
+                                      <Pencil className="h-3 w-3" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleRemoveDefectImage(defect.id, img.imageId)}
+                                      className="bg-red-500 text-white rounded p-1 hover:bg-red-600"
+                                      title="Supprimer l'image"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                  {img.annotations && img.annotations.length > 0 && (
+                                    <div className="absolute bottom-0 left-0 right-0 bg-primary/80 text-white text-xs px-1 text-center">
+                                      {img.annotations.length} annotation{img.annotations.length > 1 ? 's' : ''}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                            <div
+                              onClick={() => {
+                                const input = document.createElement('input');
+                                input.type = 'file';
+                                input.accept = 'image/*';
+                                input.multiple = true;
+                                input.onchange = async (e) => {
+                                  const files = Array.from((e.target as HTMLInputElement).files || []);
+                                  await handleAddDefectImage(defect.id, files);
+                                };
+                                input.click();
+                              }}
+                              onDragOver={(e) => e.preventDefault()}
+                              onDrop={async (e) => {
+                                e.preventDefault();
+                                const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+                                await handleAddDefectImage(defect.id, files);
+                              }}
+                              className="border-2 border-dashed border-gray-700/30 rounded-lg p-3 text-center hover:border-primary/50 transition-colors cursor-pointer"
+                            >
+                              <p className="text-xs text-gray-500">Cliquez ou glissez-déposez des images</p>
+                            </div>
+                          </div>
                         </div>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => handleRemoveDefect(defect.id)}
+                          className="flex-shrink-0"
                         >
                           <X className="h-4 w-4 text-red-500" />
                         </Button>
@@ -406,6 +550,19 @@ export default function ProcedureEditor() {
           onClose={() => setShowTemplateSelector(false)}
           onAddBlank={handleAddBlankPhase}
         />
+      )}
+
+      {/* ImageAnnotator Modal for Defects */}
+      {imageToAnnotate && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-900 rounded-lg max-w-full w-full h-full overflow-hidden">
+            <ImageAnnotator
+              annotatedImage={imageToAnnotate.image}
+              onSave={handleSaveDefectAnnotations}
+              onCancel={() => setImageToAnnotate(null)}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
