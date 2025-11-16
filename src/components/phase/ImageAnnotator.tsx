@@ -540,13 +540,23 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     setPanOffset({ x: 0, y: 0 });
   };
 
-  // Zoom à la molette avec écouteur natif
+  // Bloquer le scroll de la page et gérer le zoom à la molette
   useEffect(() => {
+    // Bloquer le scroll de la page
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
     const container = canvasContainerRef.current;
     if (!container) return;
 
+    // Empêcher le scroll sur toute la fenêtre
+    const preventScroll = (e: WheelEvent | TouchEvent) => {
+      e.preventDefault();
+    };
+
     const handleWheelNative = (e: WheelEvent) => {
       e.preventDefault();
+      e.stopPropagation();
       if (e.deltaY < 0) {
         setZoom(prev => Math.min(prev + 0.25, 5));
       } else {
@@ -554,8 +564,20 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
       }
     };
 
+    // Bloquer le scroll sur window
+    window.addEventListener('wheel', preventScroll, { passive: false });
+    window.addEventListener('touchmove', preventScroll, { passive: false });
+
     container.addEventListener('wheel', handleWheelNative, { passive: false });
-    return () => container.removeEventListener('wheel', handleWheelNative);
+
+    return () => {
+      container.removeEventListener('wheel', handleWheelNative);
+      window.removeEventListener('wheel', preventScroll);
+      window.removeEventListener('touchmove', preventScroll);
+      // Restaurer le scroll de la page
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    };
   }, []);
 
   // Raccourcis clavier
