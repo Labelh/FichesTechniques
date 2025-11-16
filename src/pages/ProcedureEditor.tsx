@@ -554,15 +554,11 @@ export default function ProcedureEditor() {
 
       {/* ImageAnnotator Modal for Defects */}
       {imageToAnnotate && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-900 rounded-lg max-w-full w-full h-full overflow-hidden">
-            <ImageAnnotator
-              annotatedImage={imageToAnnotate.image}
-              onSave={handleSaveDefectAnnotations}
-              onCancel={() => setImageToAnnotate(null)}
-            />
-          </div>
-        </div>
+        <ImageAnnotator
+          annotatedImage={imageToAnnotate.image}
+          onSave={handleSaveDefectAnnotations}
+          onCancel={() => setImageToAnnotate(null)}
+        />
       )}
     </div>
   );

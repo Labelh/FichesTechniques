@@ -796,15 +796,11 @@ function SubStepItem({
 
       {/* ImageAnnotator Modal */}
       {imageToAnnotate && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-900 rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden">
-            <ImageAnnotator
-              annotatedImage={imageToAnnotate}
-              onSave={handleSaveAnnotations}
-              onCancel={() => setImageToAnnotate(null)}
-            />
-          </div>
-        </div>
+        <ImageAnnotator
+          annotatedImage={imageToAnnotate}
+          onSave={handleSaveAnnotations}
+          onCancel={() => setImageToAnnotate(null)}
+        />
       )}
     </div>
   );

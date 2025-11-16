@@ -38,6 +38,8 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
   const [edgeMap, setEdgeMap] = useState<number[][]>([]);
   const [zoom, setZoom] = useState(1);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [lastPanPoint, setLastPanPoint] = useState<Point | null>(null);
 
   const toolColors = [
     { name: 'Orange-rouge', value: '#ff5722' },
@@ -349,33 +351,63 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     if (!canvas) return { x: 0, y: 0 };
 
     const rect = canvas.getBoundingClientRect();
+
+    // Calculer la position relative au canvas en tenant compte du zoom et du pan
+    const x = (e.clientX - rect.left - rect.width / 2) / zoom + rect.width / 2 - panOffset.x;
+    const y = (e.clientY - rect.top - rect.height / 2) / zoom + rect.height / 2 - panOffset.y;
+
+    // Convertir en coordonnées canvas réelles
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
 
     return {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY,
+      x: x * scaleX,
+      y: y * scaleY,
     };
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const point = getCanvasPoint(e);
-    setIsDrawing(true);
-    setStartPoint(point);
+    // Pan avec bouton du milieu ou Shift + clic gauche
+    if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
+      setIsPanning(true);
+      setLastPanPoint({ x: e.clientX, y: e.clientY });
+      e.preventDefault();
+      return;
+    }
 
-    if (currentTool === AnnotationType.TRAJECTORY) {
-      const newAnnotation: Annotation = {
-        id: crypto.randomUUID(),
-        type: AnnotationType.TRAJECTORY,
-        points: [point],
-        color: currentColor,
-        createdAt: new Date(),
-      };
-      setAnnotations([...annotations, newAnnotation]);
+    // Dessin normal
+    if (e.button === 0 && !e.shiftKey) {
+      const point = getCanvasPoint(e);
+      setIsDrawing(true);
+      setStartPoint(point);
+
+      if (currentTool === AnnotationType.TRAJECTORY) {
+        const newAnnotation: Annotation = {
+          id: crypto.randomUUID(),
+          type: AnnotationType.TRAJECTORY,
+          points: [point],
+          color: currentColor,
+          createdAt: new Date(),
+        };
+        setAnnotations([...annotations, newAnnotation]);
+      }
     }
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    // Gérer le pan
+    if (isPanning && lastPanPoint) {
+      const deltaX = e.clientX - lastPanPoint.x;
+      const deltaY = e.clientY - lastPanPoint.y;
+      setPanOffset(prev => ({
+        x: prev.x + deltaX,
+        y: prev.y + deltaY
+      }));
+      setLastPanPoint({ x: e.clientX, y: e.clientY });
+      return;
+    }
+
+    // Gérer le dessin
     if (!isDrawing || !startPoint) return;
 
     let point = getCanvasPoint(e);
@@ -401,6 +433,14 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
   };
 
   const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    // Arrêter le pan
+    if (isPanning) {
+      setIsPanning(false);
+      setLastPanPoint(null);
+      return;
+    }
+
+    // Arrêter le dessin
     if (!isDrawing || !startPoint) return;
 
     const endPoint = getCanvasPoint(e);
@@ -508,6 +548,27 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     }
   };
 
+  // Raccourcis clavier
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onCancel();
+      } else if (e.key === '+' || e.key === '=') {
+        e.preventDefault();
+        handleZoomIn();
+      } else if (e.key === '-' || e.key === '_') {
+        e.preventDefault();
+        handleZoomOut();
+      } else if (e.key === '0') {
+        e.preventDefault();
+        handleResetZoom();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [zoom, panOffset]);
+
   return (
     <div className="fixed inset-0 z-50 bg-black/90 flex flex-col">
       {/* Header */}
@@ -523,29 +584,35 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
           />
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 border-r border-gray-700 pr-2 mr-2">
-            <Button variant="ghost" size="sm" onClick={handleZoomOut} disabled={zoom <= 0.25}>
+          <div className="flex items-center gap-1 border-r border-gray-700 pr-3 mr-2">
+            <Button variant="ghost" size="sm" onClick={handleZoomOut} disabled={zoom <= 0.25} title="Zoom arrière (-)">
               <ZoomOut className="h-4 w-4" />
             </Button>
-            <span className="text-sm text-gray-300 w-16 text-center">{Math.round(zoom * 100)}%</span>
-            <Button variant="ghost" size="sm" onClick={handleZoomIn} disabled={zoom >= 5}>
+            <span className="text-sm font-medium text-white bg-gray-800 px-3 py-1 rounded min-w-[60px] text-center">
+              {Math.round(zoom * 100)}%
+            </span>
+            <Button variant="ghost" size="sm" onClick={handleZoomIn} disabled={zoom >= 5} title="Zoom avant (+)">
               <ZoomIn className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={handleResetZoom} title="Réinitialiser le zoom">
-              <span className="text-xs">1:1</span>
+            <Button variant="ghost" size="sm" onClick={handleResetZoom} title="Réinitialiser la vue (0)">
+              <span className="text-xs font-medium">1:1</span>
             </Button>
           </div>
-          <Button variant="ghost" size="sm" onClick={handleUndo} disabled={historyIndex === 0}>
+          <div className="text-xs text-gray-400 border-r border-gray-700 pr-3 mr-2">
+            <div>Molette : Zoom</div>
+            <div>Shift + Glisser : Déplacer</div>
+          </div>
+          <Button variant="ghost" size="sm" onClick={handleUndo} disabled={historyIndex === 0} title="Annuler">
             <Undo className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="sm" onClick={handleRedo} disabled={historyIndex >= history.length - 1}>
+          <Button variant="ghost" size="sm" onClick={handleRedo} disabled={historyIndex >= history.length - 1} title="Rétablir">
             <Redo className="h-4 w-4" />
           </Button>
           <Button variant="default" size="sm" onClick={handleSave}>
             <Save className="h-4 w-4 mr-2" />
             Enregistrer
           </Button>
-          <Button variant="ghost" size="sm" onClick={onCancel}>
+          <Button variant="ghost" size="sm" onClick={onCancel} title="Fermer (Echap)">
             <X className="h-4 w-4" />
           </Button>
         </div>
@@ -700,7 +767,8 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
-              className="cursor-crosshair"
+              onContextMenu={(e) => e.preventDefault()}
+              className={isPanning ? 'cursor-grabbing' : 'cursor-crosshair'}
               style={{
                 imageRendering: zoom > 1 ? 'auto' : 'crisp-edges',
                 maxWidth: '100%',
