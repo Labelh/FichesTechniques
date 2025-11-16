@@ -218,24 +218,17 @@ export async function generateHTML(
             background: #ffffff;
             border: 1px solid #e0e0e0;
             border-radius: 8px;
-            position: relative;
         }
 
         .step-number {
-            position: absolute;
-            top: -15px;
-            left: 20px;
+            display: inline-block;
             background: rgb(249, 55, 5);
             color: white;
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            padding: 4px 12px;
             font-weight: 700;
-            font-size: 1.1rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            font-size: 0.9rem;
+            margin-right: 10px;
+            border-radius: 4px;
         }
 
         .step-title {
@@ -243,7 +236,7 @@ export async function generateHTML(
             font-weight: 600;
             color: #2c3e50;
             margin-bottom: 10px;
-            padding-top: 10px;
+            display: inline-block;
         }
 
         .step-description {
@@ -386,47 +379,61 @@ export async function generateHTML(
             }
         }
 
-        /* Boutons d'action */
-        .actions {
-            position: fixed;
-            top: 20px;
-            right: 20px;
+        /* Sommaire */
+        .table-of-contents {
+            background: #f8f9fa;
+            padding: 30px;
+            margin-bottom: 40px;
+            border-radius: 8px;
+            border-left: 4px solid rgb(249, 55, 5);
+        }
+
+        .table-of-contents h2 {
+            color: rgb(249, 55, 5);
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .toc-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .toc-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .toc-item:last-child {
+            border-bottom: none;
+        }
+
+        .toc-link {
+            color: #2c3e50;
+            text-decoration: none;
             display: flex;
-            gap: 10px;
-            z-index: 1000;
+            justify-content: space-between;
+            align-items: center;
+            transition: color 0.2s;
         }
 
-        .btn {
-            background: rgb(249, 55, 5);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            box-shadow: 0 2px 8px rgba(249, 55, 5, 0.3);
-            transition: all 0.2s;
+        .toc-link:hover {
+            color: rgb(249, 55, 5);
         }
 
-        .btn:hover {
-            background: #e03d00;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(249, 55, 5, 0.4);
+        .toc-number {
+            font-weight: 700;
+            margin-right: 10px;
+            color: rgb(249, 55, 5);
         }
 
-        @media (max-width: 768px) {
-            .actions {
-                position: static;
-                margin-bottom: 20px;
-            }
+        .toc-meta {
+            font-size: 0.85rem;
+            color: #7f8c8d;
         }
     </style>
 </head>
 <body>
-    <div class="actions no-print">
-        <button class="btn" onclick="window.print()">🖨️ Imprimer</button>
-    </div>
-
     <div class="container">
         <!-- En-tête -->
         <div class="header">
@@ -450,6 +457,7 @@ export async function generateHTML(
 
         <!-- Contenu -->
         <div class="content">
+            ${generateTableOfContents(phases)}
             ${generateGlobalResources(procedure)}
             ${generatePhasesHTML(phases)}
         </div>
@@ -467,6 +475,37 @@ export async function generateHTML(
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+}
+
+/**
+ * Génère le sommaire (table des matières)
+ */
+function generateTableOfContents(phases: Phase[]): string {
+  if (!phases || phases.length === 0) {
+    return '';
+  }
+
+  return `
+    <div class="table-of-contents">
+        <h2>📋 Sommaire</h2>
+        <ul class="toc-list">
+            ${phases.map((phase, index) => `
+            <li class="toc-item">
+                <a href="#phase-${index + 1}" class="toc-link">
+                    <div>
+                        <span class="toc-number">Phase ${phase.phaseNumber || index + 1}</span>
+                        <span>${escapeHtml(phase.title)}</span>
+                    </div>
+                    <span class="toc-meta">
+                        ${phase.estimatedTime ? `⏱️ ${phase.estimatedTime} min` : ''}
+                        ${phase.steps ? ` • ${phase.steps.length} étapes` : ''}
+                    </span>
+                </a>
+            </li>
+            `).join('')}
+        </ul>
+    </div>
+  `;
 }
 
 /**
@@ -520,7 +559,7 @@ function generateGlobalResources(procedure: Procedure): string {
  */
 function generatePhasesHTML(phases: Phase[]): string {
   return phases.map((phase, index) => `
-    <div class="phase">
+    <div class="phase" id="phase-${index + 1}">
         <div class="phase-header">
             <div class="phase-title">Phase ${phase.phaseNumber || index + 1} : ${escapeHtml(phase.title)}</div>
             <div class="phase-meta">
@@ -554,8 +593,10 @@ function generatePhasesHTML(phases: Phase[]): string {
         <div class="steps">
             ${phase.steps.map((step, stepIndex) => `
             <div class="step">
-                <div class="step-number">${stepIndex + 1}</div>
-                ${step.title ? `<div class="step-title">${escapeHtml(step.title)}</div>` : ''}
+                <div>
+                    <span class="step-number">${stepIndex + 1}</span>
+                    ${step.title ? `<span class="step-title">${escapeHtml(step.title)}</span>` : ''}
+                </div>
                 <div class="step-description">${escapeHtml(step.description)}</div>
 
                 ${step.toolId && step.tool ? `

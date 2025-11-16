@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Eye, Plus, Image, X, Cloud, Download } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Image, X, Download } from 'lucide-react';
 import { useProcedure } from '@/hooks/useProcedures';
 import { createProcedure, updateProcedure, addPhase, deletePhase } from '@/services/procedureService';
 import { uploadImageToHost } from '@/services/imageHostingService';
-import { useAutoSave } from '@/hooks/useAutoSave';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -35,26 +34,6 @@ export default function ProcedureEditor() {
       }
     }
   }, [existingProcedure]);
-
-  // Auto-save avec délai de 2 secondes
-  const { isSaving, lastSaved } = useAutoSave(
-    {
-      onSave: async () => {
-        if (id && existingProcedure && (reference.trim() || designation.trim())) {
-          await updateProcedure(id, {
-            reference: reference.trim() || undefined,
-            designation: designation.trim() || undefined,
-            title: designation.trim() || reference.trim() || 'Sans titre',
-            description: '',
-            coverImage: coverImage || undefined,
-          });
-        }
-      },
-      delay: 2000, // 2 secondes
-      enabled: !!id,
-    },
-    [reference, designation, coverImage]
-  );
 
   const handleSave = async () => {
     if (!reference.trim() && !designation.trim()) {
@@ -203,39 +182,12 @@ export default function ProcedureEditor() {
         </Link>
 
         <div className="flex items-center gap-3">
-          {/* Auto-save status */}
-          {id && (
-            <div className="flex items-center gap-2 text-sm">
-              {isSaving ? (
-                <>
-                  <Cloud className="h-4 w-4 text-gray-400 animate-pulse" />
-                  <span className="text-gray-400">Sauvegarde...</span>
-                </>
-              ) : lastSaved ? (
-                <>
-                  <Cloud className="h-4 w-4 text-green-500" />
-                  <span className="text-gray-400">
-                    Sauvegardé à {lastSaved.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </>
-              ) : null}
-            </div>
-          )}
-
           <div className="flex gap-2">
             {id && existingProcedure && (
-              <>
-                <Button variant="secondary" onClick={handleExportHTML}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Exporter HTML
-                </Button>
-                <Link to={`/procedures/${id}`}>
-                  <Button variant="secondary">
-                    <Eye className="h-4 w-4 mr-2" />
-                    Aperçu
-                  </Button>
-                </Link>
-              </>
+              <Button variant="secondary" onClick={handleExportHTML}>
+                <Download className="h-4 w-4 mr-2" />
+                Exporter HTML
+              </Button>
             )}
             <Button onClick={handleSave}>
               <Save className="h-4 w-4 mr-2" />
