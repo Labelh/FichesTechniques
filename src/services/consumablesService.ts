@@ -57,6 +57,7 @@ export async function fetchConsumables(): Promise<Consumable[]> {
     const { data, error } = await supabase
       .from(tableName)
       .select('*')
+      .is('deleted_at', null)
       .order('designation', { ascending: true });
 
     if (error) {
@@ -106,6 +107,7 @@ export async function searchConsumables(query: string): Promise<Consumable[]> {
     const { data, error } = await supabase
       .from(tableName)
       .select('*')
+      .is('deleted_at', null)
       .or(`designation.ilike.%${query}%,description.ilike.%${query}%,reference.ilike.%${query}%`)
       .order('designation', { ascending: true });
 
@@ -131,6 +133,7 @@ export async function fetchConsumablesByCategory(category: string): Promise<Cons
     const { data, error } = await supabase
       .from(tableName)
       .select('*')
+      .is('deleted_at', null)
       .eq('category', category)
       .order('designation', { ascending: true });
 
