@@ -196,13 +196,15 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
     ));
   };
 
-  const updateStepTool = (stepId: string, toolId: string | null, toolName: string | null) => {
+  const updateStepTool = (stepId: string, toolId: string | null, toolName: string | null, toolLocation?: string | null, toolReference?: string | null) => {
     setSteps(steps.map(s =>
       s.id === stepId
         ? {
             ...s,
             toolId: toolId || undefined,
             toolName: toolName || undefined,
+            toolLocation: toolLocation || undefined,
+            toolReference: toolReference || undefined,
             tool: undefined // On ne stocke plus l'objet complet
           }
         : s
@@ -364,7 +366,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                       onAddSafetyNote={() => addStepSafetyNote(step.id)}
                       onUpdateSafetyNote={(noteId, updates) => updateStepSafetyNote(step.id, noteId, updates)}
                       onRemoveSafetyNote={(noteId) => removeStepSafetyNote(step.id, noteId)}
-                      onUpdateTool={(toolId, toolName) => updateStepTool(step.id, toolId, toolName)}
+                      onUpdateTool={(toolId, toolName, toolLocation, toolReference) => updateStepTool(step.id, toolId, toolName, toolLocation, toolReference)}
                     />
                   ))}
                 </div>
@@ -406,7 +408,7 @@ interface SubStepItemProps {
   onAddSafetyNote: () => void;
   onUpdateSafetyNote: (noteId: string, updates: Partial<SafetyNote>) => void;
   onRemoveSafetyNote: (noteId: string) => void;
-  onUpdateTool: (toolId: string | null, toolName: string | null) => void;
+  onUpdateTool: (toolId: string | null, toolName: string | null, toolLocation?: string | null, toolReference?: string | null) => void;
 }
 
 function SubStepItem({
@@ -633,21 +635,21 @@ function SubStepItem({
                 onChange={(e) => {
                   const selectedValue = e.target.value;
                   if (!selectedValue) {
-                    onUpdateTool(null, null);
+                    onUpdateTool(null, null, null, null);
                     return;
                   }
 
                   // Chercher d'abord dans les outils
                   const tool = availableTools?.find(t => t.id === selectedValue);
                   if (tool) {
-                    onUpdateTool(tool.id, tool.name);
+                    onUpdateTool(tool.id, tool.name, tool.location, tool.reference);
                     return;
                   }
 
                   // Sinon chercher dans les consommables
                   const consumable = availableConsumables?.find(c => c.id === selectedValue);
                   if (consumable) {
-                    onUpdateTool(consumable.id, consumable.designation);
+                    onUpdateTool(consumable.id, consumable.designation, (consumable as any).emplacement || (consumable as any).location, consumable.reference);
                   }
                 }}
                 className="w-full rounded border border-gray-700/30 bg-transparent px-2 py-1.5 text-xs text-white"

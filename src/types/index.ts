@@ -135,6 +135,12 @@ export interface SafetyNote {
   icon?: string;
 }
 
+export interface DefectItem {
+  id: string;
+  description: string;
+  images?: AnnotatedImage[];
+}
+
 export interface SubStep {
   id: string;
   order: number;
@@ -146,6 +152,8 @@ export interface SubStep {
   // Outil spécifique à cette sous-étape
   toolId?: string;
   toolName?: string; // Nom de l'outil (simplifié pour Firestore)
+  toolLocation?: string; // Emplacement de l'outil
+  toolReference?: string; // Référence de l'outil
   tool?: Tool; // Objet complet (uniquement en mémoire, pas sauvegardé)
 
   // Conseils et sécurité par sous-étape
@@ -199,6 +207,9 @@ export interface Procedure extends BaseEntity {
 
   // Contenu
   phases: Phase[];
+
+  // Défauthèque - Défauts possibles sur la pièce
+  defects?: DefectItem[];
 
   // Ressources globales (en plus des phases)
   globalTools: Tool[];

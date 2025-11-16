@@ -108,18 +108,28 @@ export async function generateHTML(
             border-bottom: 3px solid rgb(249, 55, 5);
         }
 
-        .header-reference {
-            font-size: 0.9rem;
-            color: rgb(249, 55, 5);
-            font-weight: 600;
-            margin-bottom: 8px;
+        .header-title {
+            font-size: 1.8rem;
+            color: #2c3e50;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: center;
         }
 
-        h1 {
-            font-size: 2.2rem;
-            margin-bottom: 15px;
+        .header-designation {
+            font-size: 2rem;
             font-weight: 600;
             color: #2c3e50;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .header-reference {
+            font-size: 2rem;
+            color: rgb(249, 55, 5);
+            font-weight: 600;
+            margin-bottom: 25px;
+            text-align: center;
         }
 
         .description {
@@ -324,6 +334,12 @@ export async function generateHTML(
             margin-right: 8px;
         }
 
+        .step-tool-details {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 4px;
+        }
+
         .step-time {
             color: #666;
             font-size: 0.85rem;
@@ -449,17 +465,19 @@ export async function generateHTML(
     <div class="container">
         <!-- En-tête -->
         <div class="header">
-            ${procedure.reference ? `<div class="header-reference">Référence: ${escapeHtml(procedure.reference)}</div>` : ''}
-            <h1>${escapeHtml(procedure.designation || procedure.title)}</h1>
+            <div class="header-title">Fiche Technique</div>
+            <div class="header-designation">${escapeHtml(procedure.designation || procedure.title)}</div>
+            ${procedure.reference ? `<div class="header-reference">${escapeHtml(procedure.reference)}</div>` : ''}
+
             ${procedure.description ? `<p class="description">${escapeHtml(procedure.description)}</p>` : ''}
+
+            ${procedure.coverImage ? `<img src="${procedure.coverImage}" alt="Cover" class="cover-image">` : ''}
 
             ${procedure.tags && procedure.tags.length > 0 ? `
             <div class="tags">
                 ${procedure.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}
             </div>
             ` : ''}
-
-            ${procedure.coverImage ? `<img src="${procedure.coverImage}" alt="Cover" class="cover-image">` : ''}
 
             <div class="meta-info">
                 ${procedure.category ? `<div class="meta-item"><span class="meta-label">Catégorie:</span> ${escapeHtml(procedure.category)}</div>` : ''}
@@ -609,27 +627,20 @@ function generatePhasesHTML(phases: Phase[]): string {
 
                 ${step.toolId && step.toolName ? `
                 <div class="step-tool">
-                    <span class="step-tool-label">🔧 Outil:</span>
-                    ${escapeHtml(step.toolName)}
+                    <div>
+                        <span class="step-tool-label">🔧 Outil:</span>
+                        ${escapeHtml(step.toolName)}
+                    </div>
+                    <div class="step-tool-details">
+                        ${step.toolReference ? `<strong>Référence:</strong> ${escapeHtml(step.toolReference)}` : ''}
+                        ${step.toolReference && step.toolLocation ? ' • ' : ''}
+                        ${step.toolLocation ? `<strong>Emplacement:</strong> ${escapeHtml(step.toolLocation)}` : ''}
+                    </div>
                 </div>
                 ` : ''}
 
                 ${step.estimatedTime ? `
                 <div class="step-time">⏱️ Temps: ${step.estimatedTime} min</div>
-                ` : ''}
-
-                ${step.images && step.images.length > 0 ? `
-                <div class="step-images">
-                    ${step.images.map(img => {
-                      const imageUrl = img.image?.url || (img.image?.blob ? URL.createObjectURL(img.image.blob) : '');
-                      return imageUrl ? `
-                      <div class="step-image-wrapper">
-                          <img src="${imageUrl}" alt="${escapeHtml(img.description || 'Image')}" class="step-image">
-                          ${img.description ? `<div class="step-image-desc">${escapeHtml(img.description)}</div>` : ''}
-                      </div>
-                      ` : '';
-                    }).join('')}
-                </div>
                 ` : ''}
 
                 ${step.tips && step.tips.length > 0 ? `
@@ -649,6 +660,20 @@ function generatePhasesHTML(phases: Phase[]): string {
                         <div>${escapeHtml(note.content)}</div>
                     </div>
                     `).join('')}
+                </div>
+                ` : ''}
+
+                ${step.images && step.images.length > 0 ? `
+                <div class="step-images">
+                    ${step.images.map(img => {
+                      const imageUrl = img.image?.url || (img.image?.blob ? URL.createObjectURL(img.image.blob) : '');
+                      return imageUrl ? `
+                      <div class="step-image-wrapper">
+                          <img src="${imageUrl}" alt="${escapeHtml(img.description || 'Image')}" class="step-image">
+                          ${img.description ? `<div class="step-image-desc">${escapeHtml(img.description)}</div>` : ''}
+                      </div>
+                      ` : '';
+                    }).join('')}
                 </div>
                 ` : ''}
             </div>
