@@ -24,7 +24,7 @@ export async function generateHTML(
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             line-height: 1.6;
             color: #2c3e50;
-            background: #f5f5f5;
+            background: #f8f9fa;
             margin: 0;
         }
 
@@ -35,22 +35,25 @@ export async function generateHTML(
             top: 0;
             bottom: 0;
             width: 280px;
-            background: #f5f5f5;
-            border-right: 1px solid #e0e0e0;
+            background: #f0f0f0;
+            border-right: 1px solid #d0d0d0;
             overflow-y: auto;
-            padding: 20px;
+            padding: 24px;
             z-index: 100;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.05);
         }
 
         .sidebar h2 {
-            font-size: 1.1rem;
-            color: #2c3e50;
-            margin-bottom: 20px;
-            font-weight: 600;
+            font-size: 1.2rem;
+            color: #1a1a1a;
+            margin-bottom: 24px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .nav-phase {
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
 
         .nav-phase-title {
@@ -60,13 +63,14 @@ export async function generateHTML(
             font-size: 0.95rem;
             margin-bottom: 8px;
             text-decoration: none;
-            padding: 8px 12px;
-            border-radius: 4px;
-            transition: background 0.2s;
+            padding: 10px 14px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
         }
 
         .nav-phase-title:hover {
-            background: #f5f5f5;
+            background: rgba(249, 55, 5, 0.08);
+            transform: translateX(4px);
         }
 
         .nav-steps {
@@ -90,46 +94,50 @@ export async function generateHTML(
         }
 
         .nav-step a:hover {
-            background: #f5f5f5;
+            background: rgba(249, 55, 5, 0.05);
             color: rgb(249, 55, 5);
         }
 
         /* Container principal */
         .container {
             margin-left: 280px;
-            background: #f5f5f5;
+            background: #f8f9fa;
         }
 
         /* En-tête */
         .header {
-            background: #e8e8e8;
+            background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
             color: #2c3e50;
-            padding: 40px;
-            border-bottom: 3px solid rgb(249, 55, 5);
+            padding: 48px 40px;
+            border-bottom: 4px solid rgb(249, 55, 5);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
 
         .header-title {
-            font-size: 1.8rem;
-            color: #2c3e50;
-            font-weight: 700;
-            margin-bottom: 20px;
+            font-size: 1.4rem;
+            color: #666;
+            font-weight: 500;
+            margin-bottom: 12px;
             text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .header-designation {
-            font-size: 2rem;
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 15px;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 16px;
             text-align: center;
         }
 
         .header-reference {
-            font-size: 2rem;
+            font-size: 2.4rem;
             color: rgb(249, 55, 5);
-            font-weight: 600;
-            margin-bottom: 25px;
+            font-weight: 700;
+            margin-bottom: 28px;
             text-align: center;
+            text-shadow: 0 2px 4px rgba(249, 55, 5, 0.1);
         }
 
         .description {
@@ -187,48 +195,57 @@ export async function generateHTML(
 
         /* Contenu */
         .content {
-            padding: 40px;
+            padding: 48px;
+            max-width: 1400px;
         }
 
         /* Ressources globales */
         .resources {
             background: white;
-            padding: 30px;
-            margin-bottom: 30px;
-            border-left: 3px solid rgb(249, 55, 5);
-            border-radius: 4px;
+            padding: 32px;
+            margin-bottom: 32px;
+            border-left: 4px solid rgb(249, 55, 5);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
 
         /* Défauthèque */
         .defects-section {
-            background: #fff5f5;
-            padding: 30px;
-            margin-bottom: 30px;
-            border-radius: 4px;
+            background: linear-gradient(135deg, #fff5f5 0%, #fff 100%);
+            padding: 36px;
+            margin-bottom: 32px;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(220, 38, 38, 0.08);
+            border: 1px solid #ffe0e0;
         }
 
         .defects-section h2 {
             color: #dc2626;
-            margin-bottom: 20px;
-            font-size: 1.3rem;
-            font-weight: 600;
+            margin-bottom: 28px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .defects-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
+            gap: 24px;
         }
 
         .defect-item {
             background: white;
-            padding: 15px;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            border: 1px solid #f0f0f0;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .defect-item:last-child {
-            margin-bottom: 0;
+        .defect-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
         }
 
         @media print {
@@ -289,17 +306,20 @@ export async function generateHTML(
 
         /* Phases */
         .phase {
-            margin-bottom: 40px;
+            margin-bottom: 48px;
             break-inside: avoid;
             background: white;
-            border-radius: 4px;
+            border-radius: 12px;
             overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            border: 1px solid #e8e8e8;
         }
 
         .phase-header {
-            background: rgb(249, 55, 5);
+            background: linear-gradient(135deg, rgb(249, 55, 5) 0%, rgb(230, 45, 0) 100%);
             color: white;
-            padding: 20px 25px;
+            padding: 24px 32px;
+            box-shadow: 0 2px 8px rgba(249, 55, 5, 0.2);
         }
 
         .phase-title {
@@ -324,15 +344,23 @@ export async function generateHTML(
 
         /* Étapes */
         .steps {
-            padding: 20px;
+            padding: 28px;
+            background: #fafafa;
         }
 
         .step {
-            margin-bottom: 20px;
-            padding: 20px;
-            background: #fafafa;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
+            margin-bottom: 24px;
+            padding: 24px;
+            background: white;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .step:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
 
         .step:last-child {
@@ -341,27 +369,29 @@ export async function generateHTML(
 
         .step-number {
             display: inline-block;
-            background: rgb(249, 55, 5);
+            background: linear-gradient(135deg, rgb(249, 55, 5) 0%, rgb(230, 45, 0) 100%);
             color: white;
-            padding: 4px 12px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            margin-right: 10px;
-            border-radius: 3px;
+            padding: 6px 16px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-right: 12px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(249, 55, 5, 0.3);
         }
 
         .step-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 10px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 12px;
             display: inline-block;
         }
 
         .step-description {
             color: #555;
-            margin-bottom: 15px;
-            line-height: 1.7;
+            margin-bottom: 16px;
+            line-height: 1.8;
+            font-size: 1rem;
         }
 
         .step-tool {
@@ -392,14 +422,22 @@ export async function generateHTML(
         /* Images */
         .step-images {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 24px;
         }
 
         .step-image-wrapper {
             overflow: hidden;
             border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .step-image-wrapper:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
         }
 
         .step-image {
@@ -409,52 +447,59 @@ export async function generateHTML(
         }
 
         .step-image-desc {
-            padding: 10px;
+            padding: 12px 16px;
             background: #f8f9fa;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             color: #666;
+            border-top: 1px solid #e8e8e8;
         }
 
         /* Conseils (touches de vert) */
         .tips {
-            background: #f0f9f4;
-            border-left: 3px solid #10b981;
-            padding: 15px;
-            margin: 15px 0;
+            background: linear-gradient(135deg, #f0f9f4 0%, #ffffff 100%);
+            border-left: 4px solid #10b981;
+            padding: 18px 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.1);
         }
 
         .tips-title {
-            font-weight: 600;
+            font-weight: 700;
             color: #059669;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            font-size: 1.05rem;
         }
 
         .tip-item {
-            padding: 5px 0;
+            padding: 6px 0;
             color: #555;
+            line-height: 1.6;
         }
 
         /* Consignes de sécurité (touches de rouge) */
         .safety-notes {
-            margin: 15px 0;
+            margin: 20px 0;
         }
 
         .safety-note {
-            padding: 15px;
-            margin-bottom: 10px;
+            padding: 18px 20px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(239, 68, 68, 0.1);
         }
 
         .safety-note.warning {
-            background: #fef2f2;
-            border-left: 3px solid #ef4444;
+            background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%);
+            border-left: 4px solid #ef4444;
         }
 
         .safety-note.danger {
-            background: #fef2f2;
-            border-left: 3px solid #dc2626;
+            background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%);
+            border-left: 4px solid #dc2626;
         }
 
         .safety-note-title {
@@ -554,6 +599,14 @@ export async function generateHTML(
  * Génère la navigation de la sidebar
  */
 function generateSidebarNav(phases: Phase[], hasDefects: boolean = false): string {
+  const defectsNav = hasDefects ? `
+    <div class="nav-phase">
+        <a href="#defautheque" class="nav-phase-title" style="color: #ff6b35;">
+            Défauthèque
+        </a>
+    </div>
+  ` : '';
+
   const phasesNav = !phases || phases.length === 0
     ? '<p style="color: #999;">Aucune phase</p>'
     : phases.map((phase, phaseIndex) => `
@@ -575,15 +628,7 @@ function generateSidebarNav(phases: Phase[], hasDefects: boolean = false): strin
     </div>
   `).join('');
 
-  const defectsNav = hasDefects ? `
-    <div class="nav-phase">
-        <a href="#defautheque" class="nav-phase-title" style="color: #ff9800;">
-            Défauthèque
-        </a>
-    </div>
-  ` : '';
-
-  return phasesNav + defectsNav;
+  return defectsNav + phasesNav;
 }
 
 /**
