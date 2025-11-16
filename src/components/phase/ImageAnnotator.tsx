@@ -37,9 +37,6 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
   const [showEdgeOverlay, setShowEdgeOverlay] = useState(false);
   const [edgeMap, setEdgeMap] = useState<number[][]>([]);
   const [zoom, setZoom] = useState(1);
-  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
-  const [isPanning, setIsPanning] = useState(false);
-  const [lastPanPoint, setLastPanPoint] = useState<Point | null>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
 
   const toolColors = [
@@ -353,31 +350,23 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
 
     const rect = canvas.getBoundingClientRect();
 
-    // Calculer la position relative au canvas en tenant compte du zoom et du pan
-    const x = (e.clientX - rect.left - rect.width / 2) / zoom + rect.width / 2 - panOffset.x;
-    const y = (e.clientY - rect.top - rect.height / 2) / zoom + rect.height / 2 - panOffset.y;
+    // Position relative au canvas affiché
+    const relX = e.clientX - rect.left;
+    const relY = e.clientY - rect.top;
 
-    // Convertir en coordonnées canvas réelles
+    // Convertir en coordonnées canvas réelles (sans tenir compte du zoom CSS)
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
 
     return {
-      x: x * scaleX,
-      y: y * scaleY,
+      x: relX * scaleX,
+      y: relY * scaleY,
     };
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    // Pan avec bouton du milieu ou Shift + clic gauche
-    if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
-      setIsPanning(true);
-      setLastPanPoint({ x: e.clientX, y: e.clientY });
-      e.preventDefault();
-      return;
-    }
-
-    // Dessin normal
-    if (e.button === 0 && !e.shiftKey) {
+    // Dessin normal avec clic gauche
+    if (e.button === 0) {
       const point = getCanvasPoint(e);
       setIsDrawing(true);
       setStartPoint(point);
@@ -396,19 +385,6 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    // Gérer le pan
-    if (isPanning && lastPanPoint) {
-      const deltaX = e.clientX - lastPanPoint.x;
-      const deltaY = e.clientY - lastPanPoint.y;
-      setPanOffset(prev => ({
-        x: prev.x + deltaX,
-        y: prev.y + deltaY
-      }));
-      setLastPanPoint({ x: e.clientX, y: e.clientY });
-      return;
-    }
-
-    // Gérer le dessin
     if (!isDrawing || !startPoint) return;
 
     let point = getCanvasPoint(e);
@@ -434,14 +410,6 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
   };
 
   const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    // Arrêter le pan
-    if (isPanning) {
-      setIsPanning(false);
-      setLastPanPoint(null);
-      return;
-    }
-
-    // Arrêter le dessin
     if (!isDrawing || !startPoint) return;
 
     const endPoint = getCanvasPoint(e);
@@ -537,7 +505,6 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
 
   const handleResetZoom = () => {
     setZoom(1);
-    setPanOffset({ x: 0, y: 0 });
   };
 
   // Bloquer le scroll de la page et gérer le zoom à la molette
@@ -599,7 +566,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [zoom, panOffset]);
+  }, [zoom]);
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black flex flex-col">
@@ -632,7 +599,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
           </div>
           <div className="text-xs text-gray-400 border-r border-gray-700 pr-3 mr-2">
             <div>Molette : Zoom</div>
-            <div>Shift + Glisser : Déplacer</div>
+            <div>+/- : Zoom</div>
           </div>
           <Button variant="ghost" size="sm" onClick={handleUndo} disabled={historyIndex === 0} title="Annuler">
             <Undo className="h-4 w-4" />
@@ -789,9 +756,9 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
           <div
             className="relative"
             style={{
-              transform: `scale(${zoom}) translate(${panOffset.x}px, ${panOffset.y}px)`,
+              transform: `scale(${zoom})`,
               transformOrigin: 'center center',
-              transition: 'transform 0.1s ease-out'
+              transition: 'transform 0.2s ease-out'
             }}
           >
             <canvas
@@ -800,7 +767,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onContextMenu={(e) => e.preventDefault()}
-              className={isPanning ? 'cursor-grabbing' : 'cursor-crosshair'}
+              className="cursor-crosshair"
               style={{
                 imageRendering: zoom > 1 ? 'auto' : 'crisp-edges',
                 maxWidth: '100%',
