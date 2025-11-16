@@ -54,10 +54,15 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
 
   // Charger l'image
   useEffect(() => {
-    const url = createImageUrl(annotatedImage.image.blob);
-    setImageUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [annotatedImage.image.blob]);
+    // Utiliser l'URL hébergée si disponible, sinon créer une URL à partir du blob
+    if (annotatedImage.image.url) {
+      setImageUrl(annotatedImage.image.url);
+    } else if (annotatedImage.image.blob) {
+      const url = createImageUrl(annotatedImage.image.blob);
+      setImageUrl(url);
+      return () => URL.revokeObjectURL(url);
+    }
+  }, [annotatedImage.image.blob, annotatedImage.image.url]);
 
   // Fonction de détection d'arêtes avec filtre de Sobel
   const detectEdges = (imageData: ImageData): number[][] => {
@@ -185,14 +190,21 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
 
   // Dessiner sur le canvas
   useEffect(() => {
-    if (!canvasRef.current || !imageUrl) return;
+    if (!canvasRef.current || !imageUrl) {
+      console.log('ImageAnnotator: Pas de canvas ou imageUrl', { canvas: !!canvasRef.current, imageUrl });
+      return;
+    }
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     const img = new Image();
+    img.crossOrigin = 'anonymous'; // Pour les images hébergées
+
     img.onload = () => {
+      console.log('ImageAnnotator: Image chargée', { width: img.width, height: img.height });
+
       // Ajuster la taille du canvas à l'image
       canvas.width = img.width;
       canvas.height = img.height;
@@ -218,6 +230,11 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
         drawAnnotation(ctx, annotation);
       });
     };
+
+    img.onerror = (error) => {
+      console.error('ImageAnnotator: Erreur chargement image', error, imageUrl);
+    };
+
     img.src = imageUrl;
   }, [imageUrl, annotations, edgeDetectionEnabled]);
 
