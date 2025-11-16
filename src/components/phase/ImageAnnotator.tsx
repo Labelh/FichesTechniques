@@ -40,6 +40,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [lastPanPoint, setLastPanPoint] = useState<Point | null>(null);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
 
   const toolColors = [
     { name: 'Orange-rouge', value: '#ff5722' },
@@ -539,14 +540,23 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     setPanOffset({ x: 0, y: 0 });
   };
 
-  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    if (e.deltaY < 0) {
-      handleZoomIn();
-    } else {
-      handleZoomOut();
-    }
-  };
+  // Zoom à la molette avec écouteur natif
+  useEffect(() => {
+    const container = canvasContainerRef.current;
+    if (!container) return;
+
+    const handleWheelNative = (e: WheelEvent) => {
+      e.preventDefault();
+      if (e.deltaY < 0) {
+        setZoom(prev => Math.min(prev + 0.25, 5));
+      } else {
+        setZoom(prev => Math.max(prev - 0.25, 0.25));
+      }
+    };
+
+    container.addEventListener('wheel', handleWheelNative, { passive: false });
+    return () => container.removeEventListener('wheel', handleWheelNative);
+  }, []);
 
   // Raccourcis clavier
   useEffect(() => {
@@ -570,9 +580,9 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
   }, [zoom, panOffset]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/90 flex flex-col">
+    <div className="fixed inset-0 z-[9999] bg-black flex flex-col">
       {/* Header */}
-      <div className="bg-gray-900 border-b border-gray-700 p-4 flex items-center justify-between">
+      <div className="bg-gray-900 border-b border-gray-700 p-4 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-4">
           <h2 className="text-xl font-bold text-white">{annotatedImage.image.name}</h2>
           <input
@@ -751,8 +761,8 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
 
         {/* Canvas */}
         <div
-          className="flex-1 overflow-auto flex items-center justify-center p-8 bg-gray-950"
-          onWheel={handleWheel}
+          ref={canvasContainerRef}
+          className="flex-1 overflow-hidden flex items-center justify-center p-8 bg-black relative"
         >
           <div
             className="relative"
