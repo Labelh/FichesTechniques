@@ -58,49 +58,36 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
   // Charger l'image
   useEffect(() => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
 
     img.onload = () => {
       imageObjRef.current = img;
-
-      if (canvasRef.current && containerRef.current) {
-        canvasRef.current.width = img.width;
-        canvasRef.current.height = img.height;
-
-        // Calculer le zoom initial pour adapter l'image à l'écran
-        const container = containerRef.current;
-        const containerWidth = container.clientWidth - 64; // padding
-        const containerHeight = container.clientHeight - 64;
-
-        const scaleX = containerWidth / img.width;
-        const scaleY = containerHeight / img.height;
-        const initialZoom = Math.min(scaleX, scaleY, 1); // Ne pas zoomer au-delà de 100%
-
-        setZoom(initialZoom);
-        redrawCanvas();
-      }
-
-      setLoaded(true);
-      console.log('✅ Image chargée:', img.width, 'x', img.height);
-    };
-
-    img.onerror = (e) => {
-      console.error('❌ Erreur chargement image:', e);
-      toast.error('Impossible de charger l\'image');
       setLoaded(true);
     };
 
-    // Déterminer la source
+    img.onerror = () => {
+      setLoaded(true);
+    };
+
     const imageUrl = annotatedImage.image.url;
     if (imageUrl) {
-      console.log('📥 Chargement depuis URL:', imageUrl);
       img.src = imageUrl;
     } else {
-      console.error('❌ Pas d\'URL disponible');
-      toast.error('Image non disponible');
       setLoaded(true);
     }
   }, [annotatedImage.image.url]);
+
+  // Redimensionner le canvas une fois que l'image et le canvas sont prêts
+  useEffect(() => {
+    if (!loaded || !canvasRef.current || !imageObjRef.current) return;
+
+    const canvas = canvasRef.current;
+    const img = imageObjRef.current;
+
+    canvas.width = img.width;
+    canvas.height = img.height;
+
+    redrawCanvas();
+  }, [loaded]);
 
   // Redessiner le canvas
   const redrawCanvas = () => {
@@ -563,20 +550,19 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
         {/* Canvas area */}
         <div
           ref={containerRef}
-          className="flex-1 overflow-auto flex items-center justify-center bg-black p-8"
+          className="flex-1 overflow-auto bg-black p-4"
         >
-          <div
-            style={{
-              transform: `scale(${zoom})`,
-              transformOrigin: 'center center',
-              transition: 'transform 0.15s ease-out',
-            }}
-          >
+          <div style={{ display: 'inline-block', lineHeight: 0 }}>
             <canvas
               ref={canvasRef}
-              className="block cursor-crosshair"
+              className="cursor-crosshair"
               style={{
+                display: 'block',
+                transform: `scale(${zoom})`,
+                transformOrigin: 'top left',
+                transition: 'transform 0.15s ease-out',
                 imageRendering: zoom > 2 ? 'auto' : 'crisp-edges',
+                maxWidth: 'none',
               }}
             />
           </div>
