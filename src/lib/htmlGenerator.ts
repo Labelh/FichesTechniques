@@ -1,4 +1,5 @@
-import { Procedure, Phase } from '../types';
+import { Procedure, Phase, AnnotatedImage } from '../types';
+import { renderAllAnnotatedImages } from './imageAnnotationRenderer';
 
 /**
  * Génère un fichier HTML complet et stylisé pour une procédure
@@ -7,6 +8,27 @@ export async function generateHTML(
   procedure: Procedure,
   phases: Phase[]
 ): Promise<void> {
+  // Collecter toutes les images annotées
+  const allAnnotatedImages: AnnotatedImage[] = [];
+
+  phases.forEach(phase => {
+    phase.steps.forEach(step => {
+      if (step.images) {
+        allAnnotatedImages.push(...step.images);
+      }
+    });
+  });
+
+  if (procedure.defects) {
+    procedure.defects.forEach(defect => {
+      if (defect.images) {
+        allAnnotatedImages.push(...defect.images);
+      }
+    });
+  }
+
+  // Rendre toutes les images avec annotations
+  const renderedImageUrls = await renderAllAnnotatedImages(allAnnotatedImages);
   const html = `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -576,8 +598,8 @@ export async function generateHTML(
         <!-- Contenu -->
         <div class="content">
             ${generateGlobalResources(procedure)}
-            ${generateDefects(procedure)}
-            ${generatePhasesHTML(phases)}
+            ${generateDefects(procedure, renderedImageUrls)}
+            ${generatePhasesHTML(phases, renderedImageUrls)}
         </div>
     </div>
 </body>
@@ -680,7 +702,7 @@ function generateGlobalResources(procedure: Procedure): string {
 /**
  * Génère le HTML pour la Défauthèque
  */
-function generateDefects(procedure: Procedure): string {
+function generateDefects(procedure: Procedure, renderedImageUrls: Map<string, string>): string {
   if (!procedure.defects || procedure.defects.length === 0) {
     return '';
   }
@@ -696,12 +718,15 @@ function generateDefects(procedure: Procedure): string {
 
                 ${defect.images && defect.images.length > 0 ? `
                 <div class="step-images" style="margin-top: 15px;">
-                    ${defect.images.map(img => `
+                    ${defect.images.map(img => {
+                      const imageUrl = renderedImageUrls.get(img.imageId) || img.image.url;
+                      return `
                     <div class="step-image">
-                        <img src="${img.image.url}" alt="${escapeHtml(img.description || 'Image du défaut')}">
+                        <img src="${imageUrl}" alt="${escapeHtml(img.description || 'Image du défaut')}">
                         ${img.description ? `<p class="image-caption">${escapeHtml(img.description)}</p>` : ''}
                     </div>
-                    `).join('')}
+                    `;
+                    }).join('')}
                 </div>
                 ` : ''}
             </div>
@@ -714,7 +739,7 @@ function generateDefects(procedure: Procedure): string {
 /**
  * Génère le HTML pour les phases
  */
-function generatePhasesHTML(phases: Phase[]): string {
+function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, string>): string {
   return phases.map((phase, phaseIndex) => `
     <div class="phase" id="phase-${phaseIndex + 1}">
         <div class="phase-header">
@@ -797,7 +822,8 @@ function generatePhasesHTML(phases: Phase[]): string {
                 ${step.images && step.images.length > 0 ? `
                 <div class="step-images">
                     ${step.images.map(img => {
-                      const imageUrl = img.image?.url || (img.image?.blob ? URL.createObjectURL(img.image.blob) : '');
+                      // Utiliser l'URL rendue avec annotations si disponible, sinon l'URL originale
+                      const imageUrl = renderedImageUrls.get(img.imageId) || img.image?.url || (img.image?.blob ? URL.createObjectURL(img.image.blob) : '');
                       return imageUrl ? `
                       <div class="step-image-wrapper">
                           <img src="${imageUrl}" alt="${escapeHtml(img.description || 'Image')}" class="step-image">

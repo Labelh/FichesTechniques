@@ -33,7 +33,9 @@
       "Bash(xargs:*)",
       "Bash(firebase deploy:*)",
       "Bash(npx firebase:*)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(git pull:*)",
+      "Bash(echo:*)"
     ],
     "deny": [],
     "ask": []

@@ -11,7 +11,6 @@ import { useAutoSave } from '@/hooks/useAutoSave';
 import { useTools } from '@/hooks/useTools';
 import ImageAnnotator from '@/components/phase/ImageAnnotator';
 import type { Phase, DifficultyLevel, SubStep, SafetyNote, AnnotatedImage, Tool, Consumable, Annotation } from '@/types';
-import { toast } from 'sonner';
 
 interface PhaseItemProps {
   phase: Phase;
@@ -53,10 +52,8 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
         estimatedTime,
         steps,
       });
-      toast.success('Phase mise à jour');
     } catch (error) {
       console.error('Error updating phase:', error);
-      toast.error('Erreur lors de la mise à jour');
     }
   };
 
@@ -95,10 +92,8 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
       };
 
       await createPhaseTemplate(currentPhase, templateName, category);
-      toast.success('Template créé avec succès');
     } catch (error) {
       console.error('Error creating template:', error);
-      toast.error('Erreur lors de la création du template');
     }
   };
 
@@ -436,7 +431,6 @@ function SubStepItem({
 
     for (const file of files) {
       if (file.size > 15 * 1024 * 1024) {
-        toast.error(`${file.name} est trop volumineux (max 15 MB)`);
         continue;
       }
 
@@ -472,13 +466,11 @@ function SubStepItem({
         });
       } catch (error: any) {
         console.error(`Error uploading ${file.name}:`, error);
-        toast.error(`Erreur pour ${file.name}: ${error.message}`);
       }
     }
 
     if (validImages.length > 0) {
       onAddImage(validImages);
-      toast.success(`${validImages.length} image(s) ajoutée(s)`);
     }
   };
 
@@ -494,7 +486,6 @@ function SubStepItem({
 
     onUpdate({ images: updatedImages });
     setImageToAnnotate(null);
-    toast.success('Annotations sauvegardées');
   };
 
   return (
