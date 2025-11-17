@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { Toaster } from 'sonner';
 import { initializeFirestore } from '@/lib/firestore';
 import { testFirestoreConnection } from './test-firestore';
 import Layout from './components/layout/Layout';
@@ -43,7 +42,6 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
-      <Toaster position="top-right" />
     </>
   );
 }

@@ -4,7 +4,7 @@
 @layer components {
   /* Stat Card */
   .stat-card {
-    @apply bg-[#2a2a2a] p-6 rounded-xl border border-[#3a3a3a] transition-transform hover:-translate-y-1;
+    @apply bg-black p-6 rounded-xl border border-[#2a2a2a] transition-transform hover:-translate-y-1;
   }
 
   .stat-card h3 {
@@ -12,7 +12,7 @@
   }
 
   .stat-card .stat-value {
-    @apply text-2xl font-bold text-white;
+    @apply text-2xl font-bold text-gray-200;
   }
 
   /* Status Badges */
@@ -22,11 +22,11 @@
 
   /* Sidebar Styles */
   .sidebar-link {
-    @apply flex items-center gap-3 px-3 py-3 rounded-lg text-white/70 font-medium transition-all;
+    @apply flex items-center gap-3 px-3 py-3 rounded-lg text-gray-400 font-medium transition-all;
   }
 
   .sidebar-link:hover {
-    @apply bg-white/8 text-white;
+    @apply bg-[#1a1a1a] text-gray-200;
   }
 
   .sidebar-link.active {
@@ -47,7 +47,7 @@
   }
 
   .btn-secondary {
-    @apply bg-transparent border border-[#3a3a3a] text-white hover:bg-[#303030] hover:border-[rgb(249,55,5)];
+    @apply bg-transparent border border-[#2a2a2a] text-gray-300 hover:bg-[#1a1a1a] hover:border-[rgb(249,55,5)];
   }
 
   .btn-danger {
@@ -55,16 +55,16 @@
   }
 
   .btn-ghost {
-    @apply bg-transparent text-gray-400 hover:bg-[#303030] hover:text-white;
+    @apply bg-transparent text-gray-400 hover:bg-[#1a1a1a] hover:text-gray-200;
   }
 
   /* Card Styles */
   .card {
-    @apply bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl transition-transform hover:-translate-y-1;
+    @apply bg-black border border-[#2a2a2a] rounded-xl transition-transform hover:-translate-y-1;
   }
 
   .card-header {
-    @apply p-6 border-b border-[#3a3a3a];
+    @apply p-6 border-b border-[#2a2a2a];
   }
 
   .card-body {
@@ -72,7 +72,7 @@
   }
 
   .card-footer {
-    @apply p-6 border-t border-[#3a3a3a];
+    @apply p-6 border-t border-[#2a2a2a];
   }
 
   /* Table Styles */
@@ -81,7 +81,7 @@
   }
 
   .table thead {
-    @apply bg-[#1f1f1f];
+    @apply bg-black;
   }
 
   .table th {
@@ -89,11 +89,11 @@
   }
 
   .table td {
-    @apply px-4 py-4 border-t border-white/10 text-white;
+    @apply px-4 py-4 border-t border-[#2a2a2a] text-gray-300;
   }
 
   .table tbody tr {
-    @apply transition-colors hover:bg-[#303030];
+    @apply transition-colors hover:bg-[#1a1a1a];
   }
 }
 
@@ -105,7 +105,7 @@
     -moz-osx-font-smoothing: grayscale;
     font-size: 0.9375rem;
     line-height: 1.6;
-    @apply bg-[#1f1f1f] text-white;
+    @apply bg-black text-gray-300;
   }
 
   /* Scrollbar */
@@ -114,20 +114,20 @@
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-[#1f1f1f];
+    @apply bg-black;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-gray-700 rounded-md hover:bg-gray-600;
+    @apply bg-[#2a2a2a] rounded-md hover:bg-gray-700;
   }
 
   /* Select et options en thème sombre */
   select {
-    @apply bg-[#2a2a2a] text-white;
+    @apply bg-black text-gray-300 border-[#2a2a2a];
   }
 
   select option {
-    @apply bg-[#2a2a2a] text-white;
+    @apply bg-black text-gray-300;
   }
 }
 
