@@ -63,9 +63,20 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     img.onload = () => {
       imageObjRef.current = img;
 
-      if (canvasRef.current) {
+      if (canvasRef.current && containerRef.current) {
         canvasRef.current.width = img.width;
         canvasRef.current.height = img.height;
+
+        // Calculer le zoom initial pour adapter l'image à l'écran
+        const container = containerRef.current;
+        const containerWidth = container.clientWidth - 64; // padding
+        const containerHeight = container.clientHeight - 64;
+
+        const scaleX = containerWidth / img.width;
+        const scaleY = containerHeight / img.height;
+        const initialZoom = Math.min(scaleX, scaleY, 1); // Ne pas zoomer au-delà de 100%
+
+        setZoom(initialZoom);
         redrawCanvas();
       }
 
