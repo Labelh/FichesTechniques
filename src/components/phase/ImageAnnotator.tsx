@@ -389,7 +389,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
         if (clickedAnn) {
           setSelectedAnnotation(clickedAnn.id);
           dragStart = point;
-          initialPoints = [...clickedAnn.points];
+          initialPoints = clickedAnn.points ? [...clickedAnn.points] : [];
         } else {
           setSelectedAnnotation(null);
         }
