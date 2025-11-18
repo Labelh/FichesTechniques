@@ -1,10 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Upload, X, Pencil } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import { uploadImageToHost } from '@/services/imageHostingService';
 import { Button } from '@/components/ui/Button';
 import { toast } from 'sonner';
 import type { AnnotatedImage } from '@/types';
+import { renderAnnotatedImage } from '@/lib/imageAnnotationRenderer';
 
 interface ImageUploaderProps {
   images: AnnotatedImage[];
@@ -126,7 +127,7 @@ export default function ImageUploader({ images, onImagesChange, onEditImage }: I
 
       {/* Images Grid */}
       {images.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {images.map((annotatedImage) => (
             <ImageThumbnail
               key={annotatedImage.imageId}
@@ -158,25 +159,55 @@ function ImageThumbnail({
   onEdit?: () => void;
 }) {
   const [imageUrl, setImageUrl] = useState<string>('');
-
-  // Créer l'URL de l'image
-  useState(() => {
-    // Si l'image a une URL hébergée, l'utiliser directement
-    if (annotatedImage.image.url) {
-      setImageUrl(annotatedImage.image.url);
-      return undefined;
-    }
-
-    // Sinon, créer une URL blob locale (ancienne méthode)
-    const url = URL.createObjectURL(annotatedImage.image.thumbnail || annotatedImage.image.blob);
-    setImageUrl(url);
-    return () => URL.revokeObjectURL(url);
-  });
-
   const hasAnnotations = annotatedImage.annotations && annotatedImage.annotations.length > 0;
 
+  // Charger l'image avec annotations si présentes
+  useEffect(() => {
+    let mounted = true;
+    let urlToRevoke: string | null = null;
+
+    const loadImage = async () => {
+      try {
+        if (hasAnnotations) {
+          // Rendre l'image avec annotations
+          const renderedUrl = await renderAnnotatedImage(annotatedImage);
+          if (mounted) {
+            urlToRevoke = renderedUrl;
+            setImageUrl(renderedUrl);
+          }
+        } else {
+          // Utiliser l'URL originale ou créer un blob
+          if (annotatedImage.image.url) {
+            setImageUrl(annotatedImage.image.url);
+          } else {
+            const url = URL.createObjectURL(annotatedImage.image.thumbnail || annotatedImage.image.blob);
+            urlToRevoke = url;
+            if (mounted) {
+              setImageUrl(url);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error rendering annotated image:', error);
+        // Fallback vers l'URL originale
+        if (mounted && annotatedImage.image.url) {
+          setImageUrl(annotatedImage.image.url);
+        }
+      }
+    };
+
+    loadImage();
+
+    return () => {
+      mounted = false;
+      if (urlToRevoke) {
+        URL.revokeObjectURL(urlToRevoke);
+      }
+    };
+  }, [annotatedImage, hasAnnotations]);
+
   return (
-    <div className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
+    <div className="relative group aspect-video rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
       {/* Image */}
       <img
         src={imageUrl}
@@ -205,14 +236,6 @@ function ImageThumbnail({
           <X className="h-4 w-4" />
         </Button>
       </div>
-
-      {/* Badge si annotations */}
-      {hasAnnotations && (
-        <div className="absolute top-2 right-2 bg-primary text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
-          <Pencil className="h-3 w-3" />
-          {annotatedImage.annotations.length}
-        </div>
-      )}
 
       {/* Nom de l'image */}
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">

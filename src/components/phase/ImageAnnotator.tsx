@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Save, Undo, Redo, Pencil, ArrowRight, Circle, Square, Minus, Type, Palette, ZoomIn, ZoomOut } from 'lucide-react';
+import { X, Save, Undo, Redo, Pencil, ArrowRight, Circle, Square, Minus, Type, Palette, ZoomIn, ZoomOut, Scan, Eraser, Move } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import type { AnnotatedImage, Annotation, Tool } from '@/types';
 import { AnnotationType } from '@/types';
@@ -33,6 +33,13 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
   const [description, setDescription] = useState(annotatedImage.description || '');
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const [edgeDetectionEnabled, setEdgeDetectionEnabled] = useState(false);
+  const [backgroundRemoved, setBackgroundRemoved] = useState(false);
+  const originalImageRef = useRef<HTMLImageElement | null>(null);
+  const [strokeWidth, setStrokeWidth] = useState(3);
+  const [strokeOpacity, setStrokeOpacity] = useState(1);
+  const [moveMode, setMoveMode] = useState(false);
+  const [selectedAnnotation, setSelectedAnnotation] = useState<string | null>(null);
 
   // État de dessin (non React pour performance)
   const drawing = useRef({
@@ -60,6 +67,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
 
     img.onload = () => {
       imageObjRef.current = img;
+      originalImageRef.current = img;
       setLoaded(true);
     };
 
@@ -67,6 +75,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
       setLoaded(true);
     };
 
+    img.crossOrigin = 'anonymous';
     const imageUrl = annotatedImage.image.url;
     if (imageUrl) {
       img.src = imageUrl;
@@ -88,6 +97,98 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     redrawCanvas();
   }, [loaded]);
 
+  // Calculer le gradient à une position pour le suivi d'arête
+  const getEdgeGradient = (imageData: ImageData, x: number, y: number): { dx: number; dy: number; magnitude: number } => {
+    const width = imageData.width;
+    const data = imageData.data;
+
+    if (x <= 0 || x >= width - 1 || y <= 0 || y >= imageData.height - 1) {
+      return { dx: 0, dy: 0, magnitude: 0 };
+    }
+
+    // Sobel pour calculer le gradient
+    const gx = (
+      -data[((y - 1) * width + (x - 1)) * 4] +
+      data[((y - 1) * width + (x + 1)) * 4] +
+      -2 * data[(y * width + (x - 1)) * 4] +
+      2 * data[(y * width + (x + 1)) * 4] +
+      -data[((y + 1) * width + (x - 1)) * 4] +
+      data[((y + 1) * width + (x + 1)) * 4]
+    );
+
+    const gy = (
+      -data[((y - 1) * width + (x - 1)) * 4] +
+      -2 * data[((y - 1) * width + x) * 4] +
+      -data[((y - 1) * width + (x + 1)) * 4] +
+      data[((y + 1) * width + (x - 1)) * 4] +
+      2 * data[((y + 1) * width + x) * 4] +
+      data[((y + 1) * width + (x + 1)) * 4]
+    );
+
+    const magnitude = Math.sqrt(gx * gx + gy * gy);
+    return { dx: gx, dy: gy, magnitude };
+  };
+
+  // Suivre une arête à partir d'un point
+  const snapToEdge = (point: Point, imageData: ImageData): Point => {
+    const searchRadius = 10;
+    let maxMagnitude = 0;
+    let bestPoint = point;
+
+    for (let dy = -searchRadius; dy <= searchRadius; dy++) {
+      for (let dx = -searchRadius; dx <= searchRadius; dx++) {
+        const x = Math.round(point.x + dx);
+        const y = Math.round(point.y + dy);
+
+        const gradient = getEdgeGradient(imageData, x, y);
+        if (gradient.magnitude > maxMagnitude) {
+          maxMagnitude = gradient.magnitude;
+          bestPoint = { x, y };
+        }
+      }
+    }
+
+    return maxMagnitude > 50 ? bestPoint : point;
+  };
+
+  // Supprimer le fond (simple seuillage de couleur)
+  const removeBackground = () => {
+    const canvas = canvasRef.current;
+    const img = originalImageRef.current;
+    if (!canvas || !img) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Dessiner l'image originale
+    ctx.drawImage(img, 0, 0);
+
+    // Obtenir les données d'image
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+
+    // Prendre la couleur du coin supérieur gauche comme référence du fond
+    const bgR = data[0];
+    const bgG = data[1];
+    const bgB = data[2];
+    const threshold = 40; // Seuil de similarité
+
+    // Rendre transparent les pixels similaires à la couleur de fond
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+
+      const diff = Math.abs(r - bgR) + Math.abs(g - bgG) + Math.abs(b - bgB);
+
+      if (diff < threshold) {
+        data[i + 3] = 0; // Rendre transparent
+      }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+  };
+
   // Redessiner le canvas
   const redrawCanvas = () => {
     const canvas = canvasRef.current;
@@ -100,11 +201,18 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     // Effacer
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Dessiner l'image
-    ctx.drawImage(img, 0, 0);
+    // Dessiner l'image (avec ou sans effets)
+    if (backgroundRemoved) {
+      removeBackground();
+    } else {
+      ctx.drawImage(img, 0, 0);
+    }
 
     // Dessiner les annotations
-    annotations.forEach(ann => drawAnnotation(ctx, ann));
+    annotations.forEach(ann => {
+      const isSelected = ann.id === selectedAnnotation;
+      drawAnnotation(ctx, ann, isSelected);
+    });
 
     // Dessiner l'annotation en cours
     if (drawing.current.active && drawing.current.points.length > 0) {
@@ -113,19 +221,33 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
         type: currentTool,
         points: drawing.current.points,
         color: currentColor,
+        strokeWidth,
         createdAt: new Date(),
-      };
-      drawAnnotation(ctx, tempAnn);
+      } as any;
+      (tempAnn as any).opacity = strokeOpacity;
+      drawAnnotation(ctx, tempAnn, false);
     }
   };
 
+  // Convertir hex en rgba avec opacité
+  const hexToRgba = (hex: string, alpha: number): string => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
+
   // Dessiner une annotation
-  const drawAnnotation = (ctx: CanvasRenderingContext2D, ann: Annotation) => {
+  const drawAnnotation = (ctx: CanvasRenderingContext2D, ann: Annotation, isSelected: boolean = false) => {
     if (!ann.points || ann.points.length === 0) return;
 
-    ctx.strokeStyle = ann.color;
-    ctx.fillStyle = ann.color;
-    ctx.lineWidth = 3;
+    const opacity = (ann as any).opacity !== undefined ? (ann as any).opacity : 1;
+    const colorWithOpacity = ann.color.startsWith('#') ? hexToRgba(ann.color, opacity) : ann.color;
+
+    ctx.strokeStyle = colorWithOpacity;
+    ctx.fillStyle = colorWithOpacity;
+    ctx.globalAlpha = 1;
+    ctx.lineWidth = ann.strokeWidth || strokeWidth;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
@@ -199,12 +321,30 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
         }
         break;
     }
+
+    // Dessiner une bordure de sélection si sélectionné
+    if (isSelected && pts.length > 0) {
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = '#00ff00';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+
+      const minX = Math.min(...pts.map(p => p.x)) - 10;
+      const minY = Math.min(...pts.map(p => p.y)) - 10;
+      const maxX = Math.max(...pts.map(p => p.x)) + 10;
+      const maxY = Math.max(...pts.map(p => p.y)) + 10;
+
+      ctx.strokeRect(minX, minY, maxX - minX, maxY - minY);
+      ctx.setLineDash([]);
+    }
+
+    ctx.globalAlpha = 1;
   };
 
-  // Redessiner quand les annotations changent
+  // Redessiner quand les annotations changent ou les effets
   useEffect(() => {
     if (loaded) redrawCanvas();
-  }, [annotations, loaded]);
+  }, [annotations, loaded, backgroundRemoved, selectedAnnotation, strokeWidth, strokeOpacity]);
 
   // Convertir coordonnées écran → canvas
   const getCanvasPoint = (e: MouseEvent): Point => {
@@ -226,10 +366,36 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     const canvas = canvasRef.current;
     if (!canvas || !loaded) return;
 
+    let dragStart: Point | null = null;
+    let initialPoints: Point[] = [];
+
     const onMouseDown = (e: MouseEvent) => {
       if (e.button !== 0) return;
 
       const point = getCanvasPoint(e);
+
+      // Mode déplacement
+      if (moveMode) {
+        // Chercher une annotation sous le curseur
+        const clickedAnn = annotations.find(ann => {
+          if (!ann.points || ann.points.length === 0) return false;
+          const minX = Math.min(...ann.points.map(p => p.x)) - 10;
+          const minY = Math.min(...ann.points.map(p => p.y)) - 10;
+          const maxX = Math.max(...ann.points.map(p => p.x)) + 10;
+          const maxY = Math.max(...ann.points.map(p => p.y)) + 10;
+          return point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY;
+        });
+
+        if (clickedAnn) {
+          setSelectedAnnotation(clickedAnn.id);
+          dragStart = point;
+          initialPoints = [...clickedAnn.points];
+        } else {
+          setSelectedAnnotation(null);
+        }
+        return;
+      }
+
       drawing.current = {
         active: true,
         startPoint: point,
@@ -239,20 +405,56 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     };
 
     const onMouseMove = (e: MouseEvent) => {
-      if (!drawing.current.active) return;
-
       const point = getCanvasPoint(e);
 
+      // Mode déplacement
+      if (moveMode && selectedAnnotation && dragStart && initialPoints.length > 0) {
+        const dx = point.x - dragStart.x;
+        const dy = point.y - dragStart.y;
+
+        const movedPoints = initialPoints.map(p => ({ x: p.x + dx, y: p.y + dy }));
+        const updatedAnnotations = annotations.map(a =>
+          a.id === selectedAnnotation ? { ...a, points: movedPoints } : a
+        );
+        setAnnotations(updatedAnnotations);
+        return;
+      }
+
+      if (!drawing.current.active) return;
+
+      // Suivi d'arête activé
+      let finalPoint = point;
+      if (edgeDetectionEnabled && currentTool === AnnotationType.TRAJECTORY) {
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          finalPoint = snapToEdge(point, imageData);
+        }
+      }
+
       if (currentTool === AnnotationType.TRAJECTORY) {
-        drawing.current.points.push(point);
+        drawing.current.points.push(finalPoint);
       } else {
-        drawing.current.points = [drawing.current.startPoint!, point];
+        drawing.current.points = [drawing.current.startPoint!, finalPoint];
       }
 
       redrawCanvas();
     };
 
     const onMouseUp = (e: MouseEvent) => {
+      if (moveMode) {
+        if (selectedAnnotation && dragStart) {
+          // Sauvegarder dans l'historique
+          const newHistory = history.slice(0, historyIndex + 1);
+          newHistory.push([...annotations]);
+          setHistory(newHistory);
+          setHistoryIndex(newHistory.length - 1);
+        }
+        dragStart = null;
+        initialPoints = [];
+        return;
+      }
+
       if (!drawing.current.active) return;
 
       const point = getCanvasPoint(e);
@@ -280,9 +482,11 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
         type: currentTool,
         points: finalPoints,
         color: currentColor,
+        strokeWidth,
         text,
         createdAt: new Date(),
-      };
+      } as any;
+      (newAnn as any).opacity = strokeOpacity;
 
       const newAnnotations = [...annotations, newAnn];
       setAnnotations(newAnnotations);
@@ -306,7 +510,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
       canvas.removeEventListener('mousemove', onMouseMove);
       canvas.removeEventListener('mouseup', onMouseUp);
     };
-  }, [loaded, currentTool, currentColor, annotations, historyIndex, history]);
+  }, [loaded, currentTool, currentColor, annotations, historyIndex, history, moveMode, selectedAnnotation, edgeDetectionEnabled, strokeWidth]);
 
   // Bloquer le scroll de la page
   useEffect(() => {
@@ -393,6 +597,35 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
           />
         </div>
         <div className="flex items-center gap-2">
+          {/* Épaisseur */}
+          <div className="flex items-center gap-2 border-r border-[#2a2a2a] pr-3 mr-2">
+            <span className="text-xs text-gray-400">Épaisseur</span>
+            <input
+              type="range"
+              min="1"
+              max="20"
+              value={strokeWidth}
+              onChange={(e) => setStrokeWidth(Number(e.target.value))}
+              className="w-20 h-1"
+            />
+            <span className="text-xs text-gray-300 w-6">{strokeWidth}</span>
+          </div>
+
+          {/* Opacité */}
+          <div className="flex items-center gap-2 border-r border-[#2a2a2a] pr-3 mr-2">
+            <span className="text-xs text-gray-400">Opacité</span>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.1"
+              value={strokeOpacity}
+              onChange={(e) => setStrokeOpacity(Number(e.target.value))}
+              className="w-20 h-1"
+            />
+            <span className="text-xs text-gray-300 w-8">{Math.round(strokeOpacity * 100)}%</span>
+          </div>
+
           {/* Zoom */}
           <div className="flex items-center gap-1 border-r border-[#2a2a2a] pr-3 mr-2">
             <Button variant="ghost" size="sm" onClick={() => setZoom(prev => Math.max(0.25, prev - 0.25))}>
@@ -501,6 +734,48 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
 
           <div className="h-px bg-[#2a2a2a] my-2" />
 
+          {/* Outils d'aide */}
+          <button
+            onClick={() => {
+              setMoveMode(!moveMode);
+              if (!moveMode) {
+                setSelectedAnnotation(null);
+              }
+            }}
+            className={`p-3 rounded transition-colors ${
+              moveMode ? 'bg-primary text-white' : 'bg-black text-gray-400 hover:bg-[#1a1a1a] border border-[#2a2a2a]'
+            }`}
+            title="Déplacer les formes"
+          >
+            <Move className="h-5 w-5" />
+          </button>
+          <button
+            onClick={() => {
+              setEdgeDetectionEnabled(!edgeDetectionEnabled);
+              setBackgroundRemoved(false);
+            }}
+            className={`p-3 rounded transition-colors ${
+              edgeDetectionEnabled ? 'bg-primary text-white' : 'bg-black text-gray-400 hover:bg-[#1a1a1a] border border-[#2a2a2a]'
+            }`}
+            title="Suivre les arêtes (pour traits main levée)"
+          >
+            <Scan className="h-5 w-5" />
+          </button>
+          <button
+            onClick={() => {
+              setBackgroundRemoved(!backgroundRemoved);
+              setEdgeDetectionEnabled(false);
+            }}
+            className={`p-3 rounded transition-colors ${
+              backgroundRemoved ? 'bg-primary text-white' : 'bg-black text-gray-400 hover:bg-[#1a1a1a] border border-[#2a2a2a]'
+            }`}
+            title="Supprimer le fond"
+          >
+            <Eraser className="h-5 w-5" />
+          </button>
+
+          <div className="h-px bg-[#2a2a2a] my-2" />
+
           {/* Color picker */}
           <div className="relative">
             <button
@@ -548,16 +823,16 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
         {/* Canvas area */}
         <div
           ref={containerRef}
-          className="flex-1 overflow-auto bg-black p-4"
+          className="flex-1 overflow-auto bg-black p-4 flex items-center justify-center"
         >
           <div style={{ display: 'inline-block', lineHeight: 0 }}>
             <canvas
               ref={canvasRef}
-              className="cursor-crosshair"
+              className={moveMode ? 'cursor-move' : 'cursor-crosshair'}
               style={{
                 display: 'block',
                 transform: `scale(${zoom})`,
-                transformOrigin: 'top left',
+                transformOrigin: 'center center',
                 transition: 'transform 0.15s ease-out',
                 imageRendering: zoom > 2 ? 'auto' : 'crisp-edges',
                 maxWidth: 'none',

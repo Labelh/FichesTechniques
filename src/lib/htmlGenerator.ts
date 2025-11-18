@@ -1,5 +1,5 @@
 import { Procedure, Phase, AnnotatedImage } from '../types';
-import { renderAllAnnotatedImages } from './imageAnnotationRenderer';
+import { renderAllAnnotatedImagesToBase64 } from './imageAnnotationRenderer';
 
 /**
  * Génère un fichier HTML complet et stylisé pour une procédure
@@ -27,8 +27,13 @@ export async function generateHTML(
     });
   }
 
-  // Rendre toutes les images avec annotations
-  const renderedImageUrls = await renderAllAnnotatedImages(allAnnotatedImages);
+  // Rendre toutes les images avec annotations en base64
+  console.log('Generating HTML for', allAnnotatedImages.length, 'images');
+  const renderedImageUrls = await renderAllAnnotatedImagesToBase64(allAnnotatedImages);
+  console.log('Rendered URLs map size:', renderedImageUrls.size);
+  renderedImageUrls.forEach((url, imageId) => {
+    console.log(`Image ${imageId}:`, url.substring(0, 50) + '...');
+  });
   const html = `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -57,7 +62,7 @@ export async function generateHTML(
             top: 0;
             bottom: 0;
             width: 280px;
-            background: #f0f0f0;
+            background: #e8e8e8;
             border-right: 1px solid #d0d0d0;
             overflow-y: auto;
             padding: 24px;
@@ -136,29 +141,29 @@ export async function generateHTML(
         }
 
         .header-title {
-            font-size: 1.4rem;
+            font-size: 2rem;
             color: #666;
             font-weight: 500;
             margin-bottom: 12px;
-            text-align: center;
+            text-align: left;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
         .header-designation {
             font-size: 2.2rem;
-            font-weight: 700;
+            font-weight: 400;
             color: #1a1a1a;
             margin-bottom: 16px;
-            text-align: center;
+            text-align: left;
         }
 
         .header-reference {
             font-size: 2.4rem;
             color: rgb(249, 55, 5);
-            font-weight: 700;
+            font-weight: 400;
             margin-bottom: 28px;
-            text-align: center;
+            text-align: left;
             text-shadow: 0 2px 4px rgba(249, 55, 5, 0.1);
         }
 
@@ -328,7 +333,7 @@ export async function generateHTML(
 
         /* Phases */
         .phase {
-            margin-bottom: 48px;
+            margin-bottom: 24px;
             break-inside: avoid;
             background: white;
             border-radius: 12px;
@@ -338,16 +343,16 @@ export async function generateHTML(
         }
 
         .phase-header {
-            background: linear-gradient(135deg, rgb(249, 55, 5) 0%, rgb(230, 45, 0) 100%);
-            color: white;
+            background: white;
             padding: 24px 32px;
-            box-shadow: 0 2px 8px rgba(249, 55, 5, 0.2);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
 
         .phase-title {
             font-size: 1.6rem;
             font-weight: 600;
             margin-bottom: 10px;
+            color: rgb(249, 55, 5);
         }
 
         .phase-meta {
@@ -355,7 +360,7 @@ export async function generateHTML(
             flex-wrap: wrap;
             gap: 20px;
             font-size: 0.9rem;
-            opacity: 0.95;
+            color: #555;
         }
 
         .phase-meta-item {
@@ -390,43 +395,59 @@ export async function generateHTML(
         }
 
         .step-number {
-            display: inline-block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             background: linear-gradient(135deg, rgb(249, 55, 5) 0%, rgb(230, 45, 0) 100%);
             color: white;
-            padding: 6px 16px;
+            width: 40px;
+            height: 40px;
+            flex-shrink: 0;
             font-weight: 700;
-            font-size: 0.95rem;
-            margin-right: 12px;
+            font-size: 1.1rem;
             border-radius: 6px;
             box-shadow: 0 2px 4px rgba(249, 55, 5, 0.3);
+        }
+
+        .step-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .step-content {
+            flex: 1;
         }
 
         .step-title {
             font-size: 1.15rem;
             font-weight: 700;
             color: #1a1a1a;
-            margin-bottom: 12px;
-            display: inline-block;
+            margin-bottom: 8px;
         }
 
         .step-description {
             color: #555;
-            margin-bottom: 16px;
             line-height: 1.8;
-            font-size: 1rem;
+            font-size: 1.1rem;
         }
 
         .step-tool {
-            background: #fff8f0;
-            padding: 12px;
-            border-left: 3px solid rgb(249, 55, 5);
-            margin: 15px 0;
+            background: linear-gradient(135deg, #f0f9f4 0%, #ffffff 100%);
+            padding: 18px 20px;
+            border-left: 4px solid #10b981;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.1);
         }
 
         .step-tool-label {
-            font-weight: 600;
-            color: rgb(249, 55, 5);
-            margin-right: 8px;
+            font-weight: 700;
+            color: #059669;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 1.05rem;
         }
 
         .step-tool-details {
@@ -454,12 +475,6 @@ export async function generateHTML(
             border: 1px solid #e0e0e0;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .step-image-wrapper:hover {
-            transform: scale(1.02);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
         }
 
         .step-image {
@@ -747,25 +762,25 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
             <div class="phase-meta">
                 ${phase.difficulty ? `
                 <div class="phase-meta-item">
-                    <span>📊 Difficulté:</span>
+                    <span>Difficulté:</span>
                     <span>${phase.difficulty === 'easy' ? 'Facile' : phase.difficulty === 'medium' ? 'Moyen' : 'Difficile'}</span>
                 </div>
                 ` : ''}
                 ${phase.estimatedTime ? `
                 <div class="phase-meta-item">
-                    <span>⏱️ Temps estimé:</span>
+                    <span>Temps estimé:</span>
                     <span>${phase.estimatedTime} min</span>
                 </div>
                 ` : ''}
                 ${phase.numberOfPeople ? `
                 <div class="phase-meta-item">
-                    <span>👥 Personnes:</span>
+                    <span>Personnes:</span>
                     <span>${phase.numberOfPeople}</span>
                 </div>
                 ` : ''}
             </div>
             ${phase.requiredSkills && phase.requiredSkills.length > 0 ? `
-            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.15);">
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0; color: #555;">
                 <strong>Compétences requises:</strong> ${phase.requiredSkills.join(', ')}
             </div>
             ` : ''}
@@ -775,33 +790,35 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
         <div class="steps">
             ${phase.steps.map((step, stepIndex) => `
             <div class="step" id="phase-${phaseIndex + 1}-step-${stepIndex + 1}">
-                <div>
-                    <span class="step-number">${stepIndex + 1}</span>
-                    ${step.title ? `<span class="step-title">${escapeHtml(step.title)}</span>` : ''}
+                <div class="step-header">
+                    <div class="step-number">${stepIndex + 1}</div>
+                    <div class="step-content">
+                        ${step.title ? `<div class="step-title">${escapeHtml(step.title)}</div>` : ''}
+                        <div class="step-description">${escapeHtml(step.description)}</div>
+                    </div>
                 </div>
-                <div class="step-description">${escapeHtml(step.description)}</div>
 
                 ${step.toolId && step.toolName ? `
                 <div class="step-tool">
-                    <div>
-                        <span class="step-tool-label">🔧 Outil:</span>
-                        ${escapeHtml(step.toolName)}
-                    </div>
+                    <div class="step-tool-label">Outil</div>
+                    <div>• ${escapeHtml(step.toolName)}</div>
+                    ${step.toolReference || step.toolLocation ? `
                     <div class="step-tool-details">
                         ${step.toolReference ? `<strong>Référence:</strong> ${escapeHtml(step.toolReference)}` : ''}
                         ${step.toolReference && step.toolLocation ? ' • ' : ''}
                         ${step.toolLocation ? `<strong>Emplacement:</strong> ${escapeHtml(step.toolLocation)}` : ''}
                     </div>
+                    ` : ''}
                 </div>
                 ` : ''}
 
                 ${step.estimatedTime ? `
-                <div class="step-time">⏱️ Temps: ${step.estimatedTime} min</div>
+                <div class="step-time">Temps: ${step.estimatedTime} min</div>
                 ` : ''}
 
                 ${step.tips && step.tips.length > 0 ? `
                 <div class="tips">
-                    <div class="tips-title">💡 Conseils</div>
+                    <div class="tips-title">Conseils</div>
                     ${step.tips.map(tip => `<div class="tip-item">• ${escapeHtml(tip)}</div>`).join('')}
                 </div>
                 ` : ''}
@@ -811,9 +828,9 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                     ${step.safetyNotes.map(note => `
                     <div class="safety-note ${note.type === 'danger' ? 'danger' : 'warning'}">
                         <div class="safety-note-title">
-                            ${note.type === 'danger' ? '⚠️ DANGER' : '⚠️ ATTENTION'}
+                            ${note.type === 'danger' ? 'DANGER' : 'ATTENTION'}
                         </div>
-                        <div>${escapeHtml(note.content)}</div>
+                        <div>• ${escapeHtml(note.content)}</div>
                     </div>
                     `).join('')}
                 </div>
