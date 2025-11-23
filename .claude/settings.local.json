@@ -38,7 +38,10 @@
       "Bash(echo:*)",
       "Bash(npx tsc:*)",
       "Bash(firebase init:*)",
-      "Bash(firebase login:*)"
+      "Bash(firebase login:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)"
     ],
     "deny": [],
     "ask": []

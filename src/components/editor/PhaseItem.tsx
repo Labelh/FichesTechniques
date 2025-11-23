@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, AlertTriangle, Lightbulb, Save, Pencil, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -29,6 +29,12 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
   const [estimatedTime, setEstimatedTime] = useState(phase.estimatedTime);
   const [steps, setSteps] = useState<SubStep[]>(phase.steps || []);
   const [consumables, setConsumables] = useState<Consumable[]>([]);
+
+  // Ref pour stocker la dernière valeur de steps (pour éviter les problèmes de closure)
+  const stepsRef = useRef(steps);
+  useEffect(() => {
+    stepsRef.current = steps;
+  }, [steps]);
 
   const availableTools = useTools();
 
@@ -238,6 +244,24 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
     setSteps(newSteps.map((s, idx) => ({ ...s, order: idx })));
   };
 
+  const savePhaseToFirestore = async () => {
+    try {
+      // Utiliser stepsRef.current pour obtenir la dernière valeur
+      await updatePhase(procedureId, phase.id, {
+        title,
+        phaseNumber,
+        difficulty,
+        estimatedTime,
+        steps: stepsRef.current,
+      });
+      return true;
+    } catch (error) {
+      console.error('Error saving phase:', error);
+      toast.error('Erreur lors de la sauvegarde');
+      return false;
+    }
+  };
+
   const getDifficultyColor = (diff: DifficultyLevel) => {
     switch (diff) {
       case 'easy': return 'bg-status-success';
@@ -414,6 +438,7 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
                       onUpdateTool={(toolId, toolName, toolLocation, toolReference) => updateStepTool(step.id, toolId, toolName, toolLocation, toolReference)}
                       onMoveUp={() => moveStepUp(step.id)}
                       onMoveDown={() => moveStepDown(step.id)}
+                      onSaveToFirestore={savePhaseToFirestore}
                     />
                   ))}
                 </div>
@@ -453,6 +478,7 @@ interface SubStepItemProps {
   onUpdateTool: (toolId: string | null, toolName: string | null, toolLocation?: string | null, toolReference?: string | null) => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  onSaveToFirestore: () => Promise<boolean>;
 }
 
 function SubStepItem({
@@ -474,6 +500,7 @@ function SubStepItem({
   onUpdateTool,
   onMoveUp,
   onMoveDown,
+  onSaveToFirestore,
 }: SubStepItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [imageToAnnotate, setImageToAnnotate] = useState<AnnotatedImage | null>(null);
@@ -527,7 +554,7 @@ function SubStepItem({
     }
   };
 
-  const handleSaveAnnotations = (annotations: Annotation[], description: string) => {
+  const handleSaveAnnotations = async (annotations: Annotation[], description: string) => {
     if (!imageToAnnotate) return;
 
     // Mettre à jour l'image avec les nouvelles annotations
@@ -537,13 +564,22 @@ function SubStepItem({
         : img
     );
 
+    // Mettre à jour l'état local immédiatement pour l'UI
     onUpdate({ images: updatedImages });
+
+    // Fermer le modal d'annotation
     setImageToAnnotate(null);
 
-    // Rappel à l'utilisateur de sauvegarder
-    toast.info('N\'oubliez pas de sauvegarder la procédure (Ctrl+S) pour conserver les annotations !', {
-      duration: 5000
-    });
+    // Sauvegarder automatiquement dans Firestore
+    toast.info('Sauvegarde des annotations...');
+
+    // Petit délai pour s'assurer que le state est à jour
+    setTimeout(async () => {
+      const success = await onSaveToFirestore();
+      if (success) {
+        toast.success('Annotations sauvegardées avec succès');
+      }
+    }, 100);
   };
 
   return (
