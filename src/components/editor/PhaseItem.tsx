@@ -260,6 +260,12 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
   };
 
   const handleSaveStepAnnotations = async (stepId: string, imageId: string, annotations: Annotation[], description: string) => {
+    console.log('=== handleSaveStepAnnotations ===');
+    console.log('Step ID:', stepId);
+    console.log('Image ID:', imageId);
+    console.log('Annotations count:', annotations.length);
+    console.log('Description:', description);
+
     // Calculer les nouvelles steps avec les annotations mises à jour
     const newSteps = steps.map(s => {
       if (s.id !== stepId) return s;
@@ -273,14 +279,29 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
       return { ...s, images: updatedImages };
     });
 
+    console.log('New steps calculated, total steps:', newSteps.length);
+    const stepWithAnnotations = newSteps.find(s => s.id === stepId);
+    if (stepWithAnnotations) {
+      console.log('Step with annotations:', {
+        stepId: stepWithAnnotations.id,
+        images: stepWithAnnotations.images?.map(img => ({
+          imageId: img.imageId,
+          annotationsCount: img.annotations?.length || 0
+        }))
+      });
+    }
+
     // Sauvegarder immédiatement dans Firestore avec les nouvelles steps
     toast.info('Sauvegarde des annotations...');
     const success = await savePhaseToFirestore(newSteps);
 
     if (success) {
+      console.log('Annotations saved successfully to Firestore');
       // Mettre à jour le state local seulement après la sauvegarde réussie
       setSteps(newSteps);
       toast.success('Annotations sauvegardées avec succès');
+    } else {
+      console.error('Failed to save annotations to Firestore');
     }
   };
 

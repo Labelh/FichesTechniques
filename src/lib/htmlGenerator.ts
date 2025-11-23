@@ -11,9 +11,23 @@ export async function generateHTML(
   // Collecter toutes les images annotées
   const allAnnotatedImages: AnnotatedImage[] = [];
 
-  phases.forEach(phase => {
-    phase.steps.forEach(step => {
+  console.log('=== DEBUG: Generating HTML ===');
+  console.log('Procedure:', procedure.designation);
+  console.log('Number of phases:', phases.length);
+
+  phases.forEach((phase, phaseIdx) => {
+    console.log(`Phase ${phaseIdx + 1}: ${phase.title}, steps:`, phase.steps.length);
+    phase.steps.forEach((step, stepIdx) => {
       if (step.images) {
+        console.log(`  Step ${stepIdx + 1}: ${step.images.length} images`);
+        step.images.forEach((img, imgIdx) => {
+          console.log(`    Image ${imgIdx + 1}:`, {
+            imageId: img.imageId,
+            hasAnnotations: img.annotations && img.annotations.length > 0,
+            annotationsCount: img.annotations?.length || 0,
+            description: img.description
+          });
+        });
         allAnnotatedImages.push(...step.images);
       }
     });
