@@ -957,7 +957,7 @@ function SubStepItem({
                 />
                 <div className="flex gap-2">
                   <Button
-                    variant="primary"
+                    variant="default"
                     size="sm"
                     onClick={handleAddVideo}
                     className="text-xs"
@@ -1159,7 +1159,7 @@ function SubStepItem({
         <ToolSelector
           availableTools={availableTools || []}
           availableConsumables={availableConsumables || []}
-          onSelect={(toolId, toolName, toolLocation, toolReference, type, color) => {
+          onSelect={(toolId, toolName, toolLocation, toolReference, _type, color) => {
             onUpdateTool(toolId, toolName, toolLocation, toolReference, color);
             setShowToolSelector(false);
           }}
