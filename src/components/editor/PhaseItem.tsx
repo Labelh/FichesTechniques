@@ -50,18 +50,10 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
     const handleKeyDown = async (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
-        try {
-          await updatePhase(procedureId, phase.id, {
-            title,
-            phaseNumber,
-            difficulty,
-            estimatedTime,
-            steps,
-          });
+        // Utilise savePhaseToFirestore qui nettoie déjà les undefined
+        const success = await savePhaseToFirestore();
+        if (success) {
           toast.success('Phase sauvegardée');
-        } catch (error) {
-          console.error('Error updating phase:', error);
-          toast.error('Erreur lors de la sauvegarde');
         }
       }
     };
@@ -240,16 +232,44 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
     setSteps(newSteps.map((s, idx) => ({ ...s, order: idx })));
   };
 
+  // Nettoie les valeurs undefined d'un objet (Firestore n'accepte pas undefined)
+  const cleanUndefined = (obj: any): any => {
+    if (obj === null || obj === undefined) {
+      return null;
+    }
+
+    if (Array.isArray(obj)) {
+      return obj.map(item => cleanUndefined(item));
+    }
+
+    if (typeof obj === 'object') {
+      const cleaned: any = {};
+      for (const key in obj) {
+        const value = obj[key];
+        if (value !== undefined) {
+          cleaned[key] = cleanUndefined(value);
+        }
+      }
+      return cleaned;
+    }
+
+    return obj;
+  };
+
   const savePhaseToFirestore = async (customSteps?: SubStep[]) => {
     try {
       // Utiliser customSteps si fourni, sinon steps actuels
       const stepsToSave = customSteps || steps;
+
+      // Nettoyer les valeurs undefined avant de sauvegarder
+      const cleanedSteps = cleanUndefined(stepsToSave);
+
       await updatePhase(procedureId, phase.id, {
         title,
         phaseNumber,
         difficulty,
         estimatedTime,
-        steps: stepsToSave,
+        steps: cleanedSteps,
       });
       return true;
     } catch (error) {
