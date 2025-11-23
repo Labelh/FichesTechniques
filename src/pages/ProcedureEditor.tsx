@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Plus, Image as ImageIcon, X, Download, AlertTriangle, Pencil, GitBranch, Clock, CheckCircle, Cloud } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Image as ImageIcon, X, Download, AlertTriangle, Pencil, GitBranch, Clock, CheckCircle } from 'lucide-react';
 import { useProcedure } from '@/hooks/useProcedures';
 import { createProcedure, updateProcedure, addPhase, deletePhase } from '@/services/procedureService';
 import { uploadImageToHost } from '@/services/imageHostingService';
-import { useAutoSave } from '@/hooks/useAutoSave';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -45,29 +44,18 @@ export default function ProcedureEditor() {
     }
   }, [existingProcedure]);
 
-  // Auto-save avec délai de 3 secondes pour les infos générales
-  const { isSaving, lastSaved } = useAutoSave(
-    {
-      onSave: async () => {
-        if (!id || !existingProcedure) return;
-        if (!reference.trim() && !designation.trim()) return;
+  // Raccourci Ctrl+S pour sauvegarde rapide
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        handleQuickSave();
+      }
+    };
 
-        await updateProcedure(id, {
-          reference: reference.trim() || undefined,
-          designation: designation.trim() || undefined,
-          title: designation.trim() || reference.trim() || 'Sans titre',
-          description: '',
-          coverImage: coverImage || undefined,
-          defects: defects,
-          versionString: versionString,
-          changelog: changelog,
-        });
-      },
-      delay: 3000, // 3 secondes
-      enabled: !!id && !!existingProcedure,
-    },
-    [reference, designation, coverImage, defects, versionString, changelog]
-  );
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [reference, designation, coverImage, defects, versionString, changelog, id, existingProcedure]);
 
   const calculateNextVersion = (current: string, type: 'major' | 'minor'): string => {
     const [major, minor] = current.split('.').map(Number);
@@ -444,23 +432,6 @@ export default function ProcedureEditor() {
         </Link>
 
         <div className="flex items-center gap-3">
-          {/* Indicateur de sauvegarde auto */}
-          {id && existingProcedure && (
-            <div className="flex items-center gap-2 text-sm">
-              {isSaving ? (
-                <>
-                  <Cloud className="h-4 w-4 text-gray-400 animate-pulse" />
-                  <span className="text-gray-400">Sauvegarde...</span>
-                </>
-              ) : lastSaved ? (
-                <>
-                  <Cloud className="h-4 w-4 text-green-500" />
-                  <span className="text-gray-400">Sauvegardé</span>
-                </>
-              ) : null}
-            </div>
-          )}
-
           <div className="flex gap-2">
             {id && existingProcedure && (
               <Button variant="secondary" onClick={handleExportHTML}>
@@ -468,7 +439,7 @@ export default function ProcedureEditor() {
                 Exporter HTML
               </Button>
             )}
-            <Button onClick={handleQuickSave} variant="secondary">
+            <Button onClick={handleQuickSave} variant="secondary" title="Ctrl+S">
               <CheckCircle className="h-4 w-4 mr-2" />
               Sauvegarde rapide
             </Button>

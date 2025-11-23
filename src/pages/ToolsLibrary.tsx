@@ -2,78 +2,59 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   Search,
   RefreshCw,
-  Package,
   Wrench,
   MapPin,
-  Tag
+  Package
 } from 'lucide-react';
 import { fetchConsumables } from '@/services/consumablesService';
-import { useTools } from '@/hooks/useTools';
-import { Consumable, Tool } from '../types';
+import { Consumable } from '../types';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { toast } from 'sonner';
-
-type ItemType = 'tool' | 'consumable';
-type LibraryItem = (Tool & { itemType: 'tool' }) | (Consumable & { itemType: 'consumable' });
 
 export default function ToolsLibrary() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedZone, setSelectedZone] = useState<string>('all');
-  const [selectedType, setSelectedType] = useState<'all' | ItemType>('all');
-  const [consumables, setConsumables] = useState<Consumable[]>([]);
-  const [isLoadingConsumables, setIsLoadingConsumables] = useState(false);
+  const [tools, setTools] = useState<Consumable[]>([]);
+  const [selectedItem, setSelectedItem] = useState<Consumable | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Récupérer les outils depuis Firebase (enrichis avec Supabase)
-  const tools = useTools();
-
-  // Récupération des consommables depuis Supabase
-  const loadConsumables = async () => {
-    setIsLoadingConsumables(true);
+  // Récupération des outils depuis Supabase uniquement
+  const loadTools = async () => {
+    setIsLoading(true);
     try {
       const data = await fetchConsumables();
-      setConsumables(data);
-      toast.success(`${data.length} consommables chargés`);
+      setTools(data);
+      toast.success(`${data.length} outils chargés`);
     } catch (error: any) {
-      console.error('Error loading consumables:', error);
+      console.error('Error loading tools:', error);
       toast.error(`Erreur: ${error.message}`);
     } finally {
-      setIsLoadingConsumables(false);
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    loadConsumables();
+    loadTools();
   }, []);
 
-  // Combiner outils et consommables
-  const allItems: LibraryItem[] = useMemo(() => {
-    const toolItems: LibraryItem[] = (tools || []).map(tool => ({
-      ...tool,
-      itemType: 'tool' as const
-    }));
-
-    const consumableItems: LibraryItem[] = consumables.map(consumable => ({
-      ...consumable,
-      itemType: 'consumable' as const
-    }));
-
-    return [...toolItems, ...consumableItems];
-  }, [tools, consumables]);
+  // Sélectionner automatiquement le premier item au chargement
+  useEffect(() => {
+    if (tools.length > 0 && !selectedItem) {
+      setSelectedItem(tools[0]);
+    }
+  }, [tools]);
 
   // Filtrage des items
   const filteredItems = useMemo(() => {
-    return allItems.filter(item => {
-      // Filtre par type
-      if (selectedType !== 'all' && item.itemType !== selectedType) return false;
-
+    return tools.filter(item => {
       // Filtre par recherche
       if (searchTerm) {
         const query = searchTerm.toLowerCase();
-        const name = item.itemType === 'tool' ? item.name : item.designation;
+        const name = item.designation || '';
         const reference = item.reference || '';
-        const description = item.itemType === 'tool' ? (item.description || '') : (item.description || '');
+        const description = item.description || '';
         const category = item.category || '';
 
         if (
@@ -88,284 +69,261 @@ export default function ToolsLibrary() {
 
       // Filtre par catégorie
       if (selectedCategory !== 'all') {
-        const itemCategory = item.itemType === 'tool'
-          ? (item.categoryData?.name || item.category)
-          : item.category;
-        if (itemCategory !== selectedCategory) return false;
+        if (item.category !== selectedCategory) return false;
       }
 
       // Filtre par zone de stockage
       if (selectedZone !== 'all') {
-        if (item.itemType === 'tool') {
-          const zoneName = item.storageZoneData?.name || item.storage_zone_id || '';
-          if (zoneName !== selectedZone) return false;
-        } else {
-          const location = (item as any).emplacement || (item as any).location || '';
-          if (!location.includes(selectedZone)) return false;
-        }
+        const location = (item as any).emplacement || (item as any).location || '';
+        if (!location.includes(selectedZone)) return false;
       }
 
       return true;
     });
-  }, [allItems, searchTerm, selectedCategory, selectedZone, selectedType]);
+  }, [tools, searchTerm, selectedCategory, selectedZone]);
 
   // Récupération des catégories uniques
   const categories = useMemo(() => {
     const cats = new Set<string>();
-    allItems.forEach(item => {
-      if (item.itemType === 'tool') {
-        const catName = item.categoryData?.name || item.category;
-        if (catName) cats.add(catName);
-      } else {
-        if (item.category) cats.add(item.category);
-      }
+    tools.forEach(item => {
+      if (item.category) cats.add(item.category);
     });
     return Array.from(cats).sort();
-  }, [allItems]);
+  }, [tools]);
 
   // Récupération des zones de stockage uniques
   const storageZones = useMemo(() => {
     const zones = new Set<string>();
-    allItems.forEach(item => {
-      if (item.itemType === 'tool') {
-        const zoneName = item.storageZoneData?.name || item.storage_zone_id;
-        if (zoneName) zones.add(zoneName);
-      } else {
-        const location = (item as any).emplacement || (item as any).location;
-        if (location) {
-          // Extraire la zone (ex: "Zone B.1.5" -> "Zone B")
-          const match = location.match(/Zone\s+[A-Z]/i);
-          if (match) zones.add(match[0]);
-        }
+    tools.forEach(item => {
+      const location = (item as any).emplacement || (item as any).location;
+      if (location) {
+        // Extraire la zone (ex: "Zone B.1.5" -> "Zone B")
+        const match = location.match(/Zone\s+[A-Z]/i);
+        if (match) zones.add(match[0]);
       }
     });
     return Array.from(zones).sort();
-  }, [allItems]);
+  }, [tools]);
 
-  const isLoading = !tools || isLoadingConsumables;
+  const getItemImage = (item: Consumable) => {
+    return item.image?.url || item.image_url || item.photo_url;
+  };
+
+  const getItemLocation = (item: Consumable) => {
+    return (item as any).emplacement || (item as any).location || item.location;
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col h-[calc(100vh-4rem)]">
       {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-text-primary">
-            Bibliothèque d'outils et consommables
-          </h1>
-          <p className="text-text-secondary mt-1">
-            {filteredItems.length} élément{filteredItems.length > 1 ? 's' : ''}
-            {' '}
-            ({filteredItems.filter(i => i.itemType === 'tool').length} outils,{' '}
-            {filteredItems.filter(i => i.itemType === 'consumable').length} consommables)
-          </p>
-        </div>
-        <div className="flex gap-2">
+      <div className="p-6 border-b border-[#323232] bg-background-surface">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Bibliothèque d'outils</h1>
+            <p className="text-sm text-gray-400 mt-1">
+              {filteredItems.length} outil{filteredItems.length > 1 ? 's' : ''}
+            </p>
+          </div>
           <Button
             variant="secondary"
-            onClick={loadConsumables}
-            disabled={isLoadingConsumables}
+            onClick={loadTools}
+            disabled={isLoading}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingConsumables ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Rafraîchir
           </Button>
         </div>
-      </div>
 
-      {/* Filters */}
-      <div className="bg-background-surface rounded-card border border-[#323232] p-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-text-muted" />
-            <Input
-              placeholder="Rechercher..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-
-          <select
-            value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value as 'all' | ItemType)}
-            className="px-3 py-2 border border-[#323232] rounded-lg bg-background-elevated text-text-primary focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
-          >
-            <option value="all">Tous les types</option>
-            <option value="tool">Outils uniquement</option>
-            <option value="consumable">Consommables uniquement</option>
-          </select>
-
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="px-3 py-2 border border-[#323232] rounded-lg bg-background-elevated text-text-primary focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
-          >
-            <option value="all">Toutes les catégories</option>
-            {categories.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-
-          <select
-            value={selectedZone}
-            onChange={(e) => setSelectedZone(e.target.value)}
-            className="px-3 py-2 border border-[#323232] rounded-lg bg-background-elevated text-text-primary focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
-          >
-            <option value="all">Toutes les zones</option>
-            {storageZones.map(zone => (
-              <option key={zone} value={zone}>{zone}</option>
-            ))}
-          </select>
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+          <Input
+            type="text"
+            placeholder="Rechercher par nom ou référence..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
         </div>
       </div>
 
-      {/* Items Grid */}
-      <div>
-        {isLoading ? (
-          <div className="text-center py-12 bg-background-surface rounded-card border border-[#323232]">
-            <RefreshCw className="h-16 w-16 mx-auto text-text-muted mb-4 animate-spin" />
-            <p className="text-text-secondary">
-              Chargement des outils et consommables...
-            </p>
-          </div>
-        ) : filteredItems.length === 0 ? (
-          <div className="text-center py-12 bg-background-surface rounded-card border border-[#323232]">
-            <Package className="h-16 w-16 mx-auto text-text-muted mb-4" />
-            <h3 className="text-lg font-medium text-text-primary mb-2">
-              Aucun élément trouvé
-            </h3>
-            <p className="text-text-secondary">
-              Essayez de modifier vos filtres
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filteredItems.map((item) => {
-              const isToolItem = item.itemType === 'tool';
-              const imageUrl = isToolItem
-                ? item.image?.url
-                : (item.image_url || item.photo_url);
-              const name = isToolItem ? item.name : item.designation;
-              const categoryName = isToolItem
-                ? (item.categoryData?.name || item.category)
-                : item.category;
-              const location = isToolItem
-                ? (item.storageZoneData?.name || item.storage_zone_id || item.location)
-                : ((item as any).emplacement || (item as any).location);
+      {/* Content - Two Panels */}
+      <div className="flex-1 overflow-hidden flex">
+        {/* Liste des items - Gauche */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {isLoading ? (
+            <div className="text-center py-12">
+              <RefreshCw className="h-16 w-16 mx-auto text-text-muted mb-4 animate-spin" />
+              <p className="text-gray-400">Chargement des outils...</p>
+            </div>
+          ) : filteredItems.length === 0 ? (
+            <div className="text-center py-12">
+              <Wrench className="h-16 w-16 mx-auto text-text-muted mb-4" />
+              <h3 className="text-lg font-medium text-white mb-2">
+                Aucun élément trouvé
+              </h3>
+              <p className="text-gray-400">
+                Essayez de modifier vos filtres
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {filteredItems.map((item) => {
+                const imageUrl = getItemImage(item);
+                const name = item.designation || item.reference || 'Sans nom';
+                const isSelected = selectedItem?.id === item.id;
+                const category = item.category || '';
+                const location = getItemLocation(item) || '';
 
-              return (
-                <div
-                  key={`${item.itemType}-${item.id}`}
-                  className="bg-background-elevated rounded-lg border border-[#323232] p-4 hover:border-primary/50 transition-colors"
-                >
-                  <div className="flex gap-4">
-                    {/* Image à gauche */}
-                    {imageUrl ? (
-                      <div className="bg-background rounded-lg overflow-hidden flex-shrink-0">
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setSelectedItem(item)}
+                    className={`p-3 rounded-lg border transition-all text-left ${
+                      isSelected
+                        ? 'border-primary bg-primary/10'
+                        : 'border-[#2a2a2a] bg-background-elevated hover:border-[#404040]'
+                    }`}
+                  >
+                    <div className="flex gap-3">
+                      {/* Image */}
+                      {imageUrl ? (
                         <img
                           src={imageUrl}
                           alt={name}
-                          className="w-24 h-24 object-contain p-2"
+                          className="h-16 w-16 object-cover rounded border border-[#323232] flex-shrink-0"
                           onError={(e) => {
                             (e.target as HTMLImageElement).style.display = 'none';
                           }}
                         />
-                      </div>
-                    ) : (
-                      <div className="bg-background rounded-lg w-24 h-24 flex items-center justify-center flex-shrink-0">
-                        {isToolItem ? (
-                          <Wrench className="h-8 w-8 text-text-muted" />
-                        ) : (
-                          <Package className="h-8 w-8 text-text-muted" />
-                        )}
-                      </div>
-                    )}
+                      ) : (
+                        <div className="h-16 w-16 bg-background rounded border border-[#323232] flex items-center justify-center flex-shrink-0">
+                          <Wrench className="h-6 w-6 text-text-muted" />
+                        </div>
+                      )}
 
-                    {/* Détails à droite */}
-                    <div className="flex-1 min-w-0 space-y-2">
-                      {/* Badges et infos supérieures */}
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {/* Badge type */}
-                        <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                          isToolItem
-                            ? 'bg-blue-500/20 text-blue-400'
-                            : 'bg-green-500/20 text-green-400'
-                        }`}>
-                          {isToolItem ? 'Outil' : 'Consommable'}
-                        </span>
-
-                        {/* Badge catégorie */}
-                        {categoryName && (
-                          <span className="px-2 py-1 bg-background-surface border border-[#323232] rounded text-xs text-text-secondary flex items-center gap-1">
-                            <Tag className="h-3 w-3" />
-                            {categoryName}
-                          </span>
-                        )}
-
-                        {/* Badge zone de stockage */}
-                        {location && (
-                          <span className="px-2 py-1 bg-purple-500/20 text-purple-400 rounded text-xs flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {location}
-                          </span>
-                        )}
-
-                        {/* Référence */}
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-white mb-1 truncate">{name}</div>
                         {item.reference && (
-                          <div className="text-sm font-semibold text-primary ml-auto">
-                            Réf: {item.reference}
+                          <div className="text-xs text-gray-400 truncate mb-1">
+                            {item.reference}
+                          </div>
+                        )}
+                        {category && (
+                          <div className="text-xs text-gray-400 truncate">
+                            Catégorie: {category}
+                          </div>
+                        )}
+                        {location && (
+                          <div className="text-xs text-gray-400 truncate">
+                            {location}
                           </div>
                         )}
                       </div>
-
-                      {/* Nom */}
-                      <h3 className="font-semibold text-text-primary text-base">
-                        {name}
-                      </h3>
-
-                      {/* Description de la catégorie (pour les outils) */}
-                      {isToolItem && item.categoryData?.description && (
-                        <p className="text-xs text-text-muted italic">
-                          {item.categoryData.description}
-                        </p>
-                      )}
-
-                      {/* Description de l'item */}
-                      {item.description && (
-                        <p className="text-sm text-text-secondary line-clamp-2">
-                          {item.description}
-                        </p>
-                      )}
-
-                      {/* Informations supplémentaires */}
-                      <div className="flex items-center gap-4 text-xs text-text-muted">
-                        {/* Localisation de la zone (pour les outils) */}
-                        {isToolItem && item.storageZoneData?.location && (
-                          <span>
-                            📍 {item.storageZoneData.location}
-                          </span>
-                        )}
-
-                        {/* Quantité (pour les consommables) */}
-                        {!isToolItem && (item as any).quantite && (
-                          <span>
-                            Stock: {(item as any).quantite}
-                          </span>
-                        )}
-
-                        {/* Prix */}
-                        {isToolItem && item.price && (
-                          <span>
-                            💰 {item.price}€
-                          </span>
-                        )}
-                      </div>
                     </div>
-                  </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Panneau de détails - Droite */}
+        <div className="w-96 border-l border-[#323232] p-6 bg-background-surface overflow-y-auto">
+          {selectedItem ? (
+            <>
+              <h3 className="text-lg font-bold text-white mb-4">Détails</h3>
+
+              {/* Image */}
+              {getItemImage(selectedItem) ? (
+                <img
+                  src={getItemImage(selectedItem)}
+                  alt={selectedItem.designation || ''}
+                  className="w-full h-48 object-cover rounded-lg border border-[#323232] mb-4"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              ) : (
+                <div className="w-full h-48 bg-background rounded-lg border border-[#323232] flex items-center justify-center mb-4">
+                  <Wrench className="h-16 w-16 text-text-muted" />
                 </div>
-              );
-            })}
-          </div>
-        )}
+              )}
+
+              {/* Informations */}
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-gray-400 uppercase tracking-wide">Nom</label>
+                  <p className="text-sm text-white font-medium mt-1">
+                    {selectedItem.designation || 'Sans nom'}
+                  </p>
+                </div>
+
+                {selectedItem.reference && (
+                  <div>
+                    <label className="text-xs text-gray-400 uppercase tracking-wide">Référence</label>
+                    <p className="text-sm font-medium mt-1" style={{ color: 'rgb(249, 55, 5)' }}>
+                      {selectedItem.reference}
+                    </p>
+                  </div>
+                )}
+
+                {getItemLocation(selectedItem) && (
+                  <div>
+                    <label className="text-xs text-gray-400 uppercase tracking-wide">Emplacement</label>
+                    <p className="text-sm text-gray-300 mt-1">
+                      {getItemLocation(selectedItem)}
+                    </p>
+                  </div>
+                )}
+
+                {selectedItem.category && (
+                  <div>
+                    <label className="text-xs text-gray-400 uppercase tracking-wide">Catégorie</label>
+                    <p className="text-sm text-white mt-1">
+                      {selectedItem.category}
+                    </p>
+                  </div>
+                )}
+
+                {(selectedItem as any).quantite && (
+                  <div>
+                    <label className="text-xs text-gray-400 uppercase tracking-wide">Quantité disponible</label>
+                    <p className="text-sm text-white mt-1">
+                      {(selectedItem as any).quantite}
+                    </p>
+                  </div>
+                )}
+
+                {(selectedItem as any).prix && (
+                  <div>
+                    <label className="text-xs text-gray-400 uppercase tracking-wide">Prix</label>
+                    <p className="text-sm text-white mt-1">
+                      {(selectedItem as any).prix}€
+                    </p>
+                  </div>
+                )}
+
+                {selectedItem.description && (
+                  <div>
+                    <label className="text-xs text-gray-400 uppercase tracking-wide">Description</label>
+                    <p className="text-sm text-gray-300 mt-1">
+                      {selectedItem.description}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-center h-full text-gray-400">
+              <div className="text-center">
+                <Wrench className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p className="text-sm">Sélectionnez un outil pour voir les détails</p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

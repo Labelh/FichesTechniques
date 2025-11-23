@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, AlertTriangle, Lightbulb, Save, Cloud, Pencil, ArrowUp, ArrowDown } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, AlertTriangle, Lightbulb, Save, Pencil, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -7,7 +7,6 @@ import { updatePhase, movePhaseUp, movePhaseDown } from '@/services/procedureSer
 import { createPhaseTemplate } from '@/services/templateService';
 import { uploadImageToHost } from '@/services/imageHostingService';
 import { fetchConsumables } from '@/services/consumablesService';
-import { useAutoSave } from '@/hooks/useAutoSave';
 import { useTools } from '@/hooks/useTools';
 import ImageAnnotator from '@/components/phase/ImageAnnotator';
 import ToolSelector from '@/components/tools/ToolSelector';
@@ -46,37 +45,30 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
     loadConsumables();
   }, []);
 
-  const handleSave = async () => {
-    try {
-      await updatePhase(procedureId, phase.id, {
-        title,
-        phaseNumber,
-        difficulty,
-        estimatedTime,
-        steps,
-      });
-    } catch (error) {
-      console.error('Error updating phase:', error);
-    }
-  };
+  // Raccourci Ctrl+S pour sauvegarde rapide
+  useEffect(() => {
+    const handleKeyDown = async (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        try {
+          await updatePhase(procedureId, phase.id, {
+            title,
+            phaseNumber,
+            difficulty,
+            estimatedTime,
+            steps,
+          });
+          toast.success('Phase sauvegardée');
+        } catch (error) {
+          console.error('Error updating phase:', error);
+          toast.error('Erreur lors de la sauvegarde');
+        }
+      }
+    };
 
-  // Auto-save avec délai de 2 secondes
-  const { isSaving, lastSaved } = useAutoSave(
-    {
-      onSave: async () => {
-        await updatePhase(procedureId, phase.id, {
-          title,
-          phaseNumber,
-          difficulty,
-          estimatedTime,
-          steps,
-        });
-      },
-      delay: 2000, // 2 secondes
-      enabled: true,
-    },
-    [title, phaseNumber, difficulty, estimatedTime, steps]
-  );
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [procedureId, phase.id, title, phaseNumber, difficulty, estimatedTime, steps]);
 
   const handleSaveAsTemplate = async () => {
     const templateName = prompt('Nom du template:', title || 'Mon template');
@@ -284,12 +276,6 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
         </div>
 
         <div className="flex items-center gap-2">
-          {isSaving && (
-            <Cloud className="h-4 w-4 text-gray-400 animate-pulse" />
-          )}
-          {lastSaved && !isSaving && (
-            <Cloud className="h-4 w-4 text-green-500" />
-          )}
           <Button
             variant="ghost"
             size="icon"
@@ -435,15 +421,9 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
             </div>
 
             {/* Actions */}
-            <div className="flex justify-between items-center pt-4 border-t border-[#323232]">
-              <Button variant="secondary" size="sm" onClick={handleSaveAsTemplate}>
-                <Save className="h-4 w-4 mr-2" />
-                Sauvegarder comme template
-              </Button>
-
-              <Button onClick={handleSave}>
-                <Save className="h-4 w-4 mr-2" />
-                Enregistrer les modifications
+            <div className="flex justify-end items-center pt-4 border-t border-[#323232]">
+              <Button variant="ghost" size="icon" onClick={handleSaveAsTemplate} title="Sauvegarder comme template">
+                <Save className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -740,7 +720,7 @@ function SubStepItem({
               Outil requis
             </label>
             {step.toolId && step.toolName ? (
-              <div className="p-3 bg-background-elevated rounded border border-[#323232]">
+              <div className="p-3 bg-background-elevated rounded border border-[#2a2a2a]">
                 <div className="flex items-start gap-3">
                   {/* Image de l'outil */}
                   {(() => {
@@ -767,13 +747,13 @@ function SubStepItem({
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-white mb-1">{step.toolName}</div>
                     {step.toolReference && (
-                      <div className="text-xs text-gray-400 mb-0.5">
-                        Réf: <span className="font-medium" style={{ color: 'rgb(249, 55, 5)' }}>{step.toolReference}</span>
+                      <div className="text-xs text-gray-400 mb-1">
+                        {step.toolReference}
                       </div>
                     )}
                     {step.toolLocation && (
                       <div className="text-xs text-gray-400">
-                        Emplacement: <span className="font-medium text-gray-300">{step.toolLocation}</span>
+                        {step.toolLocation}
                       </div>
                     )}
                   </div>

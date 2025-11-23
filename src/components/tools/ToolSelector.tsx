@@ -133,63 +133,16 @@ export default function ToolSelector({ availableTools, availableConsumables, onS
             </Button>
           </div>
 
-          {/* Search and Filters */}
-          <div className="space-y-3">
-            <div className="flex gap-3">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                <Input
-                  type="text"
-                  placeholder="Rechercher par nom, référence, emplacement ou zone..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-2 flex-wrap">
-              <Button
-                variant={filterType === 'all' ? 'default' : 'secondary'}
-                size="sm"
-                onClick={() => setFilterType('all')}
-              >
-                Tous ({allItems.length})
-              </Button>
-              <Button
-                variant={filterType === 'tool' ? 'default' : 'secondary'}
-                size="sm"
-                onClick={() => setFilterType('tool')}
-              >
-                <Wrench className="h-4 w-4 mr-1" />
-                Outils ({availableTools.length})
-              </Button>
-              <Button
-                variant={filterType === 'consumable' ? 'default' : 'secondary'}
-                size="sm"
-                onClick={() => setFilterType('consumable')}
-              >
-                <Package className="h-4 w-4 mr-1" />
-                Consommables ({availableConsumables.length})
-              </Button>
-
-              {/* Filtre par zone de stockage */}
-              {storageZones.length > 0 && filterType !== 'consumable' && (
-                <>
-                  <div className="w-px bg-[#323232] mx-1" />
-                  <select
-                    value={storageZoneFilter}
-                    onChange={(e) => setStorageZoneFilter(e.target.value)}
-                    className="px-3 py-1.5 text-sm rounded-lg border border-[#323232] bg-background-elevated text-text-primary"
-                  >
-                    <option value="">Toutes les zones</option>
-                    {storageZones.map(zone => (
-                      <option key={zone.id} value={zone.id}>{zone.name}</option>
-                    ))}
-                  </select>
-                </>
-              )}
-            </div>
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <Input
+              type="text"
+              placeholder="Rechercher par nom ou référence..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
           </div>
         </div>
 
@@ -212,10 +165,10 @@ export default function ToolSelector({ availableTools, availableConsumables, onS
                     <button
                       key={item.id}
                       onClick={() => setSelectedItem(item)}
-                      className={`p-3 rounded-lg border-2 transition-all text-left ${
+                      className={`p-3 rounded-lg border transition-all text-left ${
                         isSelected
                           ? 'border-primary bg-primary/10'
-                          : 'border-[#323232] bg-background-elevated hover:border-primary/50'
+                          : 'border-[#2a2a2a] bg-background-elevated hover:border-[#404040]'
                       }`}
                     >
                       <div className="flex gap-3">
@@ -243,25 +196,20 @@ export default function ToolSelector({ availableTools, availableConsumables, onS
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium text-white mb-1 truncate">{name}</div>
                           {item.reference && (
-                            <div className="text-xs text-gray-400 truncate">
-                              Réf: {item.reference}
+                            <div className="text-xs text-gray-400 truncate mb-1">
+                              {item.reference}
                             </div>
                           )}
-                          <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <span className={`text-xs px-2 py-0.5 rounded ${
-                              item.type === 'tool'
-                                ? 'bg-blue-500/20 text-blue-400'
-                                : 'bg-green-500/20 text-green-400'
-                            }`}>
-                              {item.type === 'tool' ? 'Outil' : 'Consommable'}
-                            </span>
-                            {item.type === 'tool' && item.storage_zone_id && (
-                              <span className="text-xs px-2 py-0.5 rounded bg-purple-500/20 text-purple-400 flex items-center gap-1">
-                                <MapPin className="h-3 w-3" />
-                                {item.storageZoneData?.name || item.storage_zone_id}
-                              </span>
-                            )}
-                          </div>
+                          {item.type === 'tool' && (item.categoryData?.name || item.category) && (
+                            <div className="text-xs text-gray-400 truncate">
+                              Catégorie: {item.categoryData?.name || item.category}
+                            </div>
+                          )}
+                          {getItemLocation(item) && (
+                            <div className="text-xs text-gray-400 truncate">
+                              {getItemLocation(item)}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </button>

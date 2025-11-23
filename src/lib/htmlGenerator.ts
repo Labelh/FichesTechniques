@@ -208,6 +208,14 @@ export async function generateHTML(
             border-top: 1px solid #d0d0d0;
         }
 
+        .document-version {
+            margin-top: 20px;
+            text-align: right;
+            font-size: 0.85rem;
+            color: #999;
+            font-style: italic;
+        }
+
         .meta-item {
             display: flex;
             align-items: center;
@@ -656,6 +664,8 @@ export async function generateHTML(
                 ${procedure.category ? `<div class="meta-item"><span class="meta-label">Catégorie:</span> ${escapeHtml(procedure.category)}</div>` : ''}
                 ${procedure.totalCost ? `<div class="meta-item"><span class="meta-label">Coût estimé:</span> ${procedure.totalCost}€</div>` : ''}
             </div>
+
+            ${procedure.versionString ? `<div class="document-version">Version ${escapeHtml(procedure.versionString)}</div>` : ''}
         </div>
 
         <!-- Contenu -->
