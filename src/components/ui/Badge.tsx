@@ -13,7 +13,7 @@ const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
       warning: 'bg-status-warning/10 text-status-warning border-status-warning/20',
       danger: 'bg-red-500/10 text-red-500 border-red-500/20',
       info: 'bg-status-info/10 text-status-info border-status-info/20',
-      secondary: 'bg-gray-500/10 text-text-secondary border-gray-500/20',
+      secondary: 'bg-text-secondary/10 text-text-secondary border-[#323232]',
     };
 
     return (

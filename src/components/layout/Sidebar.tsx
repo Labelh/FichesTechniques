@@ -5,6 +5,7 @@ import {
   FolderKanban,
   Plus,
   Package,
+  Menu,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useAppStore } from '@/store/useAppStore';
@@ -13,7 +14,7 @@ import { cn } from '@/lib/utils';
 
 export default function Sidebar() {
   const location = useLocation();
-  const sidebarOpen = useAppStore((state) => state.sidebarOpen);
+  const { sidebarOpen, toggleSidebar } = useAppStore();
   const stats = useProcedureStats();
 
   const navItems = [
@@ -38,37 +39,46 @@ export default function Sidebar() {
   if (!sidebarOpen) return null;
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-[260px] bg-background border-r border-white/10 overflow-auto z-[1040] backdrop-blur-sm">
+    <aside
+      className="fixed left-0 top-0 h-screen w-[280px] overflow-auto z-[1040]"
+      style={{
+        backgroundColor: 'var(--color-background)',
+        borderRight: '1px solid var(--color-border)',
+      }}
+    >
       <div className="flex flex-col h-full">
         {/* Sidebar Header */}
-        <div className="p-4 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-8 h-8">
-              <Package className="w-8 h-8 text-primary" strokeWidth={2} />
+        <div
+          className="p-6"
+          style={{ borderBottom: '1px solid var(--color-border)' }}
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-dark">
+                <Package className="w-6 h-6 text-white" strokeWidth={2.5} />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-white leading-none">
+                  FichesTech
+                </h1>
+                <p className="text-sm font-semibold text-primary leading-none mt-1.5">
+                  Ajust'82
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-white leading-none">
-                FichesTech
-              </h1>
-              <p className="text-sm font-semibold text-primary leading-none mt-1">
-                Ajust'82
-              </p>
-            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSidebar}
+              className="hover:bg-white/5"
+            >
+              <Menu style={{ color: 'var(--color-text-secondary)' }} size={20} />
+            </Button>
           </div>
         </div>
 
-        {/* New Procedure Button */}
-        <div className="p-4">
-          <Link to="/procedures/new" className="block">
-            <Button className="w-full " size="lg">
-              <Plus className="mr-2" size={20} />
-              Nouvelle Procédure
-            </Button>
-          </Link>
-        </div>
-
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-2">
+        <nav className="flex-1 px-4 py-4">
           <div className="flex flex-col gap-1">
             {navItems.map((item) => {
               const isActive =
@@ -93,21 +103,6 @@ export default function Sidebar() {
             })}
           </div>
         </nav>
-
-        {/* Footer */}
-        <div className="p-4 border-t border-white/10">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex items-center justify-center w-9 h-9 rounded-full bg-primary text-white font-semibold text-sm flex-shrink-0">
-                U
-              </div>
-              <div className="min-w-0">
-                <div className="text-sm font-medium text-white">Utilisateur</div>
-                <div className="text-xs text-text-secondary">Gestionnaire</div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </aside>
   );

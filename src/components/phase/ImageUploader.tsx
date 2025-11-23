@@ -101,7 +101,7 @@ export default function ImageUploader({ images, onImagesChange, onEditImage }: I
           border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
           ${isDragActive
             ? 'border-primary bg-primary/10'
-            : 'border-gray-300 dark:border-gray-600 hover:border-primary/50'
+            : 'border-[#323232] hover:border-primary/50'
           }
           ${uploading ? 'opacity-50 pointer-events-none' : ''}
         `}
@@ -207,7 +207,7 @@ function ImageThumbnail({
   }, [annotatedImage, hasAnnotations]);
 
   return (
-    <div className="relative group aspect-video rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
+    <div className="relative group aspect-video rounded-lg overflow-hidden border border-[#323232] bg-background-elevated">
       {/* Image */}
       <img
         src={imageUrl}

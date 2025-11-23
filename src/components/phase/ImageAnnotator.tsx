@@ -585,7 +585,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
   return createPortal(
     <div className="fixed inset-0 z-[9999] bg-black flex flex-col">
       {/* Header */}
-      <div className="bg-black border-b border-[#2a2a2a] p-4 flex items-center justify-between flex-shrink-0">
+      <div className="bg-black border-b border-[#323232] p-4 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-4">
           <h2 className="text-xl font-bold text-white">Annotation</h2>
           <input
@@ -593,12 +593,12 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
             placeholder="Description..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="px-3 py-2 bg-black border border-[#2a2a2a] rounded text-gray-300 placeholder-gray-500 w-80"
+            className="px-3 py-2 bg-black border border-[#323232] rounded text-gray-300 placeholder-gray-500 w-80"
           />
         </div>
         <div className="flex items-center gap-2">
           {/* Épaisseur */}
-          <div className="flex items-center gap-2 border-r border-[#2a2a2a] pr-3 mr-2">
+          <div className="flex items-center gap-2 border-r border-[#323232] pr-3 mr-2">
             <span className="text-xs text-gray-400">Épaisseur</span>
             <input
               type="range"
@@ -612,7 +612,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
           </div>
 
           {/* Opacité */}
-          <div className="flex items-center gap-2 border-r border-[#2a2a2a] pr-3 mr-2">
+          <div className="flex items-center gap-2 border-r border-[#323232] pr-3 mr-2">
             <span className="text-xs text-gray-400">Opacité</span>
             <input
               type="range"
@@ -627,11 +627,11 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
           </div>
 
           {/* Zoom */}
-          <div className="flex items-center gap-1 border-r border-[#2a2a2a] pr-3 mr-2">
+          <div className="flex items-center gap-1 border-r border-[#323232] pr-3 mr-2">
             <Button variant="ghost" size="sm" onClick={() => setZoom(prev => Math.max(0.25, prev - 0.25))}>
               <ZoomOut className="h-4 w-4" />
             </Button>
-            <span className="text-sm text-gray-300 bg-black border border-[#2a2a2a] px-3 py-1 rounded min-w-[60px] text-center">
+            <span className="text-sm text-gray-300 bg-black border border-[#323232] px-3 py-1 rounded min-w-[60px] text-center">
               {Math.round(zoom * 100)}%
             </span>
             <Button variant="ghost" size="sm" onClick={() => setZoom(prev => Math.min(5, prev + 0.25))}>
@@ -682,11 +682,11 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
 
       <div className="flex-1 flex overflow-hidden">
         {/* Toolbar */}
-        <div className="bg-black border-r border-[#2a2a2a] p-4 w-20 flex flex-col gap-2 flex-shrink-0">
+        <div className="bg-black border-r border-[#323232] p-4 w-20 flex flex-col gap-2 flex-shrink-0">
           <button
             onClick={() => setCurrentTool(AnnotationType.TRAJECTORY)}
             className={`p-3 rounded transition-colors ${
-              currentTool === AnnotationType.TRAJECTORY ? 'bg-primary text-white' : 'bg-black text-gray-400 hover:bg-[#1a1a1a] border border-[#2a2a2a]'
+              currentTool === AnnotationType.TRAJECTORY ? 'bg-primary text-white' : 'bg-black text-gray-400 hover:bg-[#1a1a1a] border border-[#323232]'
             }`}
           >
             <Pencil className="h-5 w-5" />
@@ -694,7 +694,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
           <button
             onClick={() => setCurrentTool(AnnotationType.LINE)}
             className={`p-3 rounded transition-colors ${
-              currentTool === AnnotationType.LINE ? 'bg-primary text-white' : 'bg-black text-gray-400 hover:bg-[#1a1a1a] border border-[#2a2a2a]'
+              currentTool === AnnotationType.LINE ? 'bg-primary text-white' : 'bg-black text-gray-400 hover:bg-[#1a1a1a] border border-[#323232]'
             }`}
           >
             <Minus className="h-5 w-5" />
@@ -702,7 +702,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
           <button
             onClick={() => setCurrentTool(AnnotationType.ARROW)}
             className={`p-3 rounded transition-colors ${
-              currentTool === AnnotationType.ARROW ? 'bg-primary text-white' : 'bg-black text-gray-400 hover:bg-[#1a1a1a] border border-[#2a2a2a]'
+              currentTool === AnnotationType.ARROW ? 'bg-primary text-white' : 'bg-black text-gray-400 hover:bg-[#1a1a1a] border border-[#323232]'
             }`}
           >
             <ArrowRight className="h-5 w-5" />
@@ -710,7 +710,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
           <button
             onClick={() => setCurrentTool(AnnotationType.CIRCLE)}
             className={`p-3 rounded transition-colors ${
-              currentTool === AnnotationType.CIRCLE ? 'bg-primary text-white' : 'bg-black text-gray-400 hover:bg-[#1a1a1a] border border-[#2a2a2a]'
+              currentTool === AnnotationType.CIRCLE ? 'bg-primary text-white' : 'bg-black text-gray-400 hover:bg-[#1a1a1a] border border-[#323232]'
             }`}
           >
             <Circle className="h-5 w-5" />
@@ -718,7 +718,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
           <button
             onClick={() => setCurrentTool(AnnotationType.RECTANGLE)}
             className={`p-3 rounded transition-colors ${
-              currentTool === AnnotationType.RECTANGLE ? 'bg-primary text-white' : 'bg-black text-gray-400 hover:bg-[#1a1a1a] border border-[#2a2a2a]'
+              currentTool === AnnotationType.RECTANGLE ? 'bg-primary text-white' : 'bg-black text-gray-400 hover:bg-[#1a1a1a] border border-[#323232]'
             }`}
           >
             <Square className="h-5 w-5" />
@@ -726,7 +726,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
           <button
             onClick={() => setCurrentTool(AnnotationType.TEXT)}
             className={`p-3 rounded transition-colors ${
-              currentTool === AnnotationType.TEXT ? 'bg-primary text-white' : 'bg-black text-gray-400 hover:bg-[#1a1a1a] border border-[#2a2a2a]'
+              currentTool === AnnotationType.TEXT ? 'bg-primary text-white' : 'bg-black text-gray-400 hover:bg-[#1a1a1a] border border-[#323232]'
             }`}
           >
             <Type className="h-5 w-5" />
@@ -743,7 +743,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
               }
             }}
             className={`p-3 rounded transition-colors ${
-              moveMode ? 'bg-primary text-white' : 'bg-black text-gray-400 hover:bg-[#1a1a1a] border border-[#2a2a2a]'
+              moveMode ? 'bg-primary text-white' : 'bg-black text-gray-400 hover:bg-[#1a1a1a] border border-[#323232]'
             }`}
             title="Déplacer les formes"
           >
@@ -755,7 +755,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
               setBackgroundRemoved(false);
             }}
             className={`p-3 rounded transition-colors ${
-              edgeDetectionEnabled ? 'bg-primary text-white' : 'bg-black text-gray-400 hover:bg-[#1a1a1a] border border-[#2a2a2a]'
+              edgeDetectionEnabled ? 'bg-primary text-white' : 'bg-black text-gray-400 hover:bg-[#1a1a1a] border border-[#323232]'
             }`}
             title="Suivre les arêtes (pour traits main levée)"
           >
@@ -767,7 +767,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
               setEdgeDetectionEnabled(false);
             }}
             className={`p-3 rounded transition-colors ${
-              backgroundRemoved ? 'bg-primary text-white' : 'bg-black text-gray-400 hover:bg-[#1a1a1a] border border-[#2a2a2a]'
+              backgroundRemoved ? 'bg-primary text-white' : 'bg-black text-gray-400 hover:bg-[#1a1a1a] border border-[#323232]'
             }`}
             title="Supprimer le fond"
           >
@@ -780,12 +780,12 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
           <div className="relative">
             <button
               onClick={() => setShowColorPicker(!showColorPicker)}
-              className="p-3 rounded bg-black hover:bg-[#1a1a1a] border border-[#2a2a2a] transition-colors w-full"
+              className="p-3 rounded bg-black hover:bg-[#1a1a1a] border border-[#323232] transition-colors w-full"
             >
               <Palette className="h-5 w-5" style={{ color: currentColor }} />
             </button>
             {showColorPicker && (
-              <div className="absolute left-full ml-2 top-0 bg-black border border-[#2a2a2a] rounded-lg p-2 z-10 grid grid-cols-2 gap-2">
+              <div className="absolute left-full ml-2 top-0 bg-black border border-[#323232] rounded-lg p-2 z-10 grid grid-cols-2 gap-2">
                 {toolColors.map((color) => (
                   <button
                     key={color.value}
@@ -793,7 +793,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
                       setCurrentColor(color.value);
                       setShowColorPicker(false);
                     }}
-                    className="w-8 h-8 rounded border-2 border-gray-600 hover:border-white transition-colors"
+                    className="w-8 h-8 rounded border-2 border-[#323232] hover:border-primary transition-colors"
                     style={{ backgroundColor: color.value }}
                     title={color.name}
                   />
@@ -811,7 +811,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
                 <button
                   key={tool.id}
                   onClick={() => setCurrentColor(tool.color || '#ff5722')}
-                  className="w-full h-8 rounded border-2 border-gray-600 hover:border-white transition-colors"
+                  className="w-full h-8 rounded border-2 border-[#323232] hover:border-primary transition-colors"
                   style={{ backgroundColor: tool.color || '#ff5722' }}
                   title={tool.name}
                 />

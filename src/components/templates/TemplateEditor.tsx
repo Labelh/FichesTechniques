@@ -47,9 +47,9 @@ export default function TemplateEditor({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-      <div className="bg-[#2a2a2a] rounded-lg  max-w-2xl w-full border border-[#3a3a3a]">
+      <div className="bg-[#2a2a2a] rounded-lg  max-w-2xl w-full border border-[#323232]">
         {/* Header */}
-        <div className="p-6 border-b border-[#3a3a3a] flex items-center justify-between">
+        <div className="p-6 border-b border-[#323232] flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-white">Modifier le template</h2>
             <p className="text-sm text-gray-400 mt-1">
@@ -86,7 +86,7 @@ export default function TemplateEditor({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Description du template..."
               rows={3}
-              className="w-full rounded-md border border-gray-700/30 bg-transparent px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full rounded-md border border-[#323232] bg-transparent px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
@@ -104,8 +104,8 @@ export default function TemplateEditor({
           </div>
 
           {/* Note */}
-          <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-            <p className="text-sm text-blue-200">
+          <div className="bg-background-elevated border border-[#323232] rounded-lg p-4">
+            <p className="text-sm text-text-secondary">
               <strong>Note :</strong> Seules les informations générales (nom, description, catégorie) peuvent être modifiées.
               Le contenu des phases reste inchangé pour préserver l'intégrité du template.
             </p>
@@ -113,7 +113,7 @@ export default function TemplateEditor({
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-[#3a3a3a] flex items-center justify-end gap-3">
+        <div className="p-6 border-t border-[#323232] flex items-center justify-end gap-3">
           <Button variant="ghost" onClick={onClose} disabled={saving}>
             Annuler
           </Button>

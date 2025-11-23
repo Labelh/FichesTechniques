@@ -143,7 +143,7 @@ export default function Settings() {
           </div>
 
           {firebaseImageCount !== null && firebaseImageCount > 0 && (
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="pt-4 border-t border-[#323232]">
               <h4 className="font-medium mb-2">Lancer la migration</h4>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                 Télécharger et ré-uploader toutes les images vers ImgBB
@@ -197,7 +197,7 @@ export default function Settings() {
             </Button>
           </div>
 
-          <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="pt-4 border-t border-[#323232]">
             <h4 className="font-medium mb-2 text-red-600 dark:text-red-400">
               Zone de danger
             </h4>

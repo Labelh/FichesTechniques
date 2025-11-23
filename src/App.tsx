@@ -7,7 +7,6 @@ import Dashboard from './pages/Dashboard';
 import ProcedureEditor from './pages/ProcedureEditor';
 import ToolsLibrary from './pages/ToolsLibrary';
 import Templates from './pages/Templates';
-import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 
 function App() {
@@ -38,7 +37,6 @@ function App() {
           <Route path="procedures/new" element={<ProcedureEditor />} />
           <Route path="tools" element={<ToolsLibrary />} />
           <Route path="templates" element={<Templates />} />
-          <Route path="settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

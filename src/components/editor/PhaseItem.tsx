@@ -1,25 +1,28 @@
 import { useState, useEffect } from 'react';
-import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, AlertTriangle, Lightbulb, Save, Cloud, Pencil } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, AlertTriangle, Lightbulb, Save, Cloud, Pencil, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
-import { updatePhase } from '@/services/procedureService';
+import { updatePhase, movePhaseUp, movePhaseDown } from '@/services/procedureService';
 import { createPhaseTemplate } from '@/services/templateService';
 import { uploadImageToHost } from '@/services/imageHostingService';
 import { fetchConsumables } from '@/services/consumablesService';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useTools } from '@/hooks/useTools';
 import ImageAnnotator from '@/components/phase/ImageAnnotator';
+import ToolSelector from '@/components/tools/ToolSelector';
 import type { Phase, DifficultyLevel, SubStep, SafetyNote, AnnotatedImage, Tool, Consumable, Annotation } from '@/types';
+import { toast } from 'sonner';
 
 interface PhaseItemProps {
   phase: Phase;
   index: number;
   procedureId: string;
+  totalPhases: number;
   onDelete: (phaseId: string) => void;
 }
 
-export default function PhaseItem({ phase, index, procedureId, onDelete }: PhaseItemProps) {
+export default function PhaseItem({ phase, index, procedureId, totalPhases, onDelete }: PhaseItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [title, setTitle] = useState(phase.title);
   const [phaseNumber, setPhaseNumber] = useState(phase.phaseNumber || index + 1);
@@ -207,12 +210,48 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
     ));
   };
 
+  const handleMovePhaseUp = async () => {
+    try {
+      await movePhaseUp(procedureId, phase.id);
+      toast.success('Phase déplacée vers le haut');
+    } catch (error) {
+      toast.error('Erreur lors du déplacement');
+    }
+  };
+
+  const handleMovePhaseDown = async () => {
+    try {
+      await movePhaseDown(procedureId, phase.id);
+      toast.success('Phase déplacée vers le bas');
+    } catch (error) {
+      toast.error('Erreur lors du déplacement');
+    }
+  };
+
+  const moveStepUp = (stepId: string) => {
+    const stepIndex = steps.findIndex(s => s.id === stepId);
+    if (stepIndex <= 0) return;
+
+    const newSteps = [...steps];
+    [newSteps[stepIndex - 1], newSteps[stepIndex]] = [newSteps[stepIndex], newSteps[stepIndex - 1]];
+    setSteps(newSteps.map((s, idx) => ({ ...s, order: idx })));
+  };
+
+  const moveStepDown = (stepId: string) => {
+    const stepIndex = steps.findIndex(s => s.id === stepId);
+    if (stepIndex < 0 || stepIndex >= steps.length - 1) return;
+
+    const newSteps = [...steps];
+    [newSteps[stepIndex], newSteps[stepIndex + 1]] = [newSteps[stepIndex + 1], newSteps[stepIndex]];
+    setSteps(newSteps.map((s, idx) => ({ ...s, order: idx })));
+  };
+
   const getDifficultyColor = (diff: DifficultyLevel) => {
     switch (diff) {
-      case 'easy': return 'bg-green-500';
-      case 'medium': return 'bg-yellow-500';
-      case 'hard': return 'bg-red-500';
-      default: return 'bg-gray-500';
+      case 'easy': return 'bg-status-success';
+      case 'medium': return 'bg-status-warning';
+      case 'hard': return 'bg-status-danger';
+      default: return 'bg-background-elevated';
     }
   };
 
@@ -226,10 +265,10 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
   };
 
   return (
-    <div className="border border-gray-700/50 rounded-lg bg-gray-900/30">
+    <div className="border border-[#323232] rounded-lg bg-background-elevated">
       {/* Header - Collapsible */}
       <div
-        className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-800/30 rounded-t-lg transition-colors"
+        className="p-4 flex items-center justify-between cursor-pointer hover:bg-background-hover rounded-t-lg transition-colors"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex-1 flex items-center gap-3">
@@ -256,6 +295,30 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
+              handleMovePhaseUp();
+            }}
+            disabled={index === 0}
+            title="Déplacer vers le haut"
+          >
+            <ArrowUp className={`h-4 w-4 ${index === 0 ? 'text-gray-600' : 'text-gray-400'}`} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleMovePhaseDown();
+            }}
+            disabled={index >= totalPhases - 1}
+            title="Déplacer vers le bas"
+          >
+            <ArrowDown className={`h-4 w-4 ${index >= totalPhases - 1 ? 'text-gray-600' : 'text-gray-400'}`} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
               onDelete(phase.id);
             }}
           >
@@ -271,7 +334,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
 
       {/* Expanded Content */}
       {isExpanded && (
-        <div className="border-t border-gray-700/50">
+        <div className="border-t border-[#323232]">
           <div className="p-6 space-y-6">
             {/* Informations de base */}
             <div className="grid grid-cols-3 gap-4">
@@ -294,7 +357,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                 <select
                   value={difficulty}
                   onChange={(e) => setDifficulty(e.target.value as DifficultyLevel)}
-                  className="w-full rounded-md border border-gray-700/30 bg-transparent px-3 py-2 text-sm text-white"
+                  className="w-full rounded-md border border-[#323232] bg-transparent px-3 py-2 text-sm text-white"
                 >
                   <option value="easy">Facile</option>
                   <option value="medium">Moyen</option>
@@ -327,7 +390,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
             </div>
 
             {/* Sous-étapes */}
-            <div className="border-t border-gray-700/50 pt-6">
+            <div className="border-t border-[#323232] pt-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-white">
                   Sous-étapes ({steps.length})
@@ -349,6 +412,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                       key={step.id}
                       step={step}
                       index={idx}
+                      totalSteps={steps.length}
                       availableTools={availableTools}
                       availableConsumables={consumables}
                       onUpdate={(updates) => updateStep(step.id, updates)}
@@ -362,6 +426,8 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
                       onUpdateSafetyNote={(noteId, updates) => updateStepSafetyNote(step.id, noteId, updates)}
                       onRemoveSafetyNote={(noteId) => removeStepSafetyNote(step.id, noteId)}
                       onUpdateTool={(toolId, toolName, toolLocation, toolReference) => updateStepTool(step.id, toolId, toolName, toolLocation, toolReference)}
+                      onMoveUp={() => moveStepUp(step.id)}
+                      onMoveDown={() => moveStepDown(step.id)}
                     />
                   ))}
                 </div>
@@ -369,7 +435,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
             </div>
 
             {/* Actions */}
-            <div className="flex justify-between items-center pt-4 border-t border-gray-700/50">
+            <div className="flex justify-between items-center pt-4 border-t border-[#323232]">
               <Button variant="secondary" size="sm" onClick={handleSaveAsTemplate}>
                 <Save className="h-4 w-4 mr-2" />
                 Sauvegarder comme template
@@ -391,6 +457,7 @@ export default function PhaseItem({ phase, index, procedureId, onDelete }: Phase
 interface SubStepItemProps {
   step: SubStep;
   index: number;
+  totalSteps: number;
   availableTools?: Tool[];
   availableConsumables?: Consumable[];
   onUpdate: (updates: Partial<SubStep>) => void;
@@ -404,11 +471,14 @@ interface SubStepItemProps {
   onUpdateSafetyNote: (noteId: string, updates: Partial<SafetyNote>) => void;
   onRemoveSafetyNote: (noteId: string) => void;
   onUpdateTool: (toolId: string | null, toolName: string | null, toolLocation?: string | null, toolReference?: string | null) => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
 }
 
 function SubStepItem({
   step,
   index,
+  totalSteps,
   availableTools,
   availableConsumables,
   onUpdate,
@@ -422,9 +492,12 @@ function SubStepItem({
   onUpdateSafetyNote,
   onRemoveSafetyNote,
   onUpdateTool,
+  onMoveUp,
+  onMoveDown,
 }: SubStepItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [imageToAnnotate, setImageToAnnotate] = useState<AnnotatedImage | null>(null);
+  const [showToolSelector, setShowToolSelector] = useState(false);
 
   const handleImageUpload = async (files: File[]) => {
     const validImages: AnnotatedImage[] = [];
@@ -489,26 +562,19 @@ function SubStepItem({
   };
 
   return (
-    <div className="border border-gray-700/30 rounded-lg bg-[#1a1a1a]">
+    <div className="border border-[#323232] rounded-lg bg-background-surface">
       {/* Header */}
       <div
-        className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-800/20"
+        className="p-4 flex items-center justify-between cursor-pointer hover:bg-background-hover"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-3 flex-1">
           <span className="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-white text-sm font-bold">
             {index + 1}
           </span>
-          <Input
-            value={step.title}
-            onChange={(e) => {
-              e.stopPropagation();
-              onUpdate({ title: e.target.value });
-            }}
-            onClick={(e) => e.stopPropagation()}
-            placeholder="Titre de la sous-étape..."
-            className="flex-1"
-          />
+          <span className="font-semibold text-text-primary">
+            {step.title || 'Sans titre'}
+          </span>
           {/* Indicateurs rapides */}
           <div className="flex items-center gap-2 text-xs text-gray-500">
             {(step.images?.length || 0) > 0 && (
@@ -540,6 +606,30 @@ function SubStepItem({
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
+              onMoveUp();
+            }}
+            disabled={index === 0}
+            title="Déplacer vers le haut"
+          >
+            <ArrowUp className={`h-3 w-3 ${index === 0 ? 'text-gray-600' : 'text-gray-400'}`} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              onMoveDown();
+            }}
+            disabled={index >= totalSteps - 1}
+            title="Déplacer vers le bas"
+          >
+            <ArrowDown className={`h-3 w-3 ${index >= totalSteps - 1 ? 'text-gray-600' : 'text-gray-400'}`} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
               onRemove();
             }}
           >
@@ -555,7 +645,19 @@ function SubStepItem({
 
       {/* Expanded Details */}
       {isExpanded && (
-        <div className="px-4 pb-4 space-y-4 border-t border-gray-700/30 pt-4">
+        <div className="px-4 pb-4 space-y-4 border-t border-[#323232] pt-4">
+          {/* Titre */}
+          <div>
+            <label className="block text-xs font-medium text-gray-400 mb-1">
+              Titre de la sous-étape
+            </label>
+            <Input
+              value={step.title}
+              onChange={(e) => onUpdate({ title: e.target.value })}
+              placeholder="Titre de la sous-étape..."
+            />
+          </div>
+
           {/* Description */}
           <div>
             <label className="block text-xs font-medium text-gray-400 mb-1">
@@ -566,7 +668,7 @@ function SubStepItem({
               onChange={(e) => onUpdate({ description: e.target.value })}
               placeholder="Description détaillée de cette sous-étape..."
               rows={3}
-              className="w-full rounded-lg border border-gray-700/30 bg-transparent px-3 py-2 text-sm text-white focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full rounded-lg border border-[#323232] bg-transparent px-3 py-2 text-sm text-white focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
 
@@ -581,7 +683,7 @@ function SubStepItem({
                   <img
                     src={img.image.url || URL.createObjectURL(img.image.blob)}
                     alt={img.description || 'Image'}
-                    className="h-16 w-16 object-cover rounded border border-gray-600"
+                    className="h-16 w-16 object-cover rounded border border-[#323232]"
                   />
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
                     <button
@@ -625,7 +727,7 @@ function SubStepItem({
                 const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
                 await handleImageUpload(files);
               }}
-              className="border-2 border-dashed border-gray-700/30 rounded-lg p-3 text-center hover:border-primary/50 transition-colors cursor-pointer"
+              className="border-2 border-dashed border-[#323232] rounded-lg p-3 text-center cursor-pointer bg-background-elevated"
             >
               <p className="text-xs text-gray-500">Cliquez ou glissez-déposez des images</p>
             </div>
@@ -638,62 +740,64 @@ function SubStepItem({
               Outil requis
             </label>
             {step.toolId && step.toolName ? (
-              <div className="flex items-center justify-between p-2 bg-gray-800/30 rounded border border-gray-700/30">
-                <div className="flex items-center gap-2">
-                  <Wrench className="h-4 w-4 text-primary" />
-                  <div className="text-xs font-medium text-white">{step.toolName}</div>
+              <div className="p-3 bg-background-elevated rounded border border-[#323232]">
+                <div className="flex items-start gap-3">
+                  {/* Image de l'outil */}
+                  {(() => {
+                    const tool = availableTools?.find(t => t.id === step.toolId);
+                    const consumable = availableConsumables?.find(c => c.id === step.toolId);
+                    const imageUrl = tool?.image?.url || (consumable as any)?.image_url || (consumable as any)?.photo_url;
+
+                    return imageUrl ? (
+                      <img
+                        src={imageUrl}
+                        alt={step.toolName}
+                        className="h-16 w-16 object-cover rounded border border-[#323232] flex-shrink-0"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div className="h-16 w-16 bg-background-elevated rounded border border-[#323232] flex items-center justify-center flex-shrink-0">
+                        <Wrench className="h-6 w-6 text-text-muted" />
+                      </div>
+                    );
+                  })()}
+
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-white mb-1">{step.toolName}</div>
+                    {step.toolReference && (
+                      <div className="text-xs text-gray-400 mb-0.5">
+                        Réf: <span className="font-medium" style={{ color: 'rgb(249, 55, 5)' }}>{step.toolReference}</span>
+                      </div>
+                    )}
+                    {step.toolLocation && (
+                      <div className="text-xs text-gray-400">
+                        Emplacement: <span className="font-medium text-gray-300">{step.toolLocation}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onUpdateTool(null, null)}
+                    className="flex-shrink-0"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onUpdateTool(null, null)}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
               </div>
             ) : (
-              <select
-                value={step.toolId || ''}
-                onChange={(e) => {
-                  const selectedValue = e.target.value;
-                  if (!selectedValue) {
-                    onUpdateTool(null, null, null, null);
-                    return;
-                  }
-
-                  // Chercher d'abord dans les outils
-                  const tool = availableTools?.find(t => t.id === selectedValue);
-                  if (tool) {
-                    onUpdateTool(tool.id, tool.name, tool.location, tool.reference);
-                    return;
-                  }
-
-                  // Sinon chercher dans les consommables
-                  const consumable = availableConsumables?.find(c => c.id === selectedValue);
-                  if (consumable) {
-                    onUpdateTool(consumable.id, consumable.designation, (consumable as any).emplacement || (consumable as any).location, consumable.reference);
-                  }
-                }}
-                className="w-full rounded border border-gray-700/30 bg-transparent px-2 py-1.5 text-xs text-white"
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowToolSelector(true)}
+                className="w-full justify-start"
               >
-                <option value="">Aucun outil/consommable</option>
-                {availableTools && availableTools.length > 0 && (
-                  <optgroup label="Outils">
-                    {availableTools.map(tool => (
-                      <option key={tool.id} value={tool.id}>{tool.name}</option>
-                    ))}
-                  </optgroup>
-                )}
-                {availableConsumables && availableConsumables.length > 0 && (
-                  <optgroup label="Consommables">
-                    {availableConsumables.map(consumable => (
-                      <option key={consumable.id} value={consumable.id}>
-                        {consumable.designation}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-              </select>
+                <Wrench className="h-4 w-4 mr-2" />
+                Sélectionner un outil ou consommable
+              </Button>
             )}
           </div>
 
@@ -746,7 +850,7 @@ function SubStepItem({
                     <select
                       value={note.type}
                       onChange={(e) => onUpdateSafetyNote(note.id, { type: e.target.value as any })}
-                      className="rounded border border-orange-500/30 bg-transparent px-2 py-1 text-xs text-white"
+                      className="rounded border border-[#323232] bg-transparent px-2 py-1 text-xs text-white"
                     >
                       <option value="info">Information</option>
                       <option value="warning">Attention</option>
@@ -790,6 +894,19 @@ function SubStepItem({
           annotatedImage={imageToAnnotate}
           onSave={handleSaveAnnotations}
           onCancel={() => setImageToAnnotate(null)}
+        />
+      )}
+
+      {/* ToolSelector Modal */}
+      {showToolSelector && (
+        <ToolSelector
+          availableTools={availableTools || []}
+          availableConsumables={availableConsumables || []}
+          onSelect={(toolId, toolName, toolLocation, toolReference) => {
+            onUpdateTool(toolId, toolName, toolLocation, toolReference);
+            setShowToolSelector(false);
+          }}
+          onClose={() => setShowToolSelector(false)}
         />
       )}
     </div>

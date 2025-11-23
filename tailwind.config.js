@@ -8,48 +8,40 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Palette de gris neutres (sans teinte bleue)
-        gray: {
-          50: '#fafafa',
-          100: '#f5f5f5',
-          200: '#e5e5e5',
-          300: '#d4d4d4',
-          400: '#a3a3a3',
-          500: '#737373',
-          600: '#525252',
-          700: '#404040',
-          800: '#262626',
-          900: '#171717',
-        },
-        // Palette rouge-orange principale
-        primary: {
-          DEFAULT: 'rgb(249, 55, 5)',
-          hover: 'rgb(230, 45, 0)',
-        },
-        // Backgrounds en gris très foncé
+        // Palette noir/gris foncé sobre
         background: {
-          DEFAULT: '#1a1a1a',
-          surface: '#242424',
-          hover: '#2e2e2e',
+          DEFAULT: '#0a0a0a',      // Noir profond
+          surface: '#1a1a1a',       // Gris très foncé
+          elevated: '#242424',      // Gris foncé élevé
+          hover: '#2e2e2e',         // Gris foncé hover
         },
-        // Textes en vrai gris neutre
-        text: {
-          primary: '#f5f5f5',
-          secondary: '#a3a3a3',
-          muted: '#737373',
-        },
-        // Bordures en vrai gris neutre
+        // Bordures grises sobres
         border: {
-          DEFAULT: 'rgba(64, 64, 64, 0.3)',
-          dark: '#404040',
-          subtle: 'rgba(82, 82, 82, 0.3)',
+          DEFAULT: '#323232',       // Bordure par défaut
+          light: '#323232',         // Bordure claire
+          lighter: '#323232',       // Bordure encore plus claire
         },
-        // Statuts avec rouge-orange pour danger
+        // Couleurs primaires rouge-orange
+        primary: {
+          DEFAULT: '#f93705',       // Rouge-orange principal (rgb(249, 55, 5))
+          dark: '#d43004',          // Rouge-orange foncé
+          light: '#ff4d1a',         // Rouge-orange clair
+          hover: '#ff5722',         // Rouge-orange hover
+          muted: '#ff6b3d',         // Rouge-orange atténué
+        },
+        // Textes
+        text: {
+          primary: '#e5e5e5',       // Texte principal clair
+          secondary: '#a0a0a0',     // Texte secondaire gris
+          muted: '#707070',         // Texte atténué
+          inverse: '#0a0a0a',       // Texte inversé (pour fond clair)
+        },
+        // Statuts
         status: {
-          success: '#10b981',
-          warning: '#f59e0b',
-          danger: 'rgb(249, 55, 5)',
-          info: '#737373',
+          success: '#10b981',       // Vert succès
+          warning: '#f59e0b',       // Orange warning
+          danger: '#ef4444',        // Rouge danger
+          info: '#3b82f6',          // Bleu info
         },
       },
       borderRadius: {
@@ -57,7 +49,7 @@ export default {
         'button': '8px',
       },
       fontFamily: {
-        sans: ['Nunito Sans', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
       },
       fontSize: {
         'xs': '0.75rem',
@@ -65,14 +57,17 @@ export default {
         'base': '0.9375rem',
         'lg': '1rem',
         'xl': '1.25rem',
-        '2xl': '2rem',
+        '2xl': '1.75rem',
+        '3xl': '2rem',
       },
       spacing: {
         '18': '4.5rem',
         '88': '22rem',
       },
       boxShadow: {
-        'glow': '0 0 0 3px rgba(249, 55, 5, 0.1)',
+        'glow': '0 0 20px rgba(249, 55, 5, 0.1)',
+        'primary': '0 4px 20px rgba(249, 55, 5, 0.15)',
+        'elevated': '0 2px 8px rgba(0, 0, 0, 0.3)',
         'none': 'none',
       },
       transitionProperty: {

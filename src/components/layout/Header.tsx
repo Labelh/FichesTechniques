@@ -11,7 +11,7 @@ export default function Header() {
   const { toggleSidebar } = useAppStore();
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-16 bg-[#1f1f1f] border-b border-[#3a3a3a]  z-[1050]">
+    <header className="fixed top-0 left-0 right-0 h-16 bg-[#1f1f1f] border-b border-[#323232]  z-[1050]">
       <div className="container-fluid h-full px-4">
         <div className="flex items-center h-full">
           {/* Menu Button */}
@@ -21,7 +21,7 @@ export default function Header() {
             onClick={toggleSidebar}
             className="mr-3"
           >
-            <Menu className="text-text-secondary" size={22} />
+            <Menu style={{ color: 'var(--color-text-secondary)' }} size={22} />
           </Button>
 
           {/* Logo & Title */}
@@ -33,7 +33,7 @@ export default function Header() {
               <h1 className="text-lg font-bold text-white tracking-tight leading-none">
                 Fiches Techniques
               </h1>
-              <p className="text-xs text-text-secondary leading-none mt-0.5">
+              <p className="text-xs leading-none mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
                 Gestion de procédures
               </p>
             </div>
@@ -44,7 +44,7 @@ export default function Header() {
             {/* Settings */}
             <Link to="/settings">
               <Button variant="ghost" size="icon" title="Paramètres">
-                <SettingsIcon className="text-text-secondary" size={20} />
+                <SettingsIcon style={{ color: 'var(--color-text-secondary)' }} size={20} />
               </Button>
             </Link>
           </div>

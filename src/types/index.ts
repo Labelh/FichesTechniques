@@ -87,12 +87,29 @@ export interface AnnotatedImage {
   description?: string;
 }
 
+export interface Category {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export interface StorageZone {
+  id: string;
+  name: string;
+  description?: string;
+  location?: string;
+}
+
 export interface Tool extends BaseEntity {
   name: string;
   description: string;
   category: string;
+  category_id?: string; // ID de la catégorie Supabase
+  categoryData?: Category; // Données complètes de la catégorie
   reference?: string; // Référence de l'outil
   location?: string; // Emplacement de l'outil
+  storage_zone_id?: string; // ID de la zone de stockage
+  storageZoneData?: StorageZone; // Données complètes de la zone
   image?: Image;
   imageId?: string;
   price?: number;
@@ -122,6 +139,7 @@ export interface Consumable {
   unit?: string;
   price?: number;
   reference?: string;
+  photo?: string; // Données base64 de l'image
   image_url?: string;
   photo_url?: string;
   created_at?: string;
@@ -133,6 +151,15 @@ export interface SafetyNote {
   type: 'warning' | 'danger' | 'info' | 'mandatory' | 'forbidden';
   content: string;
   icon?: string;
+}
+
+export interface VersionLog {
+  id: string;
+  version: string; // "1.0", "1.1", "2.0"
+  type: 'major' | 'minor'; // Majeure (2.0) ou Mineure (1.1)
+  description: string; // Description des modifications
+  author?: string; // Auteur de la modification
+  date: Date;
 }
 
 export interface DefectItem {
@@ -223,7 +250,9 @@ export interface Procedure extends BaseEntity {
 
   // Versioning
   version: number;
+  versionString?: string; // Format "1.0", "1.1", "2.0", etc.
   parentVersion?: string; // ID de la version parente
+  changelog?: VersionLog[]; // Historique des modifications
 
   // Dates importantes
   startDate?: Date;

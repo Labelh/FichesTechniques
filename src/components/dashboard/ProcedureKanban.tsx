@@ -7,10 +7,10 @@ interface ProcedureKanbanProps {
 
 export default function ProcedureKanban({ procedures }: ProcedureKanbanProps) {
   const columns: { status: ProcedureStatus; label: string; color: string; borderColor: string }[] = [
-    { status: 'draft' as ProcedureStatus, label: 'Brouillons', color: 'bg-gray-800', borderColor: 'border-gray-700' },
+    { status: 'draft' as ProcedureStatus, label: 'Brouillons', color: 'bg-background-elevated', borderColor: 'border-[#323232]' },
     { status: 'en_cours' as ProcedureStatus, label: 'En cours', color: 'bg-gradient-to-r from-orange-600 to-red-600', borderColor: 'border-orange-500' },
-    { status: 'in_review' as ProcedureStatus, label: 'En révision', color: 'bg-gray-700', borderColor: 'border-gray-600' },
-    { status: 'completed' as ProcedureStatus, label: 'Terminées', color: 'bg-gray-900', borderColor: 'border-gray-800' },
+    { status: 'in_review' as ProcedureStatus, label: 'En révision', color: 'bg-background-surface', borderColor: 'border-[#323232]' },
+    { status: 'completed' as ProcedureStatus, label: 'Terminées', color: 'bg-background', borderColor: 'border-[#323232]' },
   ];
 
   const getProceduresByStatus = (status: ProcedureStatus) => {
@@ -33,7 +33,7 @@ export default function ProcedureKanban({ procedures }: ProcedureKanbanProps) {
               </h3>
             </div>
 
-            <div className="flex-1 bg-black border-2 border-t-0 border-gray-800 rounded-b-lg p-3 space-y-3 min-h-[400px]">
+            <div className="flex-1 bg-background border-2 border-t-0 border-[#323232] rounded-b-lg p-3 space-y-3 min-h-[400px]">
               {columnProcedures.map((procedure) => (
                 <ProcedureCard key={procedure.id} procedure={procedure} />
               ))}

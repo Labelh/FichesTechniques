@@ -51,9 +51,9 @@ export default function PhaseTemplateSelector({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-      <div className="bg-[#2a2a2a] rounded-lg  max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col border border-[#3a3a3a]">
+      <div className="bg-[#2a2a2a] rounded-lg  max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col border border-[#323232]">
         {/* Header */}
-        <div className="p-6 border-b border-[#3a3a3a] flex items-center justify-between">
+        <div className="p-6 border-b border-[#323232] flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-white">Ajouter une phase</h2>
             <p className="text-sm text-gray-400 mt-1">
@@ -66,7 +66,7 @@ export default function PhaseTemplateSelector({
         </div>
 
         {/* Category Filter */}
-        <div className="p-4 border-b border-[#3a3a3a] flex gap-2 overflow-x-auto bg-[#1f1f1f]">
+        <div className="p-4 border-b border-[#323232] flex gap-2 overflow-x-auto bg-[#1f1f1f]">
           {categories.map((category) => (
             <button
               key={category}
@@ -88,7 +88,7 @@ export default function PhaseTemplateSelector({
             {/* Option: Blank Phase */}
             <button
               onClick={handleAddBlank}
-              className="p-6 border-2 border-dashed border-[#3a3a3a] rounded-lg hover:border-primary hover:bg-[#303030] transition-all text-left group"
+              className="p-6 border-2 border-dashed border-[#323232] rounded-lg hover:border-primary hover:bg-[#303030] transition-all text-left group"
             >
               <div className="flex items-start gap-4">
                 <div className="p-3 bg-[#1f1f1f] rounded-lg group-hover:bg-primary/10 transition-colors">
@@ -117,7 +117,7 @@ export default function PhaseTemplateSelector({
                 <button
                   key={template.id}
                   onClick={() => handleSelectTemplate(template.id)}
-                  className="p-6 border border-[#3a3a3a] rounded-lg hover:border-primary hover:bg-[#303030] transition-all text-left group"
+                  className="p-6 border border-[#323232] rounded-lg hover:border-primary hover:bg-[#303030] transition-all text-left group"
                 >
                   <div className="flex items-start gap-4">
                     <div className="p-3 bg-primary/10 rounded-lg">
@@ -174,7 +174,7 @@ export default function PhaseTemplateSelector({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-[#3a3a3a] bg-[#1f1f1f]">
+        <div className="p-4 border-t border-[#323232] bg-[#1f1f1f]">
           <p className="text-xs text-gray-400 text-center">
             Astuce : Vous pouvez sauvegarder n'importe quelle phase comme template pour la réutiliser
           </p>

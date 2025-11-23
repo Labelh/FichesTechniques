@@ -48,6 +48,18 @@ async function findConsumablesTable(): Promise<string> {
 }
 
 /**
+ * Transforme les données base64 en URL utilisable
+ */
+function processConsumableData(consumable: any): Consumable {
+  // Si le champ photo contient des données base64, on l'utilise comme image_url
+  if (consumable.photo && consumable.photo.startsWith('data:image')) {
+    consumable.image_url = consumable.photo;
+    consumable.photo_url = consumable.photo;
+  }
+  return consumable;
+}
+
+/**
  * Récupère tous les consommables depuis Supabase
  */
 export async function fetchConsumables(): Promise<Consumable[]> {
@@ -65,7 +77,8 @@ export async function fetchConsumables(): Promise<Consumable[]> {
       throw new Error(`Failed to fetch consumables: ${error.message}`);
     }
 
-    return data || [];
+    // Traiter les données pour ajouter image_url depuis photo (base64)
+    return (data || []).map(processConsumableData);
   } catch (error: any) {
     console.error('Error in fetchConsumables:', error);
     throw error;
@@ -90,7 +103,7 @@ export async function fetchConsumableById(id: string): Promise<Consumable | null
       return null;
     }
 
-    return data;
+    return data ? processConsumableData(data) : null;
   } catch (error) {
     console.error('Error in fetchConsumableById:', error);
     return null;
@@ -116,7 +129,7 @@ export async function searchConsumables(query: string): Promise<Consumable[]> {
       throw new Error(`Failed to search consumables: ${error.message}`);
     }
 
-    return data || [];
+    return (data || []).map(processConsumableData);
   } catch (error: any) {
     console.error('Error in searchConsumables:', error);
     throw error;
@@ -142,7 +155,7 @@ export async function fetchConsumablesByCategory(category: string): Promise<Cons
       throw new Error(`Failed to fetch consumables by category: ${error.message}`);
     }
 
-    return data || [];
+    return (data || []).map(processConsumableData);
   } catch (error: any) {
     console.error('Error in fetchConsumablesByCategory:', error);
     throw error;

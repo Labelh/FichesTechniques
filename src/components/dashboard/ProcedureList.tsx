@@ -30,7 +30,7 @@ export default function ProcedureList({ procedures }: ProcedureListProps) {
   };
 
   return (
-    <div className="bg-[#1a1a1a] rounded-xl border border-gray-700 overflow-hidden">
+    <div className="bg-background-surface rounded-xl border border-[#323232] overflow-hidden">
       <table className="table">
         <thead>
           <tr>

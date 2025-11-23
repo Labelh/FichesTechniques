@@ -555,6 +555,54 @@ export async function generateHTML(
             color: #dc2626;
         }
 
+        /* Version History */
+        .version-history {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .version-log {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .version-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .version-number {
+            color: white;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .version-type {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .version-date {
+            color: #666;
+            font-size: 0.85rem;
+            margin-left: auto;
+        }
+
+        .version-description {
+            color: #2c3e50;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
         /* Impression */
         @media print {
             .sidebar {
@@ -615,6 +663,7 @@ export async function generateHTML(
             ${generateGlobalResources(procedure)}
             ${generateDefects(procedure, renderedImageUrls)}
             ${generatePhasesHTML(phases, renderedImageUrls)}
+            ${generateVersionHistory(procedure)}
         </div>
     </div>
 </body>
@@ -630,6 +679,44 @@ export async function generateHTML(
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+}
+
+/**
+ * Génère le HTML pour l'historique des versions
+ */
+function generateVersionHistory(procedure: Procedure): string {
+  if (!procedure.changelog || procedure.changelog.length === 0) {
+    return '';
+  }
+
+  return `
+    <section class="section" id="versioning">
+        <h2 class="section-title">
+            📋 Historique des versions
+            ${procedure.versionString ? `<span style="background: #f93705; color: white; padding: 4px 12px; border-radius: 6px; font-size: 0.9rem; margin-left: 12px;">v${procedure.versionString}</span>` : ''}
+        </h2>
+        <div class="version-history">
+            ${procedure.changelog.map(log => `
+                <div class="version-log">
+                    <div class="version-header">
+                        <span class="version-number" style="background: ${log.type === 'major' ? '#f93705' : '#3b82f6'};">
+                            v${escapeHtml(log.version)}
+                        </span>
+                        <span class="version-type" style="background: ${log.type === 'major' ? 'rgba(255, 107, 53, 0.2)' : 'rgba(16, 185, 129, 0.2)'}; color: ${log.type === 'major' ? '#ff6b35' : '#10b981'};">
+                            ${log.type === 'major' ? 'Majeure' : 'Mineure'}
+                        </span>
+                        <span class="version-date">
+                            ${new Date(log.date).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        </span>
+                    </div>
+                    <div class="version-description">
+                        ${escapeHtml(log.description)}
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    </section>
+  `;
 }
 
 /**

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Filter, SortAsc, FileText } from 'lucide-react';
+import { Search, Filter, SortAsc, FileText, Plus } from 'lucide-react';
 import { useProcedures } from '@/hooks/useProcedures';
 import { useAppStore } from '@/store/useAppStore';
 import { Input } from '@/components/ui/Input';
@@ -26,13 +26,21 @@ export default function Dashboard() {
   return (
     <div className="container-fluid">
       {/* Header */}
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold mb-1 tracking-tight">
-          Tableau de bord
-        </h1>
-        <p className="text-gray-400 text-sm">
-          Gérez vos procédures techniques
-        </p>
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold mb-1 tracking-tight">
+            Tableau de bord
+          </h1>
+          <p className="text-gray-400 text-sm">
+            Gérez vos procédures techniques
+          </p>
+        </div>
+        <Link to="/procedures/new">
+          <Button size="lg">
+            <Plus className="mr-2" size={20} />
+            Nouvelle Procédure
+          </Button>
+        </Link>
       </div>
 
       {/* Search & Filters Bar */}
@@ -70,7 +78,7 @@ export default function Dashboard() {
 
           {/* Filter Panel */}
           {showFilters && (
-            <div className="mt-4 pt-4 border-t border-[#3a3a3a]">
+            <div className="mt-4 pt-4 border-t border-[#323232]">
               <FilterPanel />
             </div>
           )}

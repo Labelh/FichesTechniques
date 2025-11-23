@@ -82,7 +82,7 @@ export default function Templates() {
       </div>
 
       {/* Filters */}
-      <div className="bg-[#2a2a2a] rounded-lg border border-[#3a3a3a] p-4">
+      <div className="bg-[#2a2a2a] rounded-lg border border-[#323232] p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Search */}
           <div className="relative">
@@ -116,7 +116,7 @@ export default function Templates() {
 
       {/* Templates Grid */}
       {filteredTemplates.length === 0 ? (
-        <div className="text-center py-12 bg-[#2a2a2a] rounded-lg border border-[#3a3a3a]">
+        <div className="text-center py-12 bg-[#2a2a2a] rounded-lg border border-[#323232]">
           <FolderKanban className="h-16 w-16 mx-auto text-gray-400 mb-4" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
             {searchTerm || selectedCategory !== 'all'
@@ -141,7 +141,7 @@ export default function Templates() {
             return (
               <div
                 key={template.id}
-                className="bg-[#2a2a2a] rounded-lg border border-[#3a3a3a] p-5 hover: transition-shadow"
+                className="bg-[#2a2a2a] rounded-lg border border-[#323232] p-5 hover: transition-shadow"
               >
                 {/* Header */}
                 <div className="flex items-start justify-between mb-3">
@@ -193,7 +193,7 @@ export default function Templates() {
                 )}
 
                 {/* Actions */}
-                <div className="flex gap-2 pt-4 border-t border-[#3a3a3a]">
+                <div className="flex gap-2 pt-4 border-t border-[#323232]">
                   <Button
                     size="sm"
                     variant="ghost"
@@ -221,7 +221,7 @@ export default function Templates() {
 
       {/* Helper text */}
       {templates && templates.length > 0 && (
-        <div className="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg p-4">
+        <div className="bg-background-elevated border border-[#323232] rounded-lg p-4">
           <p className="text-sm text-gray-700 dark:text-gray-300">
             <strong>Astuce :</strong> Pour créer un nouveau template, éditez une procédure et sauvegardez l'une de ses phases en tant que template.
           </p>

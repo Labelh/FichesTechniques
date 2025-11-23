@@ -239,6 +239,44 @@ export async function reorderPhases(
   await updateProcedureWithPhaseCalculations(procedureId, reorderedPhases);
 }
 
+/**
+ * Déplace une phase vers le haut
+ */
+export async function movePhaseUp(
+  procedureId: string,
+  phaseId: string
+): Promise<void> {
+  const allPhases = await getPhasesByProcedureFirestore(procedureId);
+  const phaseIndex = allPhases.findIndex(p => p.id === phaseId);
+
+  if (phaseIndex <= 0) return; // Already at the top
+
+  const newPhaseIds = [...allPhases.map(p => p.id)];
+  [newPhaseIds[phaseIndex - 1], newPhaseIds[phaseIndex]] =
+    [newPhaseIds[phaseIndex], newPhaseIds[phaseIndex - 1]];
+
+  await reorderPhases(procedureId, newPhaseIds);
+}
+
+/**
+ * Déplace une phase vers le bas
+ */
+export async function movePhaseDown(
+  procedureId: string,
+  phaseId: string
+): Promise<void> {
+  const allPhases = await getPhasesByProcedureFirestore(procedureId);
+  const phaseIndex = allPhases.findIndex(p => p.id === phaseId);
+
+  if (phaseIndex < 0 || phaseIndex >= allPhases.length - 1) return; // Already at the bottom
+
+  const newPhaseIds = [...allPhases.map(p => p.id)];
+  [newPhaseIds[phaseIndex], newPhaseIds[phaseIndex + 1]] =
+    [newPhaseIds[phaseIndex + 1], newPhaseIds[phaseIndex]];
+
+  await reorderPhases(procedureId, newPhaseIds);
+}
+
 // ==========================================
 // HELPERS
 // ==========================================
