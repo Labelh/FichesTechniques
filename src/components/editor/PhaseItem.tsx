@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, AlertTriangle, Lightbulb, Save, Pencil, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -29,12 +29,6 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
   const [estimatedTime, setEstimatedTime] = useState(phase.estimatedTime);
   const [steps, setSteps] = useState<SubStep[]>(phase.steps || []);
   const [consumables, setConsumables] = useState<Consumable[]>([]);
-
-  // Ref pour stocker la dernière valeur de steps (pour éviter les problèmes de closure)
-  const stepsRef = useRef(steps);
-  useEffect(() => {
-    stepsRef.current = steps;
-  }, [steps]);
 
   const availableTools = useTools();
 
@@ -112,7 +106,9 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
   };
 
   const updateStep = (id: string, updates: Partial<SubStep>) => {
-    setSteps(steps.map(s => s.id === id ? { ...s, ...updates } : s));
+    const newSteps = steps.map(s => s.id === id ? { ...s, ...updates } : s);
+    setSteps(newSteps);
+    return newSteps;
   };
 
   const removeStep = (id: string) => {
@@ -244,21 +240,47 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
     setSteps(newSteps.map((s, idx) => ({ ...s, order: idx })));
   };
 
-  const savePhaseToFirestore = async () => {
+  const savePhaseToFirestore = async (customSteps?: SubStep[]) => {
     try {
-      // Utiliser stepsRef.current pour obtenir la dernière valeur
+      // Utiliser customSteps si fourni, sinon steps actuels
+      const stepsToSave = customSteps || steps;
       await updatePhase(procedureId, phase.id, {
         title,
         phaseNumber,
         difficulty,
         estimatedTime,
-        steps: stepsRef.current,
+        steps: stepsToSave,
       });
       return true;
     } catch (error) {
       console.error('Error saving phase:', error);
       toast.error('Erreur lors de la sauvegarde');
       return false;
+    }
+  };
+
+  const handleSaveStepAnnotations = async (stepId: string, imageId: string, annotations: Annotation[], description: string) => {
+    // Calculer les nouvelles steps avec les annotations mises à jour
+    const newSteps = steps.map(s => {
+      if (s.id !== stepId) return s;
+
+      const updatedImages = (s.images || []).map(img =>
+        img.imageId === imageId
+          ? { ...img, annotations, description }
+          : img
+      );
+
+      return { ...s, images: updatedImages };
+    });
+
+    // Sauvegarder immédiatement dans Firestore avec les nouvelles steps
+    toast.info('Sauvegarde des annotations...');
+    const success = await savePhaseToFirestore(newSteps);
+
+    if (success) {
+      // Mettre à jour le state local seulement après la sauvegarde réussie
+      setSteps(newSteps);
+      toast.success('Annotations sauvegardées avec succès');
     }
   };
 
@@ -438,7 +460,7 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
                       onUpdateTool={(toolId, toolName, toolLocation, toolReference) => updateStepTool(step.id, toolId, toolName, toolLocation, toolReference)}
                       onMoveUp={() => moveStepUp(step.id)}
                       onMoveDown={() => moveStepDown(step.id)}
-                      onSaveToFirestore={savePhaseToFirestore}
+                      onSaveAnnotations={(imageId, annotations, description) => handleSaveStepAnnotations(step.id, imageId, annotations, description)}
                     />
                   ))}
                 </div>
@@ -478,7 +500,7 @@ interface SubStepItemProps {
   onUpdateTool: (toolId: string | null, toolName: string | null, toolLocation?: string | null, toolReference?: string | null) => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
-  onSaveToFirestore: () => Promise<boolean>;
+  onSaveAnnotations: (imageId: string, annotations: Annotation[], description: string) => Promise<void>;
 }
 
 function SubStepItem({
@@ -500,7 +522,7 @@ function SubStepItem({
   onUpdateTool,
   onMoveUp,
   onMoveDown,
-  onSaveToFirestore,
+  onSaveAnnotations,
 }: SubStepItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [imageToAnnotate, setImageToAnnotate] = useState<AnnotatedImage | null>(null);
@@ -557,29 +579,11 @@ function SubStepItem({
   const handleSaveAnnotations = async (annotations: Annotation[], description: string) => {
     if (!imageToAnnotate) return;
 
-    // Mettre à jour l'image avec les nouvelles annotations
-    const updatedImages = (step.images || []).map(img =>
-      img.imageId === imageToAnnotate.imageId
-        ? { ...img, annotations, description }
-        : img
-    );
-
-    // Mettre à jour l'état local immédiatement pour l'UI
-    onUpdate({ images: updatedImages });
+    // Sauvegarder directement dans Firestore via le callback parent
+    await onSaveAnnotations(imageToAnnotate.imageId, annotations, description);
 
     // Fermer le modal d'annotation
     setImageToAnnotate(null);
-
-    // Sauvegarder automatiquement dans Firestore
-    toast.info('Sauvegarde des annotations...');
-
-    // Petit délai pour s'assurer que le state est à jour
-    setTimeout(async () => {
-      const success = await onSaveToFirestore();
-      if (success) {
-        toast.success('Annotations sauvegardées avec succès');
-      }
-    }, 100);
   };
 
   return (
