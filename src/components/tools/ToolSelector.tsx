@@ -15,9 +15,7 @@ type ToolOrConsumable = (Tool & { type: 'tool' }) | (Consumable & { type: 'consu
 
 export default function ToolSelector({ availableTools, availableConsumables, onSelect, onClose }: ToolSelectorProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'tool' | 'consumable'>('all');
   const [selectedItem, setSelectedItem] = useState<ToolOrConsumable | null>(null);
-  const [storageZoneFilter, setStorageZoneFilter] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
 
   // Combiner outils et consommables
@@ -38,52 +36,24 @@ export default function ToolSelector({ availableTools, availableConsumables, onS
     }
   }, [allItems]);
 
-  // Extraire toutes les zones de stockage uniques
-  const storageZones = useMemo(() => {
-    const zonesMap = new Map<string, { id: string; name: string }>();
-    allItems.forEach(item => {
-      if (item.type === 'tool' && item.storage_zone_id) {
-        if (!zonesMap.has(item.storage_zone_id)) {
-          zonesMap.set(item.storage_zone_id, {
-            id: item.storage_zone_id,
-            name: item.storageZoneData?.name || item.storage_zone_id
-          });
-        }
-      }
-    });
-    return Array.from(zonesMap.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [allItems]);
-
   // Filtrer les items
   const filteredItems = useMemo(() => {
     return allItems.filter(item => {
-      // Filtre par type
-      if (filterType !== 'all' && item.type !== filterType) return false;
-
-      // Filtre par zone de stockage
-      if (storageZoneFilter && item.type === 'tool') {
-        if (item.storage_zone_id !== storageZoneFilter) return false;
-      }
-
       // Filtre par recherche
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const name = item.type === 'tool' ? item.name : item.designation;
         const reference = item.reference || '';
-        const location = item.type === 'tool' ? (item.location || '') : ((item as any).emplacement || (item as any).location || '');
-        const storageZone = item.type === 'tool' ? (item.storage_zone_id || '') : '';
 
         return (
           name.toLowerCase().includes(query) ||
-          reference.toLowerCase().includes(query) ||
-          location.toLowerCase().includes(query) ||
-          storageZone.toLowerCase().includes(query)
+          reference.toLowerCase().includes(query)
         );
       }
 
       return true;
     });
-  }, [allItems, searchQuery, filterType, storageZoneFilter]);
+  }, [allItems, searchQuery]);
 
   const handleSelect = async () => {
     if (!selectedItem) return;

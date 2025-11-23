@@ -2,9 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   Search,
   RefreshCw,
-  Wrench,
-  MapPin,
-  Package
+  Wrench
 } from 'lucide-react';
 import { fetchConsumables } from '@/services/consumablesService';
 import { Consumable } from '../types';
@@ -14,8 +12,6 @@ import { toast } from 'sonner';
 
 export default function ToolsLibrary() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedZone, setSelectedZone] = useState<string>('all');
   const [tools, setTools] = useState<Consumable[]>([]);
   const [selectedItem, setSelectedItem] = useState<Consumable | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -67,50 +63,16 @@ export default function ToolsLibrary() {
         }
       }
 
-      // Filtre par catégorie
-      if (selectedCategory !== 'all') {
-        if (item.category !== selectedCategory) return false;
-      }
-
-      // Filtre par zone de stockage
-      if (selectedZone !== 'all') {
-        const location = (item as any).emplacement || (item as any).location || '';
-        if (!location.includes(selectedZone)) return false;
-      }
-
       return true;
     });
-  }, [tools, searchTerm, selectedCategory, selectedZone]);
-
-  // Récupération des catégories uniques
-  const categories = useMemo(() => {
-    const cats = new Set<string>();
-    tools.forEach(item => {
-      if (item.category) cats.add(item.category);
-    });
-    return Array.from(cats).sort();
-  }, [tools]);
-
-  // Récupération des zones de stockage uniques
-  const storageZones = useMemo(() => {
-    const zones = new Set<string>();
-    tools.forEach(item => {
-      const location = (item as any).emplacement || (item as any).location;
-      if (location) {
-        // Extraire la zone (ex: "Zone B.1.5" -> "Zone B")
-        const match = location.match(/Zone\s+[A-Z]/i);
-        if (match) zones.add(match[0]);
-      }
-    });
-    return Array.from(zones).sort();
-  }, [tools]);
+  }, [tools, searchTerm]);
 
   const getItemImage = (item: Consumable) => {
-    return item.image?.url || item.image_url || item.photo_url;
+    return (item as any).image?.url || (item as any).image_url || (item as any).photo_url;
   };
 
   const getItemLocation = (item: Consumable) => {
-    return (item as any).emplacement || (item as any).location || item.location;
+    return (item as any).emplacement || (item as any).location;
   };
 
   return (
