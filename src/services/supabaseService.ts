@@ -1,19 +1,5 @@
 import { supabase } from '@/lib/supabase';
-
-export interface Category {
-  id: string;
-  name: string;
-  description?: string;
-  created_at?: string;
-}
-
-export interface StorageZone {
-  id: string;
-  name: string;
-  description?: string;
-  location?: string;
-  created_at?: string;
-}
+import type { Category, StorageZone } from '@/types';
 
 /**
  * Cache pour les catégories et zones de stockage

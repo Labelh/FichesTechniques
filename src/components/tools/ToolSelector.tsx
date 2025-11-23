@@ -120,12 +120,6 @@ export default function ToolSelector({ availableTools, availableConsumables, onS
     }
   };
 
-  const getItemStorageZone = (item: ToolOrConsumable) => {
-    if (item.type === 'tool') {
-      return item.storage_zone_id;
-    }
-    return null;
-  };
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">

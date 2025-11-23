@@ -36,7 +36,9 @@
       "Bash(git restore:*)",
       "Bash(git pull:*)",
       "Bash(echo:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(firebase init:*)",
+      "Bash(firebase login:*)"
     ],
     "deny": [],
     "ask": []

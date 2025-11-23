@@ -87,12 +87,6 @@ export interface AnnotatedImage {
   description?: string;
 }
 
-export interface Category {
-  id: string;
-  name: string;
-  description?: string;
-}
-
 export interface StorageZone {
   id: string;
   name: string;
@@ -291,10 +285,10 @@ export interface ProcedureTemplate extends BaseEntity {
 export interface Category extends BaseEntity {
   name: string;
   description?: string;
-  color: string;
+  color?: string;
   icon?: string;
   parentId?: string;
-  procedureCount: number;
+  procedureCount?: number;
 }
 
 export interface Tag extends BaseEntity {

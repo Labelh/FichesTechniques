@@ -3,7 +3,6 @@ import {
   LayoutDashboard,
   Wrench,
   FolderKanban,
-  Plus,
   Package,
   Menu,
 } from 'lucide-react';
