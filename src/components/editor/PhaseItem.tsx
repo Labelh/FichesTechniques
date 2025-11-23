@@ -539,6 +539,11 @@ function SubStepItem({
 
     onUpdate({ images: updatedImages });
     setImageToAnnotate(null);
+
+    // Rappel à l'utilisateur de sauvegarder
+    toast.info('N\'oubliez pas de sauvegarder la procédure (Ctrl+S) pour conserver les annotations !', {
+      duration: 5000
+    });
   };
 
   return (
