@@ -76,8 +76,8 @@ export async function generateHTML(
             top: 0;
             bottom: 0;
             width: 280px;
-            background: #e8e8e8;
-            border-right: 1px solid #d0d0d0;
+            background: #d3d3d3;
+            border-right: 1px solid #b0b0b0;
             overflow-y: auto;
             padding: 24px;
             z-index: 100;
@@ -111,7 +111,6 @@ export async function generateHTML(
 
         .nav-phase-title:hover {
             background: rgba(249, 55, 5, 0.08);
-            transform: translateX(4px);
         }
 
         .nav-steps {
@@ -149,34 +148,48 @@ export async function generateHTML(
         .header {
             background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
             color: #2c3e50;
-            padding: 48px 40px;
+            padding: 32px 40px;
             border-bottom: 4px solid rgb(249, 55, 5);
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        .version-badge {
+            position: absolute;
+            top: 24px;
+            right: 40px;
+            background: rgb(249, 55, 5);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(249, 55, 5, 0.3);
         }
 
         .header-title {
-            font-size: 2rem;
+            font-size: 2.5rem;
             color: #666;
             font-weight: 500;
-            margin-bottom: 12px;
+            margin-bottom: 6px;
             text-align: left;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
         .header-designation {
-            font-size: 2.2rem;
+            font-size: 2rem;
             font-weight: 400;
             color: #1a1a1a;
-            margin-bottom: 16px;
+            margin-bottom: 8px;
             text-align: left;
         }
 
         .header-reference {
-            font-size: 2.4rem;
+            font-size: 2.2rem;
             color: rgb(249, 55, 5);
             font-weight: 400;
-            margin-bottom: 28px;
+            margin-bottom: 16px;
             text-align: left;
             text-shadow: 0 2px 4px rgba(249, 55, 5, 0.1);
         }
@@ -289,12 +302,6 @@ export async function generateHTML(
             border-radius: 8px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.08);
             border: 1px solid #f0f0f0;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .defect-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
         }
 
         @media print {
@@ -388,7 +395,7 @@ export async function generateHTML(
         .phase-meta-item {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 8px;
         }
 
         /* Étapes */
@@ -404,12 +411,6 @@ export async function generateHTML(
             border: 1px solid #e8e8e8;
             border-radius: 8px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .step:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
 
         .step:last-child {
@@ -444,7 +445,7 @@ export async function generateHTML(
 
         .step-title {
             font-size: 1.15rem;
-            font-weight: 700;
+            font-weight: 400;
             color: #1a1a1a;
             margin-bottom: 8px;
         }
@@ -455,11 +456,17 @@ export async function generateHTML(
             font-size: 1.1rem;
         }
 
+        .step-details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
         .step-tool {
             background: linear-gradient(135deg, #f0f9f4 0%, #ffffff 100%);
             padding: 18px 20px;
             border-left: 4px solid #10b981;
-            margin: 20px 0;
             border-radius: 8px;
             box-shadow: 0 2px 6px rgba(16, 185, 129, 0.1);
         }
@@ -470,6 +477,19 @@ export async function generateHTML(
             display: block;
             margin-bottom: 8px;
             font-size: 1.05rem;
+        }
+
+        .step-tool-ref {
+            color: rgb(249, 55, 5);
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-top: 6px;
+        }
+
+        .step-tool-location {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 4px;
         }
 
         .step-tool-details {
@@ -511,6 +531,50 @@ export async function generateHTML(
             font-size: 0.9rem;
             color: #666;
             border-top: 1px solid #e8e8e8;
+        }
+
+        /* Videos */
+        .step-videos {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            margin-top: 24px;
+        }
+
+        .step-video-wrapper {
+            overflow: hidden;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            background: #000;
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* Aspect ratio 16:9 */
+        }
+
+        .step-video-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            border: none;
+        }
+
+        .step-video-link {
+            display: block;
+            padding: 16px;
+            background: #f8f9fa;
+            text-align: center;
+            color: rgb(249, 55, 5);
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .step-video-link:hover {
+            background: #e8e9ea;
         }
 
         /* Conseils (touches de vert) */
@@ -660,6 +724,7 @@ export async function generateHTML(
     <div class="container">
         <!-- En-tête -->
         <div class="header">
+            ${procedure.versionString ? `<div class="version-badge">v${escapeHtml(procedure.versionString)}</div>` : ''}
             <div class="header-title">Fiche Technique</div>
             <div class="header-designation">${escapeHtml(procedure.designation || procedure.title)}</div>
             ${procedure.reference ? `<div class="header-reference">${escapeHtml(procedure.reference)}</div>` : ''}
@@ -678,8 +743,6 @@ export async function generateHTML(
                 ${procedure.category ? `<div class="meta-item"><span class="meta-label">Catégorie:</span> ${escapeHtml(procedure.category)}</div>` : ''}
                 ${procedure.totalCost ? `<div class="meta-item"><span class="meta-label">Coût estimé:</span> ${procedure.totalCost}€</div>` : ''}
             </div>
-
-            ${procedure.versionString ? `<div class="document-version">Version ${escapeHtml(procedure.versionString)}</div>` : ''}
         </div>
 
         <!-- Contenu -->
@@ -866,20 +929,16 @@ function generateDefects(procedure: Procedure, renderedImageUrls: Map<string, st
  * Génère le HTML pour les phases
  */
 function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, string>): string {
-  return phases.map((phase, phaseIndex) => `
+  return phases.map((phase, phaseIndex) => {
+    const difficultyColor = phase.difficulty === 'easy' ? '#10b981' : phase.difficulty === 'medium' ? '#f59e0b' : phase.difficulty === 'hard' ? '#ef4444' : 'rgb(249, 55, 5)';
+    return `
     <div class="phase" id="phase-${phaseIndex + 1}">
         <div class="phase-header">
-            <div class="phase-title">Phase ${phase.phaseNumber || phaseIndex + 1} : ${escapeHtml(phase.title)}</div>
+            <div class="phase-title" style="color: ${difficultyColor}">Phase ${phase.phaseNumber || phaseIndex + 1} : ${escapeHtml(phase.title)}</div>
             <div class="phase-meta">
-                ${phase.difficulty ? `
-                <div class="phase-meta-item">
-                    <span>Difficulté:</span>
-                    <span>${phase.difficulty === 'easy' ? 'Facile' : phase.difficulty === 'medium' ? 'Moyen' : 'Difficile'}</span>
-                </div>
-                ` : ''}
                 ${phase.estimatedTime ? `
                 <div class="phase-meta-item">
-                    <span>Temps estimé:</span>
+                    <span>Temps estimé par pièce:</span>
                     <span>${phase.estimatedTime} min</span>
                 </div>
                 ` : ''}
@@ -904,47 +963,43 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                 <div class="step-header">
                     <div class="step-number">${stepIndex + 1}</div>
                     <div class="step-content">
-                        ${step.title ? `<div class="step-title">${escapeHtml(step.title)}</div>` : ''}
-                        <div class="step-description">${escapeHtml(step.description)}</div>
+                        ${step.title ? `<div class="step-title">${escapeHtml(step.title)}${step.description ? ` - ${escapeHtml(step.description)}` : ''}</div>` : `<div class="step-description">${escapeHtml(step.description)}</div>`}
                     </div>
                 </div>
 
-                ${step.toolId && step.toolName ? `
-                <div class="step-tool">
-                    <div class="step-tool-label">Outil</div>
-                    <div>• ${escapeHtml(step.toolName)}</div>
-                    ${step.toolReference || step.toolLocation ? `
-                    <div class="step-tool-details">
-                        ${step.toolReference ? `<strong>Référence:</strong> ${escapeHtml(step.toolReference)}` : ''}
-                        ${step.toolReference && step.toolLocation ? ' • ' : ''}
-                        ${step.toolLocation ? `<strong>Emplacement:</strong> ${escapeHtml(step.toolLocation)}` : ''}
+                <div class="step-details-grid">
+                    ${step.toolId && step.toolName ? `
+                    <div class="step-tool" style="border-left: 4px solid ${step.toolColor || '#10b981'}">
+                        <div class="step-tool-label" style="color: ${step.toolColor || '#059669'}">Outil</div>
+                        <div>${escapeHtml(step.toolName)}</div>
+                        ${step.toolReference ? `<div class="step-tool-ref">${escapeHtml(step.toolReference)}</div>` : ''}
+                        ${step.toolLocation ? `<div class="step-tool-location">${escapeHtml(step.toolLocation)}</div>` : ''}
+                    </div>
+                    ` : ''}
+
+                    ${step.tips && step.tips.length > 0 ? `
+                    <div class="tips">
+                        <div class="tips-title">Conseils</div>
+                        ${step.tips.map(tip => `<div class="tip-item">${escapeHtml(tip)}</div>`).join('')}
+                    </div>
+                    ` : ''}
+
+                    ${step.safetyNotes && step.safetyNotes.length > 0 ? `
+                    <div class="safety-notes">
+                        ${step.safetyNotes.map(note => `
+                        <div class="safety-note ${note.type === 'danger' ? 'danger' : 'warning'}">
+                            <div class="safety-note-title">
+                                ${note.type === 'danger' ? 'DANGER' : 'ATTENTION'}
+                            </div>
+                            <div>${escapeHtml(note.content)}</div>
+                        </div>
+                        `).join('')}
                     </div>
                     ` : ''}
                 </div>
-                ` : ''}
 
                 ${step.estimatedTime ? `
                 <div class="step-time">Temps: ${step.estimatedTime} min</div>
-                ` : ''}
-
-                ${step.tips && step.tips.length > 0 ? `
-                <div class="tips">
-                    <div class="tips-title">Conseils</div>
-                    ${step.tips.map(tip => `<div class="tip-item">• ${escapeHtml(tip)}</div>`).join('')}
-                </div>
-                ` : ''}
-
-                ${step.safetyNotes && step.safetyNotes.length > 0 ? `
-                <div class="safety-notes">
-                    ${step.safetyNotes.map(note => `
-                    <div class="safety-note ${note.type === 'danger' ? 'danger' : 'warning'}">
-                        <div class="safety-note-title">
-                            ${note.type === 'danger' ? 'DANGER' : 'ATTENTION'}
-                        </div>
-                        <div>• ${escapeHtml(note.content)}</div>
-                    </div>
-                    `).join('')}
-                </div>
                 ` : ''}
 
                 ${step.images && step.images.length > 0 ? `
@@ -961,12 +1016,35 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                     }).join('')}
                 </div>
                 ` : ''}
+
+                ${step.videos && step.videos.length > 0 ? `
+                <div class="step-videos">
+                    ${step.videos.map(video => {
+                      const embedUrl = getVideoEmbedUrl(video.url);
+                      if (embedUrl) {
+                        return `
+                        <div class="step-video-wrapper">
+                            <iframe src="${embedUrl}" allowfullscreen></iframe>
+                        </div>
+                        `;
+                      } else {
+                        return `
+                        <div class="step-video-wrapper">
+                            <a href="${escapeHtml(video.url)}" target="_blank" class="step-video-link">
+                                🎥 ${escapeHtml(video.name || 'Voir la vidéo')}
+                            </a>
+                        </div>
+                        `;
+                      }
+                    }).join('')}
+                </div>
+                ` : ''}
             </div>
             `).join('')}
         </div>
         ` : ''}
     </div>
-  `).join('');
+  `}).join('');
 }
 
 /**
@@ -986,4 +1064,45 @@ function sanitizeFilename(filename: string): string {
     .replace(/[<>:"/\\|?*]/g, '_')
     .replace(/\s+/g, '_')
     .substring(0, 200);
+}
+
+/**
+ * Convertit une URL YouTube ou Vimeo en URL d'embed
+ */
+function getVideoEmbedUrl(url: string): string | null {
+  try {
+    const urlObj = new URL(url);
+
+    // YouTube
+    if (urlObj.hostname.includes('youtube.com') || urlObj.hostname.includes('youtu.be')) {
+      let videoId = '';
+
+      if (urlObj.hostname.includes('youtu.be')) {
+        // Format: https://youtu.be/VIDEO_ID
+        videoId = urlObj.pathname.slice(1).split('?')[0];
+      } else if (urlObj.searchParams.has('v')) {
+        // Format: https://www.youtube.com/watch?v=VIDEO_ID
+        videoId = urlObj.searchParams.get('v') || '';
+      } else if (urlObj.pathname.includes('/embed/')) {
+        // Déjà au format embed
+        return url;
+      }
+
+      if (videoId) {
+        return `https://www.youtube.com/embed/${videoId}`;
+      }
+    }
+
+    // Vimeo
+    if (urlObj.hostname.includes('vimeo.com')) {
+      const videoId = urlObj.pathname.split('/').filter(Boolean).pop();
+      if (videoId && /^\d+$/.test(videoId)) {
+        return `https://player.vimeo.com/video/${videoId}`;
+      }
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
 }
