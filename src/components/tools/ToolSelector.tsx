@@ -7,7 +7,7 @@ import type { Tool, Consumable } from '@/types';
 interface ToolSelectorProps {
   availableTools: Tool[];
   availableConsumables: Consumable[];
-  onSelect: (toolId: string, toolName: string, toolLocation?: string, toolReference?: string, type?: 'tool' | 'consumable') => void;
+  onSelect: (toolId: string, toolName: string, toolLocation?: string, toolReference?: string, type?: 'tool' | 'consumable', color?: string) => void;
   onClose: () => void;
 }
 
@@ -17,6 +17,7 @@ export default function ToolSelector({ availableTools, availableConsumables, onS
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<ToolOrConsumable | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedColor, setSelectedColor] = useState('#10b981'); // Vert par défaut
 
   // Combiner outils et consommables
   const allItems: ToolOrConsumable[] = useMemo(() => {
@@ -69,10 +70,20 @@ export default function ToolSelector({ availableTools, availableConsumables, onS
       : ((selectedItem as any).emplacement || (selectedItem as any).location);
     const reference = selectedItem.reference;
 
-    onSelect(selectedItem.id, name, location, reference, selectedItem.type);
+    onSelect(selectedItem.id, name, location, reference, selectedItem.type, selectedColor);
     setIsLoading(false);
     onClose();
   };
+
+  const colorPresets = [
+    { name: 'Vert', value: '#10b981' },
+    { name: 'Bleu', value: '#3b82f6' },
+    { name: 'Rouge', value: '#ef4444' },
+    { name: 'Jaune', value: '#f59e0b' },
+    { name: 'Violet', value: '#8b5cf6' },
+    { name: 'Rose', value: '#ec4899' },
+    { name: 'Orange', value: 'rgb(249, 55, 5)' },
+  ];
 
   const getItemImage = (item: ToolOrConsumable) => {
     if (item.type === 'tool') {
@@ -314,6 +325,26 @@ export default function ToolSelector({ availableTools, availableConsumables, onS
                       </p>
                     </div>
                   )}
+
+                  {/* Sélecteur de couleur */}
+                  <div>
+                    <label className="text-xs text-gray-400 uppercase tracking-wide mb-2 block">Couleur de tracé</label>
+                    <div className="flex flex-wrap gap-2">
+                      {colorPresets.map((color) => (
+                        <button
+                          key={color.value}
+                          onClick={() => setSelectedColor(color.value)}
+                          className={`w-8 h-8 rounded-full border-2 transition-all ${
+                            selectedColor === color.value
+                              ? 'border-white scale-110'
+                              : 'border-transparent hover:border-gray-500'
+                          }`}
+                          style={{ backgroundColor: color.value }}
+                          title={color.name}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </>
             ) : (

@@ -177,7 +177,9 @@ export default function ProcedureEditor() {
           };
           updatedVersionString = nextVersion;
           updatedChangelog = [newLog, ...changelog];
-          toast.success(`Version ${nextVersion} créée automatiquement (${changeDetection.type === 'major' ? 'Majeure' : 'Mineure'})`);
+          toast.success(`Version ${nextVersion} créée (${changeDetection.type === 'major' ? 'Majeure' : 'Mineure'})`);
+        } else {
+          toast.info('Aucun changement détecté dans les métadonnées');
         }
 
         await updateProcedure(id, {
@@ -195,7 +197,7 @@ export default function ProcedureEditor() {
         setVersionString(updatedVersionString);
         setChangelog(updatedChangelog);
 
-        toast.success('Procédure mise à jour');
+        toast.success('Procédure et phases sauvegardées');
       } else {
         const newId = await createProcedure({
           reference: reference.trim() || undefined,

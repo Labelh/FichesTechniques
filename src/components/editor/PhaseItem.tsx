@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, AlertTriangle, Lightbulb, Save, Pencil, ArrowUp, ArrowDown } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, AlertTriangle, Lightbulb, Save, Pencil, ArrowUp, ArrowDown, Video as VideoIcon, Play } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -126,6 +126,22 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
     ));
   };
 
+  const addStepVideo = (stepId: string, newVideos: any[]) => {
+    setSteps(steps.map(s =>
+      s.id === stepId
+        ? { ...s, videos: [...(s.videos || []), ...newVideos] }
+        : s
+    ));
+  };
+
+  const removeStepVideo = (stepId: string, videoId: string) => {
+    setSteps(steps.map(s =>
+      s.id === stepId
+        ? { ...s, videos: (s.videos || []).filter(vid => vid.id !== videoId) }
+        : s
+    ));
+  };
+
   const addStepTip = (stepId: string) => {
     setSteps(steps.map(s =>
       s.id === stepId
@@ -181,7 +197,7 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
     ));
   };
 
-  const updateStepTool = (stepId: string, toolId: string | null, toolName: string | null, toolLocation?: string | null, toolReference?: string | null) => {
+  const updateStepTool = (stepId: string, toolId: string | null, toolName: string | null, toolLocation?: string | null, toolReference?: string | null, toolColor?: string | null) => {
     setSteps(steps.map(s =>
       s.id === stepId
         ? {
@@ -190,6 +206,7 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
             toolName: toolName || undefined,
             toolLocation: toolLocation || undefined,
             toolReference: toolReference || undefined,
+            toolColor: toolColor || undefined,
             tool: undefined // On ne stocke plus l'objet complet
           }
         : s
@@ -492,13 +509,15 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
                       onRemove={() => removeStep(step.id)}
                       onAddImage={(images) => addStepImage(step.id, images)}
                       onRemoveImage={(imageId) => removeStepImage(step.id, imageId)}
+                      onAddVideo={(videos) => addStepVideo(step.id, videos)}
+                      onRemoveVideo={(videoId) => removeStepVideo(step.id, videoId)}
                       onAddTip={() => addStepTip(step.id)}
                       onUpdateTip={(tipIdx, value) => updateStepTip(step.id, tipIdx, value)}
                       onRemoveTip={(tipIdx) => removeStepTip(step.id, tipIdx)}
                       onAddSafetyNote={() => addStepSafetyNote(step.id)}
                       onUpdateSafetyNote={(noteId, updates) => updateStepSafetyNote(step.id, noteId, updates)}
                       onRemoveSafetyNote={(noteId) => removeStepSafetyNote(step.id, noteId)}
-                      onUpdateTool={(toolId, toolName, toolLocation, toolReference) => updateStepTool(step.id, toolId, toolName, toolLocation, toolReference)}
+                      onUpdateTool={(toolId, toolName, toolLocation, toolReference, toolColor) => updateStepTool(step.id, toolId, toolName, toolLocation, toolReference, toolColor)}
                       onMoveUp={() => moveStepUp(step.id)}
                       onMoveDown={() => moveStepDown(step.id)}
                       onSaveAnnotations={(imageId, annotations, description) => handleSaveStepAnnotations(step.id, imageId, annotations, description)}
@@ -532,13 +551,15 @@ interface SubStepItemProps {
   onRemove: () => void;
   onAddImage: (images: AnnotatedImage[]) => void;
   onRemoveImage: (imageId: string) => void;
+  onAddVideo: (videos: any[]) => void;
+  onRemoveVideo: (videoId: string) => void;
   onAddTip: () => void;
   onUpdateTip: (index: number, value: string) => void;
   onRemoveTip: (index: number) => void;
   onAddSafetyNote: () => void;
   onUpdateSafetyNote: (noteId: string, updates: Partial<SafetyNote>) => void;
   onRemoveSafetyNote: (noteId: string) => void;
-  onUpdateTool: (toolId: string | null, toolName: string | null, toolLocation?: string | null, toolReference?: string | null) => void;
+  onUpdateTool: (toolId: string | null, toolName: string | null, toolLocation?: string | null, toolReference?: string | null, toolColor?: string | null) => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
   onSaveAnnotations: (imageId: string, annotations: Annotation[], description: string) => Promise<void>;
@@ -554,6 +575,8 @@ function SubStepItem({
   onRemove,
   onAddImage,
   onRemoveImage,
+  onAddVideo,
+  onRemoveVideo,
   onAddTip,
   onUpdateTip,
   onRemoveTip,
@@ -568,6 +591,8 @@ function SubStepItem({
   const [isExpanded, setIsExpanded] = useState(false);
   const [imageToAnnotate, setImageToAnnotate] = useState<AnnotatedImage | null>(null);
   const [showToolSelector, setShowToolSelector] = useState(false);
+  const [showVideoInput, setShowVideoInput] = useState(false);
+  const [videoUrl, setVideoUrl] = useState('');
 
   const handleImageUpload = async (files: File[]) => {
     const validImages: AnnotatedImage[] = [];
@@ -627,6 +652,64 @@ function SubStepItem({
     setImageToAnnotate(null);
   };
 
+  const handleAddVideo = () => {
+    if (!videoUrl.trim()) return;
+
+    const newVideo = {
+      id: crypto.randomUUID(),
+      name: extractVideoTitle(videoUrl),
+      url: videoUrl,
+      thumbnail: extractVideoThumbnail(videoUrl),
+      size: 0,
+      mimeType: 'video/mp4',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    onAddVideo([newVideo]);
+    setVideoUrl('');
+    setShowVideoInput(false);
+  };
+
+  const extractVideoTitle = (url: string): string => {
+    try {
+      const urlObj = new URL(url);
+      if (urlObj.hostname.includes('youtube.com') || urlObj.hostname.includes('youtu.be')) {
+        return 'Vidéo YouTube';
+      } else if (urlObj.hostname.includes('vimeo.com')) {
+        return 'Vidéo Vimeo';
+      }
+      return 'Vidéo';
+    } catch {
+      return 'Vidéo';
+    }
+  };
+
+  const extractVideoThumbnail = (url: string): string | undefined => {
+    try {
+      const urlObj = new URL(url);
+
+      // YouTube
+      if (urlObj.hostname.includes('youtube.com') || urlObj.hostname.includes('youtu.be')) {
+        let videoId = '';
+        if (urlObj.hostname.includes('youtu.be')) {
+          videoId = urlObj.pathname.slice(1);
+        } else {
+          videoId = urlObj.searchParams.get('v') || '';
+        }
+        if (videoId) {
+          return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+        }
+      }
+
+      // Vimeo (nécessiterait une API call, on laisse undefined pour l'instant)
+
+      return undefined;
+    } catch {
+      return undefined;
+    }
+  };
+
   return (
     <div className="border border-[#323232] rounded-lg bg-background-surface">
       {/* Header */}
@@ -646,6 +729,11 @@ function SubStepItem({
             {(step.images?.length || 0) > 0 && (
               <span className="flex items-center gap-1">
                 📷 {step.images?.length}
+              </span>
+            )}
+            {(step.videos?.length || 0) > 0 && (
+              <span className="flex items-center gap-1">
+                🎥 {step.videos?.length}
               </span>
             )}
             {step.toolId && (
@@ -743,33 +831,37 @@ function SubStepItem({
             <label className="block text-xs font-medium text-gray-400 mb-2">
               Images ({step.images?.length || 0})
             </label>
-            <div className="flex flex-wrap gap-2 mb-2">
+            <div className="flex flex-wrap gap-3 mb-2">
               {(step.images || []).map((img) => (
-                <div key={img.imageId} className="relative group">
-                  <img
-                    src={img.image.url || URL.createObjectURL(img.image.blob)}
-                    alt={img.description || 'Image'}
-                    className="h-16 w-16 object-cover rounded border border-[#323232]"
-                  />
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
-                    <button
-                      onClick={() => setImageToAnnotate(img)}
-                      className="bg-primary text-white rounded p-1 hover:bg-primary/80"
-                      title="Annoter l'image"
-                    >
-                      <Pencil className="h-3 w-3" />
-                    </button>
-                    <button
-                      onClick={() => onRemoveImage(img.imageId)}
-                      className="bg-red-500 text-white rounded p-1 hover:bg-red-600"
-                      title="Supprimer l'image"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
+                <div key={img.imageId} className="flex flex-col gap-1">
+                  <div className="relative group">
+                    <img
+                      src={img.image.url || URL.createObjectURL(img.image.blob)}
+                      alt={img.description || 'Image'}
+                      className="h-16 w-16 object-cover rounded border border-[#323232]"
+                    />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                      <button
+                        onClick={() => setImageToAnnotate(img)}
+                        className="bg-primary text-white rounded p-1 hover:bg-primary/80"
+                        title="Annoter l'image"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                      <button
+                        onClick={() => onRemoveImage(img.imageId)}
+                        className="bg-red-500 text-white rounded p-1 hover:bg-red-600"
+                        title="Supprimer l'image"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
                   </div>
                   {img.annotations && img.annotations.length > 0 && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-primary/80 text-white text-xs px-1 text-center">
-                      {img.annotations.length} annotation{img.annotations.length > 1 ? 's' : ''}
+                    <div className="flex justify-center">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary border border-primary/30">
+                        {img.annotations.length} annotation{img.annotations.length > 1 ? 's' : ''}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -799,6 +891,105 @@ function SubStepItem({
             </div>
           </div>
 
+          {/* Vidéos */}
+          <div>
+            <label className="block text-xs font-medium text-gray-400 mb-2">
+              <VideoIcon className="h-3 w-3 inline mr-1" />
+              Vidéos ({step.videos?.length || 0})
+            </label>
+            <div className="flex flex-wrap gap-3 mb-2">
+              {(step.videos || []).map((video) => (
+                <div key={video.id} className="relative group">
+                  {video.thumbnail ? (
+                    <div className="relative h-16 w-24 rounded border border-[#323232] overflow-hidden">
+                      <img
+                        src={video.thumbnail}
+                        alt={video.name}
+                        className="h-full w-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                        <Play className="h-5 w-5 text-white" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="h-16 w-24 bg-background-elevated rounded border border-[#323232] flex items-center justify-center">
+                      <VideoIcon className="h-6 w-6 text-text-muted" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                    <a
+                      href={video.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-primary text-white rounded p-1 hover:bg-primary/80"
+                      title="Ouvrir la vidéo"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Play className="h-3 w-3" />
+                    </a>
+                    <button
+                      onClick={() => onRemoveVideo(video.id)}
+                      className="bg-red-500 text-white rounded p-1 hover:bg-red-600"
+                      title="Supprimer la vidéo"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {showVideoInput ? (
+              <div className="space-y-2">
+                <Input
+                  type="text"
+                  value={videoUrl}
+                  onChange={(e) => setVideoUrl(e.target.value)}
+                  placeholder="URL de la vidéo (YouTube, Vimeo, etc.)"
+                  className="text-xs"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleAddVideo();
+                    } else if (e.key === 'Escape') {
+                      setShowVideoInput(false);
+                      setVideoUrl('');
+                    }
+                  }}
+                />
+                <div className="flex gap-2">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleAddVideo}
+                    className="text-xs"
+                  >
+                    Ajouter
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      setShowVideoInput(false);
+                      setVideoUrl('');
+                    }}
+                    className="text-xs"
+                  >
+                    Annuler
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowVideoInput(true)}
+                className="w-full justify-start text-xs"
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Ajouter une vidéo
+              </Button>
+            )}
+          </div>
+
           {/* Outil */}
           <div>
             <label className="block text-xs font-medium text-gray-400 mb-2">
@@ -806,7 +997,7 @@ function SubStepItem({
               Outil requis
             </label>
             {step.toolId && step.toolName ? (
-              <div className="p-3 bg-background-elevated rounded border border-[#2a2a2a]">
+              <div className="p-3 bg-background-elevated rounded border border-[#2a2a2a]" style={{ borderLeft: `4px solid ${step.toolColor || '#10b981'}` }}>
                 <div className="flex items-start gap-3">
                   {/* Image de l'outil */}
                   {(() => {
@@ -968,8 +1159,8 @@ function SubStepItem({
         <ToolSelector
           availableTools={availableTools || []}
           availableConsumables={availableConsumables || []}
-          onSelect={(toolId, toolName, toolLocation, toolReference) => {
-            onUpdateTool(toolId, toolName, toolLocation, toolReference);
+          onSelect={(toolId, toolName, toolLocation, toolReference, type, color) => {
+            onUpdateTool(toolId, toolName, toolLocation, toolReference, color);
             setShowToolSelector(false);
           }}
           onClose={() => setShowToolSelector(false)}

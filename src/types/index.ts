@@ -87,6 +87,19 @@ export interface AnnotatedImage {
   description?: string;
 }
 
+export interface Video {
+  id: string;
+  name: string;
+  url: string;
+  description?: string;
+  thumbnail?: string;
+  duration?: number;
+  size: number;
+  mimeType: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface StorageZone {
   id: string;
   name: string;
@@ -168,6 +181,7 @@ export interface SubStep {
   title: string;
   description: string;
   images?: AnnotatedImage[];
+  videos?: Video[];
   estimatedTime?: number; // en minutes
 
   // Outil spécifique à cette sous-étape
@@ -175,6 +189,7 @@ export interface SubStep {
   toolName?: string; // Nom de l'outil (simplifié pour Firestore)
   toolLocation?: string; // Emplacement de l'outil
   toolReference?: string; // Référence de l'outil
+  toolColor?: string; // Couleur pour le tracé et l'affichage
   tool?: Tool; // Objet complet (uniquement en mémoire, pas sauvegardé)
 
   // Conseils et sécurité par sous-étape
