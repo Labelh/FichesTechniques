@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Plus, Image as ImageIcon, X, Download, AlertTriangle, Pencil, GitBranch, Clock, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Image as ImageIcon, X, Download, AlertTriangle, Pencil, Clock, CheckCircle } from 'lucide-react';
 import { useProcedure } from '@/hooks/useProcedures';
 import { createProcedure, updateProcedure, addPhase, deletePhase } from '@/services/procedureService';
 import { uploadImageToHost } from '@/services/imageHostingService';
@@ -120,16 +120,6 @@ export default function ProcedureEditor() {
     });
     if (defectImagesChanged) {
       changes.push("Modification des images de défauts");
-    }
-
-    // MINEUR: Changements dans les outils de défauts
-    const defectToolsChanged = defects.some((def, idx) => {
-      const existingDef = existingDefects[idx];
-      if (!existingDef) return false;
-      return def.toolId !== existingDef.toolId;
-    });
-    if (defectToolsChanged) {
-      changes.push("Modification des outils");
     }
 
     // Si aucun changement détecté, on crée quand même une version mineure
@@ -766,11 +756,15 @@ export default function ProcedureEditor() {
                         </div>
                         <div className="flex items-center gap-1 text-xs text-text-muted">
                           <Clock className="h-3 w-3" />
-                          {log.date && typeof log.date === 'object' && 'toDate' in log.date
-                            ? log.date.toDate().toLocaleDateString('fr-FR')
-                            : log.date instanceof Date
-                            ? log.date.toLocaleDateString('fr-FR')
-                            : new Date(log.date).toLocaleDateString('fr-FR')}
+                          {(() => {
+                            if (log.date && typeof log.date === 'object' && 'toDate' in log.date) {
+                              return ((log.date as any).toDate() as Date).toLocaleDateString('fr-FR');
+                            } else if (log.date instanceof Date) {
+                              return log.date.toLocaleDateString('fr-FR');
+                            } else {
+                              return new Date(log.date).toLocaleDateString('fr-FR');
+                            }
+                          })()}
                         </div>
                       </div>
                       <p className="text-sm text-text-primary">{log.description}</p>
