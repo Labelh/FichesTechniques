@@ -82,11 +82,6 @@ export default function ProcedureEditor() {
       isMajor = true;
     }
 
-    // MAJEUR: Ajout/suppression de phases
-    const existingPhasesCount = existingProcedure.phases?.length || 0;
-    const currentPhasesCount = existingProcedure.phases?.length || 0; // On ne peut pas compter ici car géré ailleurs
-    // On détecte via le nombre de phases dans la base au moment du save
-
     // MAJEUR: Suppression de défauts
     const existingDefectsCount = existingProcedure.defects?.length || 0;
     const currentDefectsCount = defects.length;
