@@ -162,7 +162,6 @@ export async function generateHTML(
             border-radius: 20px;
             font-size: 1rem;
             font-weight: 600;
-            box-shadow: 0 2px 8px rgba(249, 55, 5, 0.3);
         }
 
         .header-title {
@@ -473,6 +472,12 @@ export async function generateHTML(
             color: #2c3e50;
             line-height: 1.8;
             font-size: 1rem;
+            display: flex;
+            gap: 20px;
+        }
+
+        .step-description-left {
+            flex: 1;
         }
 
         .step-description-title {
@@ -483,13 +488,12 @@ export async function generateHTML(
         }
 
         .step-description-content {
-            margin-bottom: 16px;
         }
 
         .step-tool-info {
-            padding-top: 16px;
-            border-top: 1px solid rgba(0, 0, 0, 0.1);
-            margin-top: 8px;
+            border-left: 1px solid #e0e0e0;
+            padding-left: 20px;
+            min-width: 200px;
         }
 
         .step-tool-info-label {
@@ -1032,7 +1036,7 @@ export async function generateHTML(
     <div class="container">
         <!-- En-tête -->
         <div class="header">
-            ${procedure.versionString ? `<div class="version-badge">v${escapeHtml(procedure.versionString)}</div>` : ''}
+            ${procedure.changelog && procedure.changelog.length > 0 ? `<div class="version-badge">v${escapeHtml(procedure.changelog[0].version)}</div>` : procedure.versionString ? `<div class="version-badge">v${escapeHtml(procedure.versionString)}</div>` : ''}
             <div class="header-title">Fiche Technique</div>
             <div class="header-designation">${escapeHtml(procedure.designation || procedure.title)}</div>
             ${procedure.reference ? `<div class="header-reference">${escapeHtml(procedure.reference)}</div>` : ''}
@@ -1253,14 +1257,28 @@ function generateVersionHistory(procedure: Procedure): string {
                     </tr>
                 </thead>
                 <tbody>
-                    ${procedure.changelog.map(log => `
+                    ${procedure.changelog.map(log => {
+                        let dateStr = '';
+                        try {
+                            if (log.date && typeof log.date === 'object' && 'toDate' in log.date) {
+                                dateStr = (log.date as any).toDate().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+                            } else if (log.date instanceof Date) {
+                                dateStr = log.date.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+                            } else {
+                                dateStr = new Date(log.date).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+                            }
+                        } catch (e) {
+                            dateStr = 'Date invalide';
+                        }
+                        return `
                         <tr>
                             <td><span class="version-badge">v${escapeHtml(log.version)}</span></td>
                             <td><span class="version-type-badge ${log.type === 'major' ? 'version-type-major' : 'version-type-minor'}">${log.type === 'major' ? 'Majeure' : 'Mineure'}</span></td>
-                            <td class="version-date-cell">${new Date(log.date).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}</td>
+                            <td class="version-date-cell">${dateStr}</td>
                             <td>${escapeHtml(log.description)}</td>
                         </tr>
-                    `).join('')}
+                        `;
+                    }).join('')}
                 </tbody>
             </table>
         </div>
@@ -1433,10 +1451,12 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                 <div class="step-details-grid">
                     ${step.description || (step.toolId && step.toolName) ? `
                     <div class="step-description-box" style="background: ${step.toolColor ? `${step.toolColor}15` : '#f8f9fa'};">
-                        ${step.description ? `
-                        <div class="step-description-title">Description</div>
-                        <div class="step-description-content">${step.description}</div>
-                        ` : ''}
+                        <div class="step-description-left">
+                            ${step.description ? `
+                            <div class="step-description-title">Description</div>
+                            <div class="step-description-content">${step.description}</div>
+                            ` : ''}
+                        </div>
                         ${step.toolId && step.toolName ? `
                         <div class="step-tool-info">
                             <div class="step-tool-info-label">Outil</div>

@@ -28,6 +28,9 @@ export default function ProcedureEditor() {
   const [imageToAnnotate, setImageToAnnotate] = useState<{ defectId: string, image: AnnotatedImage } | null>(null);
   const [versionString, setVersionString] = useState('1.0');
   const [changelog, setChangelog] = useState<VersionLog[]>([]);
+  const [initialSnapshot, setInitialSnapshot] = useState<{ phaseCount: number, stepCounts: number[] } | null>(null);
+  const [quickSaveSuccess, setQuickSaveSuccess] = useState(false);
+  const [versionSaveSuccess, setVersionSaveSuccess] = useState(false);
 
   useEffect(() => {
     if (existingProcedure) {
@@ -37,12 +40,20 @@ export default function ProcedureEditor() {
       setVersionString(existingProcedure.versionString || '1.0');
       setChangelog(existingProcedure.changelog || []);
 
+      // Sauvegarder le snapshot initial pour la détection des changements
+      if (!initialSnapshot && existingProcedure.phases) {
+        setInitialSnapshot({
+          phaseCount: existingProcedure.phases.length,
+          stepCounts: existingProcedure.phases.map(p => p.steps?.length || 0)
+        });
+      }
+
       if (existingProcedure.coverImage) {
         setCoverImage(existingProcedure.coverImage);
         setCoverImagePreview(existingProcedure.coverImage);
       }
     }
-  }, [existingProcedure]);
+  }, [existingProcedure, initialSnapshot]);
 
   // Raccourci Ctrl+S pour sauvegarde rapide
   useEffect(() => {
@@ -67,32 +78,57 @@ export default function ProcedureEditor() {
   };
 
   const detectChangeType = (): { type: 'major' | 'minor', description: string } | null => {
-    if (!existingProcedure) return null;
+    if (!existingProcedure || !initialSnapshot) return null;
 
     const changes: string[] = [];
     let isMajor = false;
 
-    // MAJEUR: Changements de référence ou désignation
+    // MAJEUR: Changements de phases
+    const currentPhaseCount = existingProcedure.phases?.length || 0;
+    if (currentPhaseCount !== initialSnapshot.phaseCount) {
+      const diff = currentPhaseCount - initialSnapshot.phaseCount;
+      if (diff > 0) {
+        changes.push(`Ajout de ${diff} phase(s)`);
+      } else {
+        changes.push(`Suppression de ${Math.abs(diff)} phase(s)`);
+      }
+      isMajor = true;
+    }
+
+    // MAJEUR: Changements de sous-étapes
+    const currentStepCounts = existingProcedure.phases?.map(p => p.steps?.length || 0) || [];
+    for (let i = 0; i < Math.max(currentStepCounts.length, initialSnapshot.stepCounts.length); i++) {
+      const currentCount = currentStepCounts[i] || 0;
+      const initialCount = initialSnapshot.stepCounts[i] || 0;
+      if (currentCount !== initialCount) {
+        const diff = currentCount - initialCount;
+        if (diff > 0) {
+          changes.push(`Ajout de ${diff} sous-étape(s) dans phase ${i + 1}`);
+        } else {
+          changes.push(`Suppression de ${Math.abs(diff)} sous-étape(s) dans phase ${i + 1}`);
+        }
+        isMajor = true;
+      }
+    }
+
+    // MINEUR: Changements de référence ou désignation
     if (reference.trim() !== (existingProcedure.reference || '').trim()) {
       changes.push('Modification de la référence');
-      isMajor = true;
     }
     if (designation.trim() !== (existingProcedure.designation || existingProcedure.title || '').trim()) {
       changes.push('Modification de la désignation');
-      isMajor = true;
     }
 
-    // MAJEUR: Suppression de défauts
+    // MINEUR: Changements de défauts
     const existingDefectsCount = existingProcedure.defects?.length || 0;
     const currentDefectsCount = defects.length;
-    if (currentDefectsCount < existingDefectsCount) {
-      changes.push(`Suppression de ${existingDefectsCount - currentDefectsCount} défaut(s)`);
-      isMajor = true;
-    }
-
-    // MINEUR: Ajout de défauts
-    if (currentDefectsCount > existingDefectsCount) {
-      changes.push(`Ajout de ${currentDefectsCount - existingDefectsCount} défaut(s)`);
+    if (currentDefectsCount !== existingDefectsCount) {
+      const diff = currentDefectsCount - existingDefectsCount;
+      if (diff > 0) {
+        changes.push(`Ajout de ${diff} défaut(s)`);
+      } else {
+        changes.push(`Suppression de ${Math.abs(diff)} défaut(s)`);
+      }
     }
 
     // MINEUR: Changement d'image de couverture
@@ -180,6 +216,10 @@ export default function ProcedureEditor() {
         });
         navigate(`/procedures/${newId}/edit`);
       }
+
+      // Feedback visuel vert
+      setQuickSaveSuccess(true);
+      setTimeout(() => setQuickSaveSuccess(false), 3000);
     } catch (error) {
       console.error('Error saving:', error);
       toast.error('Erreur lors de la sauvegarde');
@@ -239,6 +279,18 @@ export default function ProcedureEditor() {
       // Mettre à jour l'état local
       setVersionString(updatedVersionString);
       setChangelog(updatedChangelog);
+
+      // Réinitialiser le snapshot pour la prochaine détection
+      if (existingProcedure.phases) {
+        setInitialSnapshot({
+          phaseCount: existingProcedure.phases.length,
+          stepCounts: existingProcedure.phases.map(p => p.steps?.length || 0)
+        });
+      }
+
+      // Feedback visuel vert
+      setVersionSaveSuccess(true);
+      setTimeout(() => setVersionSaveSuccess(false), 3000);
 
       toast.success(`✅ Version ${nextVersion} créée (${versionType === 'major' ? 'Majeure' : 'Mineure'}) !\n${description}`, {
         duration: 5000,
@@ -467,11 +519,19 @@ export default function ProcedureEditor() {
                 Exporter HTML
               </Button>
             )}
-            <Button onClick={handleQuickSave} variant="secondary" title="Ctrl+S">
+            <Button
+              onClick={handleQuickSave}
+              variant="secondary"
+              title="Ctrl+S"
+              className={quickSaveSuccess ? 'bg-green-600 hover:bg-green-700 border-green-600' : ''}
+            >
               <CheckCircle className="h-4 w-4 mr-2" />
               Sauvegarde rapide
             </Button>
-            <Button onClick={handleSave}>
+            <Button
+              onClick={handleSave}
+              className={versionSaveSuccess ? 'bg-green-600 hover:bg-green-700' : ''}
+            >
               <Save className="h-4 w-4 mr-2" />
               Sauvegarder + Version
             </Button>
