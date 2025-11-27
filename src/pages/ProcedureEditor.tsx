@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Plus, Image as ImageIcon, X, Download, AlertTriangle, Pencil, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Image as ImageIcon, X, Download, AlertTriangle, Pencil, CheckCircle, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import { useProcedure } from '@/hooks/useProcedures';
 import { createProcedure, updateProcedure, addPhase, deletePhase } from '@/services/procedureService';
 import { uploadImageToHost } from '@/services/imageHostingService';
@@ -31,6 +31,8 @@ export default function ProcedureEditor() {
   const [initialSnapshot, setInitialSnapshot] = useState<{ phaseCount: number, stepCounts: number[] } | null>(null);
   const [quickSaveSuccess, setQuickSaveSuccess] = useState(false);
   const [versionSaveSuccess, setVersionSaveSuccess] = useState(false);
+  const [showAllVersions, setShowAllVersions] = useState(false);
+  const [showDefects, setShowDefects] = useState(true);
 
   useEffect(() => {
     if (existingProcedure) {
@@ -158,9 +160,9 @@ export default function ProcedureEditor() {
       changes.push("Modification des images de défauts");
     }
 
-    // Si aucun changement détecté, on crée quand même une version mineure
+    // Si aucun changement détecté, retourner null
     if (changes.length === 0) {
-      changes.push("Modifications diverses");
+      return null;
     }
 
     return {
@@ -243,7 +245,10 @@ export default function ProcedureEditor() {
       const changeDetection = detectChangeType();
 
       if (!changeDetection) {
-        toast.error('Erreur lors de la détection des changements');
+        toast.info('Aucune modification détectée depuis la dernière version', {
+          duration: 3000,
+          position: 'top-right',
+        });
         return;
       }
 
@@ -315,6 +320,23 @@ export default function ProcedureEditor() {
 
   const handleRemoveDefect = (id: string) => {
     setDefects(defects.filter(d => d.id !== id));
+  };
+
+  const handleDeleteVersion = async (versionId: string) => {
+    if (!id || !confirm('Supprimer cette version de l\'historique ?')) return;
+
+    try {
+      const updatedChangelog = changelog.filter(log => log.id !== versionId);
+
+      await updateProcedure(id, {
+        changelog: updatedChangelog,
+      });
+
+      setChangelog(updatedChangelog);
+      toast.success('Version supprimée de l\'historique');
+    } catch (error) {
+      toast.error('Erreur lors de la suppression');
+    }
   };
 
   const handleAddDefectImage = async (defectId: string, files: File[]) => {
@@ -636,110 +658,118 @@ export default function ProcedureEditor() {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-xl font-bold flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-orange-500" />
-                    Défauthèque
-                  </h2>
-                </div>
+                <button
+                  onClick={() => setShowDefects(!showDefects)}
+                  className="flex items-center gap-2 text-xl font-bold hover:text-primary transition-colors"
+                >
+                  {showDefects ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                  Défauthèque
+                  {defects.length > 0 && (
+                    <span className="text-sm font-normal text-text-muted">({defects.length})</span>
+                  )}
+                </button>
                 <Button onClick={handleAddDefect} variant="secondary">
                   <Plus className="h-4 w-4 mr-2" />
                   Ajouter un défaut
                 </Button>
               </div>
 
-              {defects.length === 0 ? (
-                <p className="text-gray-400 text-center py-8">
-                  Aucun défaut répertorié. Cliquez sur "Ajouter un défaut" pour commencer.
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {defects.map((defect) => (
-                    <div key={defect.id} className="border border-[#323232] rounded-lg bg-background-elevated p-4">
-                      <div className="flex items-start gap-3 mb-3">
-                        <AlertTriangle className="h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
-                        <div className="flex-1 space-y-3">
-                          <textarea
-                            value={defect.description}
-                            onChange={(e) => handleUpdateDefect(defect.id, e.target.value)}
-                            placeholder="Description du défaut..."
-                            rows={3}
-                            className="w-full rounded-lg border border-[#323232] bg-transparent px-3 py-2 text-sm text-white focus:ring-2 focus:ring-primary focus:border-transparent"
-                          />
+              {showDefects && (
+                <>
+                  {defects.length === 0 ? (
+                    <p className="text-gray-400 text-center py-8">
+                      Aucun défaut répertorié. Cliquez sur "Ajouter un défaut" pour commencer.
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {defects.map((defect) => (
+                        <div key={defect.id} className="border border-[#323232] rounded-lg bg-background-elevated p-4">
+                          <div className="flex items-start gap-3 mb-3">
+                            <AlertTriangle className="h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                            <div className="flex-1 space-y-3">
+                              <textarea
+                                value={defect.description}
+                                onChange={(e) => handleUpdateDefect(defect.id, e.target.value)}
+                                placeholder="Description du défaut..."
+                                rows={3}
+                                className="w-full rounded-lg border border-[#323232] bg-transparent px-3 py-2 text-sm text-white focus:ring-2 focus:ring-primary focus:border-transparent"
+                              />
 
-                          {/* Images */}
-                          <div>
-                            <label className="block text-xs font-medium text-gray-400 mb-2">
-                              Images ({defect.images?.length || 0})
-                            </label>
-                            <div className="flex flex-wrap gap-2 mb-2">
-                              {(defect.images || []).map((img) => (
-                                <div key={img.imageId} className="relative group">
-                                  <img
-                                    src={img.image.url || URL.createObjectURL(img.image.blob)}
-                                    alt={img.description || 'Image du défaut'}
-                                    className="h-16 w-16 object-cover rounded border border-[#323232]"
-                                  />
-                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
-                                    <button
-                                      onClick={() => setImageToAnnotate({ defectId: defect.id, image: img })}
-                                      className="bg-primary text-white rounded p-1 hover:bg-primary/80"
-                                      title="Annoter l'image"
-                                    >
-                                      <Pencil className="h-3 w-3" />
-                                    </button>
-                                    <button
-                                      onClick={() => handleRemoveDefectImage(defect.id, img.imageId)}
-                                      className="bg-red-500 text-white rounded p-1 hover:bg-red-600"
-                                      title="Supprimer l'image"
-                                    >
-                                      <X className="h-3 w-3" />
-                                    </button>
-                                  </div>
-                                  {img.annotations && img.annotations.length > 0 && (
-                                    <div className="absolute bottom-0 left-0 right-0 bg-primary/80 text-white text-xs px-1 text-center">
-                                      {img.annotations.length} annotation{img.annotations.length > 1 ? 's' : ''}
+                              {/* Images */}
+                              <div>
+                                <label className="block text-xs font-medium text-gray-400 mb-2">
+                                  Images ({defect.images?.length || 0})
+                                </label>
+                                <div className="flex flex-wrap gap-2 mb-2">
+                                  {(defect.images || []).map((img) => (
+                                    <div key={img.imageId} className="relative group">
+                                      <img
+                                        src={img.image.url || URL.createObjectURL(img.image.blob)}
+                                        alt={img.description || 'Image du défaut'}
+                                        className="h-16 w-16 object-cover rounded border border-[#323232]"
+                                      />
+                                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                                        <button
+                                          onClick={() => setImageToAnnotate({ defectId: defect.id, image: img })}
+                                          className="bg-primary text-white rounded p-1 hover:bg-primary/80"
+                                          title="Annoter l'image"
+                                        >
+                                          <Pencil className="h-3 w-3" />
+                                        </button>
+                                        <button
+                                          onClick={() => handleRemoveDefectImage(defect.id, img.imageId)}
+                                          className="bg-red-500 text-white rounded p-1 hover:bg-red-600"
+                                          title="Supprimer l'image"
+                                        >
+                                          <X className="h-3 w-3" />
+                                        </button>
+                                      </div>
+                                      {img.annotations && img.annotations.length > 0 && (
+                                        <div className="absolute bottom-0 left-0 right-0 bg-primary/80 text-white text-xs px-1 text-center">
+                                          {img.annotations.length} annotation{img.annotations.length > 1 ? 's' : ''}
+                                        </div>
+                                      )}
                                     </div>
-                                  )}
+                                  ))}
                                 </div>
-                              ))}
+                                <div
+                                  onClick={() => {
+                                    const input = document.createElement('input');
+                                    input.type = 'file';
+                                    input.accept = 'image/*';
+                                    input.multiple = true;
+                                    input.onchange = async (e) => {
+                                      const files = Array.from((e.target as HTMLInputElement).files || []);
+                                      await handleAddDefectImage(defect.id, files);
+                                    };
+                                    input.click();
+                                  }}
+                                  onDragOver={(e) => e.preventDefault()}
+                                  onDrop={async (e) => {
+                                    e.preventDefault();
+                                    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+                                    await handleAddDefectImage(defect.id, files);
+                                  }}
+                                  className="border-2 border-dashed border-[#323232] rounded-lg p-3 text-center cursor-pointer bg-background-elevated"
+                                >
+                                  <p className="text-xs text-gray-500">Cliquez ou glissez-déposez des images</p>
+                                </div>
+                              </div>
                             </div>
-                            <div
-                              onClick={() => {
-                                const input = document.createElement('input');
-                                input.type = 'file';
-                                input.accept = 'image/*';
-                                input.multiple = true;
-                                input.onchange = async (e) => {
-                                  const files = Array.from((e.target as HTMLInputElement).files || []);
-                                  await handleAddDefectImage(defect.id, files);
-                                };
-                                input.click();
-                              }}
-                              onDragOver={(e) => e.preventDefault()}
-                              onDrop={async (e) => {
-                                e.preventDefault();
-                                const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
-                                await handleAddDefectImage(defect.id, files);
-                              }}
-                              className="border-2 border-dashed border-[#323232] rounded-lg p-3 text-center cursor-pointer bg-background-elevated"
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleRemoveDefect(defect.id)}
+                              className="flex-shrink-0"
                             >
-                              <p className="text-xs text-gray-500">Cliquez ou glissez-déposez des images</p>
-                            </div>
+                              <X className="h-4 w-4 text-red-500" />
+                            </Button>
                           </div>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveDefect(defect.id)}
-                          className="flex-shrink-0"
-                        >
-                          <X className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
@@ -798,50 +828,99 @@ export default function ProcedureEditor() {
                   Aucune modification enregistrée. La procédure est en version initiale {versionString}.
                 </p>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="table">
-                    <thead>
-                      <tr>
-                        <th style={{ width: '15%' }}>Version</th>
-                        <th style={{ width: '12%' }}>Type</th>
-                        <th style={{ width: '18%' }}>Date</th>
-                        <th>Modifications</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {changelog.map((log) => (
-                        <tr key={log.id}>
-                          <td>
-                            <span className="px-2 py-1 rounded text-xs font-semibold bg-primary/20 text-primary border border-primary/30">
-                              v{log.version}
-                            </span>
-                          </td>
-                          <td>
-                            <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                              log.type === 'major'
-                                ? 'bg-primary/20 text-primary border border-primary/30'
-                                : 'bg-green-500/20 text-green-300 border border-green-500/30'
-                            }`}>
-                              {log.type === 'major' ? 'Majeure' : 'Mineure'}
-                            </span>
-                          </td>
-                          <td className="text-xs text-text-muted">
-                            {(() => {
-                              if (log.date && typeof log.date === 'object' && 'toDate' in log.date) {
-                                return ((log.date as any).toDate() as Date).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
-                              } else if (log.date instanceof Date) {
-                                return log.date.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
-                              } else {
-                                return new Date(log.date).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
-                              }
-                            })()}
-                          </td>
-                          <td className="text-sm text-text-primary">{log.description}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <>
+                  {/* Dernière version */}
+                  <div className="mb-4 border border-[#323232] rounded-lg bg-background-elevated p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-1 rounded text-xs font-semibold bg-primary/20 text-primary border border-primary/30">
+                          v{changelog[0].version}
+                        </span>
+                        <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                          changelog[0].type === 'major'
+                            ? 'bg-primary/20 text-primary border border-primary/30'
+                            : 'bg-green-500/20 text-green-300 border border-green-500/30'
+                        }`}>
+                          {changelog[0].type === 'major' ? 'Majeure' : 'Mineure'}
+                        </span>
+                        <span className="text-xs text-text-muted">
+                          {(() => {
+                            if (changelog[0].date && typeof changelog[0].date === 'object' && 'toDate' in changelog[0].date) {
+                              return ((changelog[0].date as any).toDate() as Date).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+                            } else if (changelog[0].date instanceof Date) {
+                              return changelog[0].date.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+                            } else {
+                              return new Date(changelog[0].date).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+                            }
+                          })()}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteVersion(changelog[0].id)}
+                        className="text-red-500 hover:text-red-400 p-1"
+                        title="Supprimer cette version"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <p className="text-sm text-text-primary">{changelog[0].description}</p>
+                  </div>
+
+                  {/* Bouton pour afficher toutes les versions */}
+                  {changelog.length > 1 && (
+                    <>
+                      <button
+                        onClick={() => setShowAllVersions(!showAllVersions)}
+                        className="flex items-center gap-2 text-sm text-text-muted hover:text-text-primary mb-4"
+                      >
+                        {showAllVersions ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        {showAllVersions ? 'Masquer' : 'Afficher'} les versions précédentes ({changelog.length - 1})
+                      </button>
+
+                      {showAllVersions && (
+                        <div className="space-y-3">
+                          {changelog.slice(1).map((log) => (
+                            <div key={log.id} className="border border-[#323232] rounded-lg bg-background-elevated p-4">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="px-2 py-1 rounded text-xs font-semibold bg-primary/20 text-primary border border-primary/30">
+                                    v{log.version}
+                                  </span>
+                                  <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                    log.type === 'major'
+                                      ? 'bg-primary/20 text-primary border border-primary/30'
+                                      : 'bg-green-500/20 text-green-300 border border-green-500/30'
+                                  }`}>
+                                    {log.type === 'major' ? 'Majeure' : 'Mineure'}
+                                  </span>
+                                  <span className="text-xs text-text-muted">
+                                    {(() => {
+                                      if (log.date && typeof log.date === 'object' && 'toDate' in log.date) {
+                                        return ((log.date as any).toDate() as Date).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+                                      } else if (log.date instanceof Date) {
+                                        return log.date.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+                                      } else {
+                                        return new Date(log.date).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+                                      }
+                                    })()}
+                                  </span>
+                                </div>
+                                <button
+                                  onClick={() => handleDeleteVersion(log.id)}
+                                  className="text-red-500 hover:text-red-400 p-1"
+                                  title="Supprimer cette version"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                              <p className="text-sm text-text-primary">{log.description}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
