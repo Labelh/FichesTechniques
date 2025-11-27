@@ -73,11 +73,11 @@ export default function ProcedureEditor() {
     let isMajor = false;
 
     // MAJEUR: Changements de référence ou désignation
-    if (reference !== (existingProcedure.reference || '')) {
+    if (reference.trim() !== (existingProcedure.reference || '').trim()) {
       changes.push('Modification de la référence');
       isMajor = true;
     }
-    if (designation !== (existingProcedure.designation || existingProcedure.title || '')) {
+    if (designation.trim() !== (existingProcedure.designation || existingProcedure.title || '').trim()) {
       changes.push('Modification de la désignation');
       isMajor = true;
     }
@@ -101,15 +101,41 @@ export default function ProcedureEditor() {
     }
 
     // MINEUR: Changements dans les descriptions de défauts
+    const existingDefects = existingProcedure.defects || [];
     const defectDescChanged = defects.some((def, idx) => {
-      const existingDef = existingProcedure.defects?.[idx];
+      const existingDef = existingDefects[idx];
       return existingDef && def.description !== existingDef.description;
     });
     if (defectDescChanged) {
-      changes.push("Modification de descriptions");
+      changes.push("Modification de descriptions de défauts");
     }
 
-    if (changes.length === 0) return null;
+    // MINEUR: Changements dans les images de défauts
+    const defectImagesChanged = defects.some((def, idx) => {
+      const existingDef = existingDefects[idx];
+      if (!existingDef) return false;
+      const existingImgCount = existingDef.images?.length || 0;
+      const currentImgCount = def.images?.length || 0;
+      return existingImgCount !== currentImgCount;
+    });
+    if (defectImagesChanged) {
+      changes.push("Modification des images de défauts");
+    }
+
+    // MINEUR: Changements dans les outils de défauts
+    const defectToolsChanged = defects.some((def, idx) => {
+      const existingDef = existingDefects[idx];
+      if (!existingDef) return false;
+      return def.toolId !== existingDef.toolId;
+    });
+    if (defectToolsChanged) {
+      changes.push("Modification des outils");
+    }
+
+    // Si aucun changement détecté, on crée quand même une version mineure
+    if (changes.length === 0) {
+      changes.push("Modifications diverses");
+    }
 
     return {
       type: isMajor ? 'major' : 'minor',
@@ -187,7 +213,7 @@ export default function ProcedureEditor() {
       const changeDetection = detectChangeType();
 
       if (!changeDetection) {
-        toast.info('Aucun changement détecté');
+        toast.error('Erreur lors de la détection des changements');
         return;
       }
 
@@ -707,15 +733,11 @@ export default function ProcedureEditor() {
         {id && (
           <Card>
             <CardContent className="pt-6">
-              <div className="flex items-center gap-3 mb-4">
-                <h2 className="text-xl font-bold flex items-center gap-2">
-                  <GitBranch className="h-5 w-5 text-primary" />
+              <div className="mb-4">
+                <h2 className="text-xl font-bold mb-2">
                   Historique des versions
                 </h2>
-                <span className="px-3 py-1 bg-primary/20 border border-primary/30 rounded-lg text-sm font-semibold text-primary">
-                  v{versionString}
-                </span>
-                <span className="text-xs text-text-muted ml-auto">
+                <span className="text-xs text-text-muted">
                   Versions créées automatiquement à chaque sauvegarde
                 </span>
               </div>
@@ -731,20 +753,24 @@ export default function ProcedureEditor() {
                     <div key={log.id} className="border border-[#323232] rounded-lg bg-background-elevated p-4">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <span className="px-2 py-1 rounded text-xs font-semibold bg-status-info/20 text-blue-400 border border-blue-400/30">
+                          <span className="px-2 py-1 rounded text-xs font-semibold bg-primary/20 text-primary border border-primary/30">
                             v{log.version}
                           </span>
                           <span className={`px-2 py-1 rounded text-xs ${
                             log.type === 'major'
-                              ? 'bg-orange-500/20 text-orange-300'
-                              : 'bg-green-500/20 text-green-300'
+                              ? 'bg-primary/20 text-primary border border-primary/30'
+                              : 'bg-green-500/20 text-green-300 border border-green-500/30'
                           }`}>
                             {log.type === 'major' ? 'Majeure' : 'Mineure'}
                           </span>
                         </div>
                         <div className="flex items-center gap-1 text-xs text-text-muted">
                           <Clock className="h-3 w-3" />
-                          {new Date(log.date).toLocaleDateString('fr-FR')}
+                          {log.date && typeof log.date === 'object' && 'toDate' in log.date
+                            ? log.date.toDate().toLocaleDateString('fr-FR')
+                            : log.date instanceof Date
+                            ? log.date.toLocaleDateString('fr-FR')
+                            : new Date(log.date).toLocaleDateString('fr-FR')}
                         </div>
                       </div>
                       <p className="text-sm text-text-primary">{log.description}</p>

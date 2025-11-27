@@ -149,7 +149,6 @@ export async function generateHTML(
             background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
             color: #2c3e50;
             padding: 32px 40px;
-            border-bottom: 4px solid rgb(249, 55, 5);
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
             position: relative;
         }
@@ -259,6 +258,7 @@ export async function generateHTML(
         .content {
             padding: 48px;
             max-width: 1400px;
+            margin: 0 auto;
         }
 
         /* Ressources globales */
@@ -468,13 +468,35 @@ export async function generateHTML(
         }
 
         .step-description-box {
-            background: #f8f9fa;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
             padding: 16px 20px;
             color: #2c3e50;
             line-height: 1.8;
             font-size: 1rem;
+        }
+
+        .step-description-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            color: #1a1a1a;
+        }
+
+        .step-description-content {
+            margin-bottom: 16px;
+        }
+
+        .step-tool-info {
+            padding-top: 16px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            margin-top: 8px;
+        }
+
+        .step-tool-info-label {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 8px;
         }
 
         .step-details-grid {
@@ -1106,6 +1128,33 @@ export async function generateHTML(
                 });
             }
         });
+
+        // Égaliser les hauteurs des cadres conseil et consigne
+        function equalizeStepBottomRowHeights() {
+            document.querySelectorAll('.step-bottom-row').forEach(row => {
+                const tips = row.querySelector('.tips');
+                const safety = row.querySelector('.safety-notes');
+
+                if (tips && safety) {
+                    // Reset heights
+                    tips.style.minHeight = '';
+                    safety.style.minHeight = '';
+
+                    // Get natural heights
+                    const tipsHeight = tips.offsetHeight;
+                    const safetyHeight = safety.offsetHeight;
+
+                    // Set to max height
+                    const maxHeight = Math.max(tipsHeight, safetyHeight);
+                    tips.style.minHeight = maxHeight + 'px';
+                    safety.style.minHeight = maxHeight + 'px';
+                }
+            });
+        }
+
+        // Appeler au chargement et au redimensionnement
+        window.addEventListener('load', equalizeStepBottomRowHeights);
+        window.addEventListener('resize', equalizeStepBottomRowHeights);
     </script>
 </body>
 </html>`;
@@ -1321,18 +1370,20 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                 </div>
 
                 <div class="step-details-grid">
-                    ${step.description ? `
-                    <div class="step-description-box">
-                        ${step.description}
-                    </div>
-                    ` : ''}
-
-                    ${step.toolId && step.toolName ? `
-                    <div class="step-tool" style="border-left: 4px solid ${step.toolColor || '#10b981'}">
-                        <div class="step-tool-label" style="color: ${step.toolColor || '#059669'}">🔧 Outil</div>
-                        <div>${escapeHtml(step.toolName)}</div>
-                        ${step.toolReference ? `<div class="step-tool-ref">${escapeHtml(step.toolReference)}</div>` : ''}
-                        ${step.toolLocation ? `<div class="step-tool-location">${escapeHtml(step.toolLocation)}</div>` : ''}
+                    ${step.description || (step.toolId && step.toolName) ? `
+                    <div class="step-description-box" style="background: ${step.toolColor ? `${step.toolColor}15` : '#f8f9fa'};">
+                        ${step.description ? `
+                        <div class="step-description-title">Description</div>
+                        <div class="step-description-content">${step.description}</div>
+                        ` : ''}
+                        ${step.toolId && step.toolName ? `
+                        <div class="step-tool-info">
+                            <div class="step-tool-info-label" style="color: ${step.toolColor || '#059669'}">🔧 Outil</div>
+                            <div>${escapeHtml(step.toolName)}</div>
+                            ${step.toolReference ? `<div class="step-tool-ref">${escapeHtml(step.toolReference)}</div>` : ''}
+                            ${step.toolLocation ? `<div class="step-tool-location">${escapeHtml(step.toolLocation)}</div>` : ''}
+                        </div>
+                        ` : ''}
                     </div>
                     ` : ''}
 
