@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Plus, Image as ImageIcon, X, Download, AlertTriangle, Pencil, Clock, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Image as ImageIcon, X, Download, AlertTriangle, Pencil, CheckCircle } from 'lucide-react';
 import { useProcedure } from '@/hooks/useProcedures';
 import { createProcedure, updateProcedure, addPhase, deletePhase } from '@/services/procedureService';
 import { uploadImageToHost } from '@/services/imageHostingService';
@@ -732,44 +732,55 @@ export default function ProcedureEditor() {
                 </span>
               </div>
 
-              {/* Changelog */}
+              {/* Changelog Table */}
               {changelog.length === 0 ? (
                 <p className="text-gray-400 text-center py-8">
                   Aucune modification enregistrée. La procédure est en version initiale {versionString}.
                 </p>
               ) : (
-                <div className="space-y-3">
-                  {changelog.map((log) => (
-                    <div key={log.id} className="border border-[#323232] rounded-lg bg-background-elevated p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="px-2 py-1 rounded text-xs font-semibold bg-primary/20 text-primary border border-primary/30">
-                            v{log.version}
-                          </span>
-                          <span className={`px-2 py-1 rounded text-xs ${
-                            log.type === 'major'
-                              ? 'bg-primary/20 text-primary border border-primary/30'
-                              : 'bg-green-500/20 text-green-300 border border-green-500/30'
-                          }`}>
-                            {log.type === 'major' ? 'Majeure' : 'Mineure'}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1 text-xs text-text-muted">
-                          <Clock className="h-3 w-3" />
-                          {(() => {
-                            if (log.date && typeof log.date === 'object' && 'toDate' in log.date) {
-                              return ((log.date as any).toDate() as Date).toLocaleDateString('fr-FR');
-                            } else if (log.date instanceof Date) {
-                              return log.date.toLocaleDateString('fr-FR');
-                            } else {
-                              return new Date(log.date).toLocaleDateString('fr-FR');
-                            }
-                          })()}
-                        </div>
-                      </div>
-                      <p className="text-sm text-text-primary">{log.description}</p>
-                    </div>
-                  ))}
+                <div className="overflow-x-auto">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: '15%' }}>Version</th>
+                        <th style={{ width: '12%' }}>Type</th>
+                        <th style={{ width: '18%' }}>Date</th>
+                        <th>Modifications</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {changelog.map((log) => (
+                        <tr key={log.id}>
+                          <td>
+                            <span className="px-2 py-1 rounded text-xs font-semibold bg-primary/20 text-primary border border-primary/30">
+                              v{log.version}
+                            </span>
+                          </td>
+                          <td>
+                            <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                              log.type === 'major'
+                                ? 'bg-primary/20 text-primary border border-primary/30'
+                                : 'bg-green-500/20 text-green-300 border border-green-500/30'
+                            }`}>
+                              {log.type === 'major' ? 'Majeure' : 'Mineure'}
+                            </span>
+                          </td>
+                          <td className="text-xs text-text-muted">
+                            {(() => {
+                              if (log.date && typeof log.date === 'object' && 'toDate' in log.date) {
+                                return ((log.date as any).toDate() as Date).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+                              } else if (log.date instanceof Date) {
+                                return log.date.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+                              } else {
+                                return new Date(log.date).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+                              }
+                            })()}
+                          </td>
+                          <td className="text-sm text-text-primary">{log.description}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </CardContent>

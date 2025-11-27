@@ -149,7 +149,6 @@ export async function generateHTML(
             background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
             color: #2c3e50;
             padding: 32px 40px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
             position: relative;
         }
 
@@ -468,7 +467,7 @@ export async function generateHTML(
         }
 
         .step-description-box {
-            border: 2px solid #e0e0e0;
+            border: 1px solid #e0e0e0;
             border-radius: 8px;
             padding: 16px 20px;
             color: #2c3e50;
@@ -497,6 +496,18 @@ export async function generateHTML(
             font-weight: 600;
             font-size: 1rem;
             margin-bottom: 8px;
+            color: #1a1a1a;
+        }
+
+        .step-tool-location-badge {
+            display: inline-block;
+            background: #e5e7eb;
+            color: #4b5563;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-top: 6px;
         }
 
         .step-details-grid {
@@ -630,7 +641,7 @@ export async function generateHTML(
         .tips {
             background: rgba(16, 185, 129, 0.1);
             border-left: 4px solid #10b981;
-            padding: 18px 20px;
+            padding: 12px 16px;
             border-radius: 8px;
             box-shadow: 0 2px 6px rgba(16, 185, 129, 0.1);
         }
@@ -638,50 +649,50 @@ export async function generateHTML(
         .tips-title {
             font-weight: 700;
             color: #059669;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 1.05rem;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
         }
 
         .tip-item {
-            padding: 6px 0;
+            padding: 4px 0;
             color: #555;
-            line-height: 1.6;
+            line-height: 1.5;
+            font-size: 0.9rem;
         }
 
         /* Consignes de sécurité (touches de rouge) */
         .safety-notes {
-            margin: 20px 0;
-        }
-
-        .safety-note {
-            padding: 18px 20px;
-            margin-bottom: 12px;
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 4px solid #ef4444;
+            padding: 12px 16px;
             border-radius: 8px;
             box-shadow: 0 2px 6px rgba(239, 68, 68, 0.1);
         }
 
-        .safety-note.warning {
-            background: rgba(239, 68, 68, 0.1);
-            border-left: 4px solid #ef4444;
+        .safety-note {
+            padding: 0;
+            margin-bottom: 8px;
         }
 
+        .safety-note:last-child {
+            margin-bottom: 0;
+        }
+
+        .safety-note.warning,
         .safety-note.danger {
-            background: rgba(220, 38, 38, 0.1);
-            border-left: 4px solid #dc2626;
+            background: transparent;
+            border: none;
+            box-shadow: none;
         }
 
         .safety-note-title {
             font-weight: 700;
             margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            font-size: 0.95rem;
         }
 
-        .safety-note.warning .safety-note-title {
+        .safety-note.warning .safety-note-title,
+        .safety-notes .safety-note-title {
             color: #ef4444;
         }
 
@@ -689,52 +700,95 @@ export async function generateHTML(
             color: #dc2626;
         }
 
-        /* Version History */
-        .version-history {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .version-log {
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 16px;
-        }
-
-        .version-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-
-        .version-number {
-            color: white;
-            padding: 4px 12px;
-            border-radius: 6px;
-            font-weight: 600;
+        .safety-note > div:last-child {
+            color: #555;
+            line-height: 1.5;
             font-size: 0.9rem;
         }
 
-        .version-type {
+        /* Version History Table */
+        .version-history {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .version-history-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            padding: 20px 24px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            margin: 0;
+        }
+
+        .version-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .version-table th {
+            background: #f8f9fa;
+            color: #666;
+            font-weight: 600;
+            text-align: left;
+            padding: 12px 16px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .version-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #f0f0f0;
+            color: #2c3e50;
+            font-size: 0.9rem;
+        }
+
+        .version-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .version-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: rgb(249, 55, 5);
+            color: white;
             padding: 4px 10px;
             border-radius: 6px;
+            font-weight: 600;
             font-size: 0.85rem;
-            font-weight: 500;
         }
 
-        .version-date {
+        .version-type-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .version-type-major {
+            background: rgba(249, 55, 5, 0.1);
+            color: rgb(249, 55, 5);
+        }
+
+        .version-type-minor {
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+        }
+
+        .version-date-cell {
             color: #666;
             font-size: 0.85rem;
-            margin-left: auto;
-        }
-
-        .version-description {
-            color: #2c3e50;
-            line-height: 1.6;
-            font-size: 0.95rem;
+            white-space: nowrap;
         }
 
         /* Carrousels */
@@ -971,7 +1025,7 @@ export async function generateHTML(
     <!-- Sidebar Navigation -->
     <div class="sidebar">
         <h2>Navigation</h2>
-        ${generateSidebarNav(phases, !!(procedure.defects && procedure.defects.length > 0))}
+        ${generateSidebarNav(phases, !!(procedure.defects && procedure.defects.length > 0), !!(procedure.changelog && procedure.changelog.length > 0))}
     </div>
 
     <!-- Contenu principal -->
@@ -1187,29 +1241,28 @@ function generateVersionHistory(procedure: Procedure): string {
 
   return `
     <section class="section" id="versioning">
-        <h2 class="section-title">
-            📋 Historique des versions
-            ${procedure.versionString ? `<span style="background: #f93705; color: white; padding: 4px 12px; border-radius: 6px; font-size: 0.9rem; margin-left: 12px;">v${procedure.versionString}</span>` : ''}
-        </h2>
         <div class="version-history">
-            ${procedure.changelog.map(log => `
-                <div class="version-log">
-                    <div class="version-header">
-                        <span class="version-number" style="background: ${log.type === 'major' ? '#f93705' : '#3b82f6'};">
-                            v${escapeHtml(log.version)}
-                        </span>
-                        <span class="version-type" style="background: ${log.type === 'major' ? 'rgba(255, 107, 53, 0.2)' : 'rgba(16, 185, 129, 0.2)'}; color: ${log.type === 'major' ? '#ff6b35' : '#10b981'};">
-                            ${log.type === 'major' ? 'Majeure' : 'Mineure'}
-                        </span>
-                        <span class="version-date">
-                            ${new Date(log.date).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}
-                        </span>
-                    </div>
-                    <div class="version-description">
-                        ${escapeHtml(log.description)}
-                    </div>
-                </div>
-            `).join('')}
+            <h2 class="version-history-title">Historique des versions</h2>
+            <table class="version-table">
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">Version</th>
+                        <th style="width: 12%;">Type</th>
+                        <th style="width: 18%;">Date</th>
+                        <th>Modifications</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${procedure.changelog.map(log => `
+                        <tr>
+                            <td><span class="version-badge">v${escapeHtml(log.version)}</span></td>
+                            <td><span class="version-type-badge ${log.type === 'major' ? 'version-type-major' : 'version-type-minor'}">${log.type === 'major' ? 'Majeure' : 'Mineure'}</span></td>
+                            <td class="version-date-cell">${new Date(log.date).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}</td>
+                            <td>${escapeHtml(log.description)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
         </div>
     </section>
   `;
@@ -1218,7 +1271,7 @@ function generateVersionHistory(procedure: Procedure): string {
 /**
  * Génère la navigation de la sidebar
  */
-function generateSidebarNav(phases: Phase[], hasDefects: boolean = false): string {
+function generateSidebarNav(phases: Phase[], hasDefects: boolean = false, hasVersionHistory: boolean = false): string {
   const defectsNav = hasDefects ? `
     <div class="nav-phase">
         <a href="#defautheque" class="nav-phase-title" style="color: #ff6b35;">
@@ -1248,7 +1301,15 @@ function generateSidebarNav(phases: Phase[], hasDefects: boolean = false): strin
     </div>
   `).join('');
 
-  return defectsNav + phasesNav;
+  const versioningNav = hasVersionHistory ? `
+    <div class="nav-phase">
+        <a href="#versioning" class="nav-phase-title" style="color: #f93705;">
+            Historique des versions
+        </a>
+    </div>
+  ` : '';
+
+  return defectsNav + phasesNav + versioningNav;
 }
 
 /**
@@ -1268,7 +1329,7 @@ function generateGlobalResources(procedure: Procedure): string {
         <p style="color: #7f8c8d; margin-bottom: 20px;">Ces ressources sont nécessaires pour l'ensemble de la procédure</p>
 
         ${hasGlobalTools ? `
-        <h3>🔧 Outils</h3>
+        <h3>Outils</h3>
         <ul class="resource-list">
             ${procedure.globalTools!.map(tool => `
             <li class="resource-item">
@@ -1378,10 +1439,10 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                         ` : ''}
                         ${step.toolId && step.toolName ? `
                         <div class="step-tool-info">
-                            <div class="step-tool-info-label" style="color: ${step.toolColor || '#059669'}">🔧 Outil</div>
+                            <div class="step-tool-info-label">Outil</div>
                             <div>${escapeHtml(step.toolName)}</div>
                             ${step.toolReference ? `<div class="step-tool-ref">${escapeHtml(step.toolReference)}</div>` : ''}
-                            ${step.toolLocation ? `<div class="step-tool-location">${escapeHtml(step.toolLocation)}</div>` : ''}
+                            ${step.toolLocation ? `<span class="step-tool-location-badge">${escapeHtml(step.toolLocation)}</span>` : ''}
                         </div>
                         ` : ''}
                     </div>
@@ -1391,7 +1452,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                     <div class="step-bottom-row">
                         ${step.tips && step.tips.length > 0 ? `
                         <div class="tips">
-                            <div class="tips-title">💡 Conseils</div>
+                            <div class="tips-title">Conseils</div>
                             ${step.tips.map(tip => `<div class="tip-item">${escapeHtml(tip)}</div>`).join('')}
                         </div>
                         ` : '<div></div>'}
@@ -1401,7 +1462,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                             ${step.safetyNotes.map(note => `
                             <div class="safety-note ${note.type === 'danger' ? 'danger' : 'warning'}">
                                 <div class="safety-note-title">
-                                    ${note.type === 'danger' ? '⛔ DANGER' : '⚠️ ATTENTION'}
+                                    ${note.type === 'danger' ? 'DANGER' : 'ATTENTION'}
                                 </div>
                                 <div>${escapeHtml(note.content)}</div>
                             </div>
