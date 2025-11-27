@@ -72,7 +72,7 @@ export default function ProcedureEditor() {
     const changes: string[] = [];
     let isMajor = false;
 
-    // Changements de référence ou désignation (majeur)
+    // MAJEUR: Changements de référence ou désignation
     if (reference !== (existingProcedure.reference || '')) {
       changes.push('Modification de la référence');
       isMajor = true;
@@ -82,19 +82,36 @@ export default function ProcedureEditor() {
       isMajor = true;
     }
 
-    // Changements d'image de couverture (mineur)
+    // MAJEUR: Ajout/suppression de phases
+    const existingPhasesCount = existingProcedure.phases?.length || 0;
+    const currentPhasesCount = existingProcedure.phases?.length || 0; // On ne peut pas compter ici car géré ailleurs
+    // On détecte via le nombre de phases dans la base au moment du save
+
+    // MAJEUR: Suppression de défauts
+    const existingDefectsCount = existingProcedure.defects?.length || 0;
+    const currentDefectsCount = defects.length;
+    if (currentDefectsCount < existingDefectsCount) {
+      changes.push(`Suppression de ${existingDefectsCount - currentDefectsCount} défaut(s)`);
+      isMajor = true;
+    }
+
+    // MINEUR: Ajout de défauts
+    if (currentDefectsCount > existingDefectsCount) {
+      changes.push(`Ajout de ${currentDefectsCount - existingDefectsCount} défaut(s)`);
+    }
+
+    // MINEUR: Changement d'image de couverture
     if (coverImage !== existingProcedure.coverImage) {
       changes.push("Modification de l'image de couverture");
     }
 
-    // Changements dans les défauts (mineur)
-    const existingDefectsCount = existingProcedure.defects?.length || 0;
-    const currentDefectsCount = defects.length;
-    if (currentDefectsCount > existingDefectsCount) {
-      changes.push(`Ajout de ${currentDefectsCount - existingDefectsCount} défaut(s)`);
-    } else if (currentDefectsCount < existingDefectsCount) {
-      changes.push(`Suppression de ${existingDefectsCount - currentDefectsCount} défaut(s)`);
-      isMajor = true;
+    // MINEUR: Changements dans les descriptions de défauts
+    const defectDescChanged = defects.some((def, idx) => {
+      const existingDef = existingProcedure.defects?.[idx];
+      return existingDef && def.description !== existingDef.description;
+    });
+    if (defectDescChanged) {
+      changes.push("Modification de descriptions");
     }
 
     if (changes.length === 0) return null;
@@ -124,7 +141,10 @@ export default function ProcedureEditor() {
           versionString: versionString,
           changelog: changelog,
         });
-        toast.success('Sauvegarde rapide effectuée');
+        toast.success('✅ Sauvegarde rapide effectuée !', {
+          duration: 3000,
+          position: 'top-right',
+        });
       } else {
         // Pour une nouvelle procédure, on crée la version 1.0
         const newId = await createProcedure({
@@ -143,7 +163,10 @@ export default function ProcedureEditor() {
             date: new Date(),
           }],
         });
-        toast.success('Procédure créée');
+        toast.success('✅ Procédure créée avec succès !', {
+          duration: 3000,
+          position: 'top-right',
+        });
         navigate(`/procedures/${newId}/edit`);
       }
     } catch (error) {
@@ -159,65 +182,57 @@ export default function ProcedureEditor() {
       return;
     }
 
+    if (!id || !existingProcedure) {
+      // Pour une nouvelle procédure, utiliser sauvegarde rapide
+      return handleQuickSave();
+    }
+
     try {
-      let updatedVersionString = versionString;
-      let updatedChangelog = changelog;
+      // Détection automatique des changements
+      const changeDetection = detectChangeType();
 
-      // Détection automatique des changements pour procédures existantes
-      if (id && existingProcedure) {
-        const changeDetection = detectChangeType();
-        if (changeDetection) {
-          const nextVersion = calculateNextVersion(versionString, changeDetection.type);
-          const newLog: VersionLog = {
-            id: crypto.randomUUID(),
-            version: nextVersion,
-            type: changeDetection.type,
-            description: changeDetection.description,
-            date: new Date(),
-          };
-          updatedVersionString = nextVersion;
-          updatedChangelog = [newLog, ...changelog];
-          toast.success(`Version ${nextVersion} créée (${changeDetection.type === 'major' ? 'Majeure' : 'Mineure'})`);
-        } else {
-          toast.info('Aucun changement détecté dans les métadonnées');
-        }
-
-        await updateProcedure(id, {
-          reference: reference.trim() || undefined,
-          designation: designation.trim() || undefined,
-          title: designation.trim() || reference.trim() || 'Sans titre',
-          description: '',
-          coverImage: coverImage || undefined,
-          defects: defects,
-          versionString: updatedVersionString,
-          changelog: updatedChangelog,
-        });
-
-        // Mettre à jour l'état local
-        setVersionString(updatedVersionString);
-        setChangelog(updatedChangelog);
-
-        toast.success('Procédure et phases sauvegardées');
-      } else {
-        const newId = await createProcedure({
-          reference: reference.trim() || undefined,
-          designation: designation.trim() || undefined,
-          title: designation.trim() || reference.trim() || 'Nouvelle procédure',
-          description: '',
-          coverImage: coverImage || undefined,
-          defects: defects,
-          versionString: '1.0',
-          changelog: [{
-            id: crypto.randomUUID(),
-            version: '1.0',
-            type: 'major',
-            description: 'Création initiale de la procédure',
-            date: new Date(),
-          }],
-        });
-        toast.success('Procédure créée');
-        navigate(`/procedures/${newId}/edit`);
+      if (!changeDetection) {
+        toast.info('Aucun changement détecté');
+        return;
       }
+
+      const { type: versionType, description } = changeDetection;
+
+      // Calculer la nouvelle version
+      const nextVersion = calculateNextVersion(versionString, versionType);
+
+      // Créer le nouveau log
+      const newLog: VersionLog = {
+        id: crypto.randomUUID(),
+        version: nextVersion,
+        type: versionType,
+        description: description,
+        date: new Date(),
+      };
+
+      const updatedVersionString = nextVersion;
+      const updatedChangelog = [newLog, ...changelog];
+
+      // Sauvegarder
+      await updateProcedure(id, {
+        reference: reference.trim() || undefined,
+        designation: designation.trim() || undefined,
+        title: designation.trim() || reference.trim() || 'Sans titre',
+        description: '',
+        coverImage: coverImage || undefined,
+        defects: defects,
+        versionString: updatedVersionString,
+        changelog: updatedChangelog,
+      });
+
+      // Mettre à jour l'état local
+      setVersionString(updatedVersionString);
+      setChangelog(updatedChangelog);
+
+      toast.success(`✅ Version ${nextVersion} créée (${versionType === 'major' ? 'Majeure' : 'Mineure'}) !\n${description}`, {
+        duration: 5000,
+        position: 'top-right',
+      });
     } catch (error) {
       toast.error('Erreur lors de la sauvegarde');
     }

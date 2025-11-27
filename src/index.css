@@ -237,4 +237,16 @@
   .shadow-primary-lg {
     box-shadow: 0 8px 32px rgba(249, 55, 5, 0.2);
   }
+
+  /* ContentEditable placeholder */
+  [contenteditable]:empty:before {
+    content: attr(data-placeholder);
+    color: #707070;
+    pointer-events: none;
+    display: block;
+  }
+
+  [contenteditable]:focus:before {
+    content: none;
+  }
 }

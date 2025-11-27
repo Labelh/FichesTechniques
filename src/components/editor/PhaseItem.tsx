@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, AlertTriangle, Lightbulb, Save, Pencil, ArrowUp, ArrowDown, Video as VideoIcon, Play } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, AlertTriangle, Lightbulb, Save, Pencil, ArrowUp, ArrowDown, Video as VideoIcon, Play, Bold, Italic, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -812,18 +812,66 @@ function SubStepItem({
             />
           </div>
 
-          {/* Description */}
+          {/* Description avec éditeur riche */}
           <div>
             <label className="block text-xs font-medium text-gray-400 mb-1">
               Description
             </label>
-            <textarea
-              value={step.description}
-              onChange={(e) => onUpdate({ description: e.target.value })}
-              placeholder="Description détaillée de cette sous-étape..."
-              rows={3}
-              className="w-full rounded-lg border border-[#323232] bg-transparent px-3 py-2 text-sm text-white focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
+            <div className="border border-[#323232] rounded-lg overflow-hidden">
+              {/* Barre d'outils */}
+              <div className="flex gap-1 p-2 bg-[#1a1a1a] border-b border-[#323232]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    document.execCommand('bold', false);
+                  }}
+                  className="p-1.5 hover:bg-[#323232] rounded text-gray-400 hover:text-white transition"
+                  title="Gras"
+                >
+                  <Bold className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    document.execCommand('italic', false);
+                  }}
+                  className="p-1.5 hover:bg-[#323232] rounded text-gray-400 hover:text-white transition"
+                  title="Italique"
+                >
+                  <Italic className="h-4 w-4" />
+                </button>
+                <div className="relative group">
+                  <button
+                    type="button"
+                    className="p-1.5 hover:bg-[#323232] rounded text-gray-400 hover:text-white transition"
+                    title="Couleur du texte"
+                  >
+                    <Palette className="h-4 w-4" />
+                  </button>
+                  <input
+                    type="color"
+                    onChange={(e) => {
+                      document.execCommand('foreColor', false, e.target.value);
+                    }}
+                    className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer"
+                    title="Choisir une couleur"
+                  />
+                </div>
+              </div>
+              {/* Zone de texte éditable */}
+              <div
+                contentEditable
+                suppressContentEditableWarning
+                onInput={(e) => {
+                  const htmlContent = e.currentTarget.innerHTML;
+                  onUpdate({ description: htmlContent });
+                }}
+                dangerouslySetInnerHTML={{ __html: step.description || '' }}
+                className="min-h-[80px] px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                style={{ maxHeight: '200px', overflowY: 'auto' }}
+                data-placeholder="Description détaillée de cette sous-étape..."
+              />
+            </div>
           </div>
 
           {/* Images */}

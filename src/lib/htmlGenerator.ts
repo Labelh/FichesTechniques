@@ -273,12 +273,12 @@ export async function generateHTML(
 
         /* Défauthèque */
         .defects-section {
-            background: linear-gradient(135deg, #fff5f5 0%, #fff 100%);
+            background: white;
             padding: 36px;
             margin-bottom: 32px;
             border-radius: 12px;
-            box-shadow: 0 2px 12px rgba(220, 38, 38, 0.08);
-            border: 1px solid #ffe0e0;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e8e8e8;
         }
 
         .defects-section h2 {
@@ -381,7 +381,18 @@ export async function generateHTML(
             font-size: 1.6rem;
             font-weight: 600;
             margin-bottom: 10px;
-            color: rgb(249, 55, 5);
+            color: #f93705;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .difficulty-badge {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         .phase-meta {
@@ -456,15 +467,31 @@ export async function generateHTML(
             font-size: 1.1rem;
         }
 
+        .step-description-box {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px 20px;
+            color: #2c3e50;
+            line-height: 1.8;
+            font-size: 1rem;
+        }
+
         .step-details-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            display: flex;
+            flex-direction: column;
             gap: 16px;
             margin: 20px 0;
         }
 
+        .step-bottom-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
         .step-tool {
-            background: linear-gradient(135deg, #f0f9f4 0%, #ffffff 100%);
+            background: rgba(16, 185, 129, 0.1);
             padding: 18px 20px;
             border-left: 4px solid #10b981;
             border-radius: 8px;
@@ -579,10 +606,9 @@ export async function generateHTML(
 
         /* Conseils (touches de vert) */
         .tips {
-            background: linear-gradient(135deg, #f0f9f4 0%, #ffffff 100%);
+            background: rgba(16, 185, 129, 0.1);
             border-left: 4px solid #10b981;
             padding: 18px 20px;
-            margin: 20px 0;
             border-radius: 8px;
             box-shadow: 0 2px 6px rgba(16, 185, 129, 0.1);
         }
@@ -616,12 +642,12 @@ export async function generateHTML(
         }
 
         .safety-note.warning {
-            background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%);
+            background: rgba(239, 68, 68, 0.1);
             border-left: 4px solid #ef4444;
         }
 
         .safety-note.danger {
-            background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%);
+            background: rgba(220, 38, 38, 0.1);
             border-left: 4px solid #dc2626;
         }
 
@@ -689,6 +715,212 @@ export async function generateHTML(
             font-size: 0.95rem;
         }
 
+        /* Carrousels */
+        .carousel-container {
+            position: relative;
+            margin-top: 24px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .carousel-wrapper {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .carousel-items {
+            display: flex;
+            transition: transform 0.4s ease-in-out;
+        }
+
+        .carousel-item {
+            min-width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .carousel-item img {
+            width: 100%;
+            height: auto;
+            max-height: 500px;
+            object-fit: contain;
+            background: #000;
+        }
+
+
+        .carousel-button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+            z-index: 10;
+        }
+
+        .carousel-button:hover {
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        .carousel-button.prev {
+            left: 16px;
+        }
+
+        .carousel-button.next {
+            right: 16px;
+        }
+
+        .carousel-indicators {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px;
+            background: #f8f9fa;
+        }
+
+        .carousel-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #d0d0d0;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.3s;
+        }
+
+        .carousel-indicator.active {
+            background: #f93705;
+            transform: scale(1.2);
+        }
+
+        .carousel-counter {
+            text-align: center;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        /* Défauthèque - Images carrées */
+        .defect-item .carousel-item img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        /* Images cliquables pour zoom */
+        .carousel-item img,
+        .step-image-wrapper img {
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        .carousel-item img:hover,
+        .step-image-wrapper img:hover {
+            opacity: 0.9;
+        }
+
+        /* Lightbox / Modal pour agrandir les images */
+        .lightbox {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .lightbox.active {
+            display: flex;
+        }
+
+        .lightbox-content {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.5);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+        }
+
+        .lightbox-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-size: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.5);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+            user-select: none;
+        }
+
+        .lightbox-nav:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .lightbox-nav.prev {
+            left: 20px;
+        }
+
+        .lightbox-nav.next {
+            right: 20px;
+        }
+
+        .lightbox-counter {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 1rem;
+        }
+
         /* Impression */
         @media print {
             .sidebar {
@@ -753,6 +985,128 @@ export async function generateHTML(
             ${generateVersionHistory(procedure)}
         </div>
     </div>
+
+    <!-- Lightbox pour agrandir les images -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+        <span class="lightbox-close" onclick="closeLightbox(event)">&times;</span>
+        <img class="lightbox-content" id="lightbox-img" src="" alt="">
+        <div class="lightbox-counter" id="lightbox-caption"></div>
+    </div>
+
+    <script>
+        // Lightbox JavaScript
+        function openLightbox(imageSrc, caption) {
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            const lightboxCaption = document.getElementById('lightbox-caption');
+
+            lightbox.classList.add('active');
+            lightboxImg.src = imageSrc;
+            lightboxCaption.textContent = caption || '';
+
+            // Empêcher le scroll du body
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox(event) {
+            if (event.target.id === 'lightbox' || event.target.classList.contains('lightbox-close')) {
+                const lightbox = document.getElementById('lightbox');
+                lightbox.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        // Fermer avec Échap
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const lightbox = document.getElementById('lightbox');
+                if (lightbox.classList.contains('active')) {
+                    lightbox.classList.remove('active');
+                    document.body.style.overflow = 'auto';
+                }
+            }
+        });
+
+        // Carrousel JavaScript
+        const carouselStates = new Map();
+
+        function initCarousel(carouselId) {
+            if (!carouselStates.has(carouselId)) {
+                carouselStates.set(carouselId, { currentIndex: 0 });
+            }
+        }
+
+        function changeSlide(carouselId, direction) {
+            initCarousel(carouselId);
+            const state = carouselStates.get(carouselId);
+            const itemsContainer = document.getElementById('items-' + carouselId);
+            const items = itemsContainer.querySelectorAll('.carousel-item');
+            const indicators = document.querySelectorAll('#carousel-' + carouselId + ' .carousel-indicator');
+            const counter = document.getElementById('counter-' + carouselId);
+            const descElement = document.getElementById('desc-' + carouselId);
+
+            // Cacher l'élément actuel
+            items[state.currentIndex].style.display = 'none';
+            indicators[state.currentIndex].classList.remove('active');
+
+            // Calculer le nouvel index
+            state.currentIndex = (state.currentIndex + direction + items.length) % items.length;
+
+            // Afficher le nouvel élément
+            items[state.currentIndex].style.display = 'flex';
+            indicators[state.currentIndex].classList.add('active');
+            counter.textContent = state.currentIndex + 1;
+
+            // Mettre à jour la description
+            if (descElement) {
+                const description = items[state.currentIndex].getAttribute('data-description');
+                descElement.textContent = description ? ' - ' + description : '';
+            }
+        }
+
+        function goToSlide(carouselId, index) {
+            initCarousel(carouselId);
+            const state = carouselStates.get(carouselId);
+            const itemsContainer = document.getElementById('items-' + carouselId);
+            const items = itemsContainer.querySelectorAll('.carousel-item');
+            const indicators = document.querySelectorAll('#carousel-' + carouselId + ' .carousel-indicator');
+            const counter = document.getElementById('counter-' + carouselId);
+            const descElement = document.getElementById('desc-' + carouselId);
+
+            // Cacher l'élément actuel
+            items[state.currentIndex].style.display = 'none';
+            indicators[state.currentIndex].classList.remove('active');
+
+            // Aller à l'index demandé
+            state.currentIndex = index;
+
+            // Afficher le nouvel élément
+            items[state.currentIndex].style.display = 'flex';
+            indicators[state.currentIndex].classList.add('active');
+            counter.textContent = state.currentIndex + 1;
+
+            // Mettre à jour la description
+            if (descElement) {
+                const description = items[state.currentIndex].getAttribute('data-description');
+                descElement.textContent = description ? ' - ' + description : '';
+            }
+        }
+
+        // Support du clavier (flèches gauche/droite)
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                const direction = e.key === 'ArrowLeft' ? -1 : 1;
+                // Trouver le carrousel visible et le faire défiler
+                document.querySelectorAll('.carousel-container').forEach(carousel => {
+                    const rect = carousel.getBoundingClientRect();
+                    if (rect.top >= 0 && rect.bottom <= window.innerHeight) {
+                        const carouselId = carousel.id.replace('carousel-', '');
+                        changeSlide(carouselId, direction);
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>`;
 
@@ -761,7 +1115,13 @@ export async function generateHTML(
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `${sanitizeFilename(procedure.designation || procedure.reference || procedure.title || 'procedure')}.html`;
+
+  // Format: FT_Référence_Désignation_Version
+  const reference = sanitizeFilename(procedure.reference || 'REF');
+  const designation = sanitizeFilename(procedure.designation || procedure.title || 'Procedure');
+  const version = procedure.versionString || '1.0';
+  link.download = `FT_${reference}_${designation}_v${version}.html`;
+
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -901,22 +1261,12 @@ function generateDefects(procedure: Procedure, renderedImageUrls: Map<string, st
         <h2>Défauthèque</h2>
 
         <div class="defects-grid">
-        ${procedure.defects.map(defect => `
+        ${procedure.defects.map((defect, defectIndex) => `
             <div class="defect-item">
                 <div class="defect-description">${escapeHtml(defect.description)}</div>
 
                 ${defect.images && defect.images.length > 0 ? `
-                <div class="step-images" style="margin-top: 15px;">
-                    ${defect.images.map(img => {
-                      const imageUrl = renderedImageUrls.get(img.imageId) || img.image.url;
-                      return `
-                    <div class="step-image">
-                        <img src="${imageUrl}" alt="${escapeHtml(img.description || 'Image du défaut')}">
-                        ${img.description ? `<p class="image-caption">${escapeHtml(img.description)}</p>` : ''}
-                    </div>
-                    `;
-                    }).join('')}
-                </div>
+                ${generateImageCarousel(defect.images, renderedImageUrls, `defect-${defectIndex}`)}
                 ` : ''}
             </div>
         `).join('')}
@@ -930,11 +1280,14 @@ function generateDefects(procedure: Procedure, renderedImageUrls: Map<string, st
  */
 function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, string>): string {
   return phases.map((phase, phaseIndex) => {
-    const difficultyColor = phase.difficulty === 'easy' ? '#10b981' : phase.difficulty === 'medium' ? '#f59e0b' : phase.difficulty === 'hard' ? '#ef4444' : 'rgb(249, 55, 5)';
+    const difficultyColor = phase.difficulty === 'easy' ? '#10b981' : phase.difficulty === 'medium' ? '#f59e0b' : phase.difficulty === 'hard' ? '#ef4444' : '#999';
     return `
     <div class="phase" id="phase-${phaseIndex + 1}">
         <div class="phase-header">
-            <div class="phase-title" style="color: ${difficultyColor}">Phase ${phase.phaseNumber || phaseIndex + 1} : ${escapeHtml(phase.title)}</div>
+            <div class="phase-title">
+                <span class="difficulty-badge" style="background: ${difficultyColor};"></span>
+                Phase ${phase.phaseNumber || phaseIndex + 1} : ${escapeHtml(phase.title)}
+            </div>
             <div class="phase-meta">
                 ${phase.estimatedTime ? `
                 <div class="phase-meta-item">
@@ -963,81 +1316,61 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                 <div class="step-header">
                     <div class="step-number">${stepIndex + 1}</div>
                     <div class="step-content">
-                        ${step.title ? `<div class="step-title">${escapeHtml(step.title)}${step.description ? ` - ${escapeHtml(step.description)}` : ''}</div>` : `<div class="step-description">${escapeHtml(step.description)}</div>`}
+                        ${step.title ? `<div class="step-title">${escapeHtml(step.title)}</div>` : ''}
                     </div>
                 </div>
 
                 <div class="step-details-grid">
+                    ${step.description ? `
+                    <div class="step-description-box">
+                        ${step.description}
+                    </div>
+                    ` : ''}
+
                     ${step.toolId && step.toolName ? `
                     <div class="step-tool" style="border-left: 4px solid ${step.toolColor || '#10b981'}">
-                        <div class="step-tool-label" style="color: ${step.toolColor || '#059669'}">Outil</div>
+                        <div class="step-tool-label" style="color: ${step.toolColor || '#059669'}">🔧 Outil</div>
                         <div>${escapeHtml(step.toolName)}</div>
                         ${step.toolReference ? `<div class="step-tool-ref">${escapeHtml(step.toolReference)}</div>` : ''}
                         ${step.toolLocation ? `<div class="step-tool-location">${escapeHtml(step.toolLocation)}</div>` : ''}
                     </div>
                     ` : ''}
 
-                    ${step.tips && step.tips.length > 0 ? `
-                    <div class="tips">
-                        <div class="tips-title">Conseils</div>
-                        ${step.tips.map(tip => `<div class="tip-item">${escapeHtml(tip)}</div>`).join('')}
-                    </div>
-                    ` : ''}
-
-                    ${step.safetyNotes && step.safetyNotes.length > 0 ? `
-                    <div class="safety-notes">
-                        ${step.safetyNotes.map(note => `
-                        <div class="safety-note ${note.type === 'danger' ? 'danger' : 'warning'}">
-                            <div class="safety-note-title">
-                                ${note.type === 'danger' ? 'DANGER' : 'ATTENTION'}
-                            </div>
-                            <div>${escapeHtml(note.content)}</div>
+                    ${(step.tips && step.tips.length > 0) || (step.safetyNotes && step.safetyNotes.length > 0) ? `
+                    <div class="step-bottom-row">
+                        ${step.tips && step.tips.length > 0 ? `
+                        <div class="tips">
+                            <div class="tips-title">💡 Conseils</div>
+                            ${step.tips.map(tip => `<div class="tip-item">${escapeHtml(tip)}</div>`).join('')}
                         </div>
-                        `).join('')}
+                        ` : '<div></div>'}
+
+                        ${step.safetyNotes && step.safetyNotes.length > 0 ? `
+                        <div class="safety-notes">
+                            ${step.safetyNotes.map(note => `
+                            <div class="safety-note ${note.type === 'danger' ? 'danger' : 'warning'}">
+                                <div class="safety-note-title">
+                                    ${note.type === 'danger' ? '⛔ DANGER' : '⚠️ ATTENTION'}
+                                </div>
+                                <div>${escapeHtml(note.content)}</div>
+                            </div>
+                            `).join('')}
+                        </div>
+                        ` : '<div></div>'}
                     </div>
                     ` : ''}
                 </div>
 
                 ${step.estimatedTime ? `
-                <div class="step-time">Temps: ${step.estimatedTime} min</div>
+                <div class="step-time">⏱️ Temps: ${step.estimatedTime} min</div>
                 ` : ''}
 
                 ${step.images && step.images.length > 0 ? `
-                <div class="step-images">
-                    ${step.images.map(img => {
-                      // Utiliser l'URL rendue avec annotations si disponible, sinon l'URL originale
-                      const imageUrl = renderedImageUrls.get(img.imageId) || img.image?.url || (img.image?.blob ? URL.createObjectURL(img.image.blob) : '');
-                      return imageUrl ? `
-                      <div class="step-image-wrapper">
-                          <img src="${imageUrl}" alt="${escapeHtml(img.description || 'Image')}" class="step-image">
-                          ${img.description ? `<div class="step-image-desc">${escapeHtml(img.description)}</div>` : ''}
-                      </div>
-                      ` : '';
-                    }).join('')}
-                </div>
+                ${generateImageCarousel(step.images, renderedImageUrls, `phase-${phaseIndex + 1}-step-${stepIndex + 1}`)}
                 ` : ''}
 
                 ${step.videos && step.videos.length > 0 ? `
-                <div class="step-videos">
-                    ${step.videos.map(video => {
-                      const embedUrl = getVideoEmbedUrl(video.url);
-                      if (embedUrl) {
-                        return `
-                        <div class="step-video-wrapper">
-                            <iframe src="${embedUrl}" allowfullscreen></iframe>
-                        </div>
-                        `;
-                      } else {
-                        return `
-                        <div class="step-video-wrapper">
-                            <a href="${escapeHtml(video.url)}" target="_blank" class="step-video-link">
-                                🎥 ${escapeHtml(video.name || 'Voir la vidéo')}
-                            </a>
-                        </div>
-                        `;
-                      }
-                    }).join('')}
-                </div>
+                ${generateVideoCarousel(step.videos, `phase-${phaseIndex + 1}-step-${stepIndex + 1}`)}
                 ` : ''}
             </div>
             `).join('')}
@@ -1089,7 +1422,9 @@ function getVideoEmbedUrl(url: string): string | null {
       }
 
       if (videoId) {
-        return `https://www.youtube.com/embed/${videoId}`;
+        // Utiliser youtube-nocookie pour éviter certaines restrictions
+        // Ajouter des paramètres pour maximiser la compatibilité
+        return `https://www.youtube-nocookie.com/embed/${videoId}?modestbranding=1&rel=0&showinfo=0`;
       }
     }
 
@@ -1105,4 +1440,110 @@ function getVideoEmbedUrl(url: string): string | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Génère un carrousel d'images
+ */
+function generateImageCarousel(images: AnnotatedImage[], renderedImageUrls: Map<string, string>, carouselId: string): string {
+  if (images.length === 0) return '';
+
+  const carouselItems = images.map((img, index) => {
+    const imageUrl = renderedImageUrls.get(img.imageId) || img.image?.url || (img.image?.blob ? URL.createObjectURL(img.image.blob) : '');
+    if (!imageUrl) return '';
+
+    return `
+      <div class="carousel-item" style="display: ${index === 0 ? 'flex' : 'none'};" data-description="${escapeHtml(img.description || '')}">
+        <img src="${imageUrl}" alt="${escapeHtml(img.description || 'Image')}" loading="lazy" onclick="openLightbox('${imageUrl}', '${escapeHtml(img.description || '')}')">
+      </div>
+    `;
+  }).filter(Boolean).join('');
+
+  if (images.length === 1) {
+    const desc = images[0]?.description || '';
+    return `
+      <div class="carousel-container">
+        ${carouselItems}
+        ${desc ? `<div class="carousel-counter" style="text-align: left; padding-left: 20px;">Image 1/1 - ${escapeHtml(desc)}</div>` : '<div class="carousel-counter">Image 1/1</div>'}
+      </div>
+    `;
+  }
+
+  const indicators = images.map((_, index) =>
+    `<span class="carousel-indicator ${index === 0 ? 'active' : ''}" onclick="goToSlide('${carouselId}', ${index})"></span>`
+  ).join('');
+
+  return `
+    <div class="carousel-container" id="carousel-${carouselId}">
+      <div class="carousel-wrapper">
+        <button class="carousel-button prev" onclick="changeSlide('${carouselId}', -1)">‹</button>
+        <div class="carousel-items" id="items-${carouselId}">
+          ${carouselItems}
+        </div>
+        <button class="carousel-button next" onclick="changeSlide('${carouselId}', 1)">›</button>
+      </div>
+      <div class="carousel-counter" style="text-align: left; padding-left: 20px;">
+        Image <span id="counter-${carouselId}">1</span>/${images.length}<span id="desc-${carouselId}" style="margin-left: 10px;">${images[0]?.description ? ' - ' + escapeHtml(images[0].description) : ''}</span>
+      </div>
+      <div class="carousel-indicators">
+        ${indicators}
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Génère un carrousel de vidéos
+ */
+function generateVideoCarousel(videos: any[], carouselId: string): string {
+  if (videos.length === 0) return '';
+
+  const carouselItems = videos.map((video, index) => {
+    const embedUrl = getVideoEmbedUrl(video.url);
+
+    if (embedUrl) {
+      return `
+        <div class="carousel-item" style="display: ${index === 0 ? 'flex' : 'none'};">
+          <div class="step-video-wrapper">
+            <iframe src="${embedUrl}" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" frameborder="0"></iframe>
+          </div>
+          ${video.name ? `<div class="carousel-item-desc" style="padding: 12px; background: #f8f9fa; text-align: center; border-top: 1px solid #e8e8e8; color: #666;">${escapeHtml(video.name)}</div>` : ''}
+        </div>
+      `;
+    } else {
+      return `
+        <div class="carousel-item" style="display: ${index === 0 ? 'flex' : 'none'};">
+          <div style="padding: 40px; text-align: center; background: #f8f9fa;">
+            <a href="${escapeHtml(video.url)}" target="_blank" style="color: #f93705; font-size: 1.2rem; text-decoration: none; font-weight: 600;">
+              🎥 ${escapeHtml(video.name || 'Voir la vidéo')}
+            </a>
+          </div>
+        </div>
+      `;
+    }
+  }).join('');
+
+  if (videos.length === 1) {
+    return `<div class="carousel-container">${carouselItems}</div>`;
+  }
+
+  const indicators = videos.map((_, index) =>
+    `<span class="carousel-indicator ${index === 0 ? 'active' : ''}" onclick="goToSlide('video-${carouselId}', ${index})"></span>`
+  ).join('');
+
+  return `
+    <div class="carousel-container" id="carousel-video-${carouselId}">
+      <div class="carousel-counter">Vidéo <span id="counter-video-${carouselId}">1</span>/${videos.length}</div>
+      <div class="carousel-wrapper">
+        <button class="carousel-button prev" onclick="changeSlide('video-${carouselId}', -1)">‹</button>
+        <div class="carousel-items" id="items-video-${carouselId}">
+          ${carouselItems}
+        </div>
+        <button class="carousel-button next" onclick="changeSlide('video-${carouselId}', 1)">›</button>
+      </div>
+      <div class="carousel-indicators">
+        ${indicators}
+      </div>
+    </div>
+  `;
 }

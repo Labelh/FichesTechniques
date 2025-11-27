@@ -21,7 +21,7 @@ export async function getCategories(): Promise<Map<string, Category>> {
       .select('*');
 
     if (error) {
-      console.error('Error fetching categories from Supabase:', error);
+      // Supabase non configuré, renvoyer une map vide sans erreur
       return new Map();
     }
 
@@ -31,7 +31,7 @@ export async function getCategories(): Promise<Map<string, Category>> {
 
     return categoriesCache;
   } catch (error) {
-    console.error('Error fetching categories:', error);
+    // Supabase non configuré, renvoyer une map vide sans erreur
     return new Map();
   }
 }
