@@ -377,6 +377,11 @@ export async function generateHTML(
             align-items: center;
             justify-content: space-between;
             gap: 16px;
+            transition: background 0.2s ease;
+        }
+
+        .phase-header:hover {
+            background: #fafafa;
         }
 
         .phase-title {
@@ -492,8 +497,6 @@ export async function generateHTML(
 
         .step-header {
             margin-bottom: 16px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #f93705;
         }
 
         .step-label {
@@ -540,6 +543,22 @@ export async function generateHTML(
             max-width: 100%;
             word-wrap: break-word;
             overflow-wrap: break-word;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .step-tool-image {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #d0d0d0;
+            flex-shrink: 0;
+        }
+
+        .step-tool-info {
+            flex: 1;
         }
 
         .step-tool-title {
@@ -657,7 +676,6 @@ export async function generateHTML(
             background: #f8f9fa;
             font-size: 0.9rem;
             color: #666;
-            border-top: 1px solid #e8e8e8;
         }
 
         /* Videos */
@@ -1434,10 +1452,13 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                     <div class="step-bottom-row">
                         ${step.toolId && step.toolName ? `
                         <div class="step-tool-box">
-                            <div class="step-tool-title">Outil requis</div>
-                            <div class="step-tool-name">${escapeHtml(step.toolName)}</div>
-                            ${step.toolReference ? `<div class="step-tool-ref" style="margin-top: 2px;">${escapeHtml(step.toolReference)}</div>` : ''}
-                            ${step.toolLocation ? `<div class="step-tool-location-badge" style="margin-top: 6px;">${escapeHtml(step.toolLocation)}</div>` : ''}
+                            ${step.tool?.image?.url ? `<img src="${step.tool.image.url}" alt="${escapeHtml(step.toolName)}" class="step-tool-image" loading="lazy">` : ''}
+                            <div class="step-tool-info">
+                                <div class="step-tool-title">Outil requis</div>
+                                <div class="step-tool-name">${escapeHtml(step.toolName)}</div>
+                                ${step.toolReference ? `<div class="step-tool-ref" style="margin-top: 2px;">${escapeHtml(step.toolReference)}</div>` : ''}
+                                ${step.toolLocation ? `<div class="step-tool-location-badge" style="margin-top: 6px;">${escapeHtml(step.toolLocation)}</div>` : ''}
+                            </div>
                         </div>
                         ` : '<div></div>'}
 
