@@ -161,22 +161,21 @@ export async function generateHTML(
             background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
             color: #2c3e50;
             padding: 32px 40px;
-            position: relative;
             max-width: 100%;
             box-sizing: border-box;
             overflow-x: hidden;
         }
 
         .version-badge {
-            position: absolute;
-            top: 24px;
-            right: 40px;
-            background: rgb(249, 55, 5);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 1rem;
-            font-weight: 600;
+            display: inline-block;
+            background: #e8e8e8;
+            color: #666;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-left: 12px;
+            border: 1px solid #d0d0d0;
         }
 
         .header-title {
@@ -312,7 +311,7 @@ export async function generateHTML(
         }
 
         .defects-header h2 {
-            color: #dc2626;
+            color: #1a1a1a;
             font-size: 1.5rem;
             font-weight: 700;
             text-transform: uppercase;
@@ -443,21 +442,25 @@ export async function generateHTML(
             background: white;
             padding: 24px 32px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
         }
 
         .phase-title {
             font-size: 1.6rem;
             font-weight: 600;
-            color: #f93705;
             word-wrap: break-word;
             overflow-wrap: break-word;
+            flex: 1;
         }
 
         .phase-badges {
             display: flex;
             align-items: center;
             gap: 8px;
-            margin-top: 8px;
+            flex-shrink: 0;
         }
 
         .difficulty-badge {
@@ -1110,8 +1113,10 @@ export async function generateHTML(
     <div class="container">
         <!-- En-tête -->
         <div class="header">
-            ${procedure.changelog && procedure.changelog.length > 0 ? `<div class="version-badge">v${escapeHtml(procedure.changelog[0].version)}</div>` : procedure.versionString ? `<div class="version-badge">v${escapeHtml(procedure.versionString)}</div>` : ''}
-            <div class="header-title">Fiche Technique</div>
+            <div class="header-title">
+                Fiche Technique
+                ${procedure.changelog && procedure.changelog.length > 0 ? `<span class="version-badge">v${escapeHtml(procedure.changelog[0].version)}</span>` : procedure.versionString ? `<span class="version-badge">v${escapeHtml(procedure.versionString)}</span>` : ''}
+            </div>
             <div class="header-designation">${escapeHtml(procedure.designation || procedure.title)}</div>
             ${procedure.reference ? `<div class="header-reference">${escapeHtml(procedure.reference)}</div>` : ''}
 
@@ -1514,15 +1519,11 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
     return `
     <div class="phase" id="phase-${phaseIndex + 1}">
         <div class="phase-header" onclick="togglePhase('phase-${phaseIndex + 1}')" style="cursor: pointer;">
-            <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <div class="phase-title" style="color: ${difficultyColor};">Phase ${phase.phaseNumber || phaseIndex + 1} : ${escapeHtml(phase.title)}</div>
+            <div class="phase-badges">
+                <span class="difficulty-badge" style="background: ${difficultyColor};">${difficultyLabel.toUpperCase()}</span>
+                ${phase.estimatedTime ? `<span class="phase-time-badge">${phase.estimatedTime} min/pièce</span>` : ''}
                 <span class="phase-toggle-icon collapsed" id="phase-${phaseIndex + 1}-toggle">►</span>
-                <div style="flex: 1;">
-                    <div class="phase-title">Phase ${phase.phaseNumber || phaseIndex + 1} : ${escapeHtml(phase.title)}</div>
-                    <div class="phase-badges">
-                        <span class="difficulty-badge" style="background: ${difficultyColor};">${difficultyLabel.toUpperCase()}</span>
-                        ${phase.estimatedTime ? `<span class="phase-time-badge">⏱️ ${phase.estimatedTime} min/pièce</span>` : ''}
-                    </div>
-                </div>
             </div>
         </div>
         <div class="phase-content collapsed" id="phase-${phaseIndex + 1}-content">
