@@ -516,8 +516,9 @@ export default function ProcedureEditor() {
     try {
       // Recharger la procédure depuis Firestore pour avoir les données les plus récentes
       const { db } = await import('@/lib/firebase');
-      const { doc, getDoc } = await import('firebase/firestore');
+      const { doc, getDoc, collection, query, where, getDocs, orderBy } = await import('firebase/firestore');
 
+      // Charger la procédure
       const procedureRef = doc(db, 'procedures', id);
       const procedureSnap = await getDoc(procedureRef);
 
@@ -531,10 +532,29 @@ export default function ProcedureEditor() {
         ...procedureSnap.data()
       } as any;
 
-      console.log('Fresh procedure loaded for HTML export:', freshProcedure);
-      console.log('Number of phases:', freshProcedure.phases?.length);
+      // Charger les phases depuis la collection séparée
+      const phasesQuery = query(
+        collection(db, 'phases'),
+        where('procedureId', '==', id),
+        orderBy('order', 'asc')
+      );
 
-      await generateHTML(freshProcedure, freshProcedure.phases || []);
+      const phasesSnap = await getDocs(phasesQuery);
+      const phases = phasesSnap.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as any[];
+
+      console.log('Fresh procedure loaded for HTML export:', freshProcedure);
+      console.log('Number of phases loaded:', phases.length);
+      phases.forEach((phase, idx) => {
+        console.log(`Phase ${idx + 1}:`, phase.title, `Steps: ${phase.steps?.length || 0}`);
+      });
+
+      // Ajouter les phases à la procédure
+      freshProcedure.phases = phases;
+
+      await generateHTML(freshProcedure, phases);
       toast.success('Procédure exportée en HTML');
     } catch (error) {
       console.error('Error exporting HTML:', error);
