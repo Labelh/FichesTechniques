@@ -67,6 +67,7 @@ export async function generateHTML(
             color: #2c3e50;
             background: #f8f9fa;
             margin: 0;
+            overflow-x: hidden;
         }
 
         /* Sidebar Navigation */
@@ -255,7 +256,7 @@ export async function generateHTML(
         /* Contenu */
         .content {
             padding: 48px;
-            max-width: 1400px;
+            max-width: 100%;
             margin: 0 auto;
         }
 
@@ -367,6 +368,7 @@ export async function generateHTML(
             overflow: hidden;
             box-shadow: 0 4px 16px rgba(0,0,0,0.08);
             border: 1px solid #e8e8e8;
+            max-width: 100%;
         }
 
         .phase-header {
@@ -444,6 +446,7 @@ export async function generateHTML(
             border: 1px solid #e8e8e8;
             border-radius: 8px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+            max-width: 100%;
         }
 
         .step:last-child {
@@ -498,10 +501,14 @@ export async function generateHTML(
             font-size: 1rem;
             display: flex;
             gap: 20px;
+            flex-wrap: wrap;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .step-description-left {
             flex: 1;
+            min-width: 0;
         }
 
         .step-description-title {
@@ -517,7 +524,22 @@ export async function generateHTML(
         .step-tool-info {
             border-left: 1px solid #e0e0e0;
             padding-left: 20px;
-            min-width: 200px;
+            min-width: 180px;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 768px) {
+            .step-description-box {
+                flex-direction: column;
+            }
+
+            .step-tool-info {
+                border-left: none;
+                border-top: 1px solid #e0e0e0;
+                padding-left: 0;
+                padding-top: 16px;
+                min-width: 100%;
+            }
         }
 
         .step-tool-info-label {
@@ -827,10 +849,12 @@ export async function generateHTML(
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            max-width: 100%;
         }
 
         .carousel-wrapper {
             position: relative;
+            max-width: 100%;
             overflow: hidden;
         }
 
