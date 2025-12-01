@@ -77,81 +77,12 @@ export async function generateHTML(
             max-width: 100vw;
         }
 
-        /* Sidebar Navigation */
-        .sidebar {
-            position: fixed;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 280px;
-            background: #d3d3d3;
-            border-right: 1px solid #b0b0b0;
-            overflow-y: auto;
-            padding: 24px;
-            z-index: 100;
-            box-shadow: 2px 0 8px rgba(0,0,0,0.05);
-        }
-
-        .sidebar h2 {
-            font-size: 1.2rem;
-            color: #1a1a1a;
-            margin-bottom: 24px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .nav-phase {
-            margin-bottom: 16px;
-        }
-
-        .nav-phase-title {
-            display: block;
-            color: rgb(249, 55, 5);
-            font-weight: 600;
-            font-size: 0.95rem;
-            margin-bottom: 8px;
-            text-decoration: none;
-            padding: 10px 14px;
-            border-radius: 6px;
-            transition: all 0.2s ease;
-        }
-
-        .nav-phase-title:hover {
-            background: rgba(249, 55, 5, 0.08);
-        }
-
-        .nav-steps {
-            list-style: none;
-            padding-left: 12px;
-            margin-top: 5px;
-        }
-
-        .nav-step {
-            margin-bottom: 4px;
-        }
-
-        .nav-step a {
-            display: block;
-            color: #555;
-            text-decoration: none;
-            font-size: 0.85rem;
-            padding: 4px 8px;
-            border-radius: 3px;
-            transition: background 0.2s;
-        }
-
-        .nav-step a:hover {
-            background: rgba(249, 55, 5, 0.05);
-            color: rgb(249, 55, 5);
-        }
-
         /* Container principal */
         .container {
-            margin-left: 280px;
+            margin: 0 auto;
             background: #f8f9fa;
-            width: calc(100vw - 280px);
-            max-width: calc(100vw - 280px);
+            width: 100%;
+            max-width: 1400px;
             overflow-x: hidden;
             box-sizing: border-box;
         }
@@ -606,7 +537,6 @@ export async function generateHTML(
             border-radius: 8px;
             padding: 16px;
             background: #fafafa;
-            margin-bottom: 16px;
             max-width: 100%;
             word-wrap: break-word;
             overflow-wrap: break-word;
@@ -615,11 +545,15 @@ export async function generateHTML(
         .step-tool-title {
             font-weight: 600;
             font-size: 1rem;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             color: #1a1a1a;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+        }
+
+        .step-tool-name {
+            font-weight: 600;
+            font-size: 1rem;
+            color: #2c3e50;
+            margin-bottom: 4px;
         }
 
         .step-tool-info-label {
@@ -649,7 +583,7 @@ export async function generateHTML(
 
         .step-bottom-row {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 16px;
         }
 
@@ -1080,14 +1014,6 @@ export async function generateHTML(
 
         /* Impression */
         @media print {
-            .sidebar {
-                display: none;
-            }
-
-            .container {
-                margin-left: 0;
-            }
-
             body {
                 background: white;
             }
@@ -1103,12 +1029,6 @@ export async function generateHTML(
     </style>
 </head>
 <body>
-    <!-- Sidebar Navigation -->
-    <div class="sidebar">
-        <h2>Navigation</h2>
-        ${generateSidebarNav(phases, !!(procedure.defects && procedure.defects.length > 0))}
-    </div>
-
     <!-- Contenu principal -->
     <div class="container">
         <!-- En-tête -->
@@ -1396,42 +1316,6 @@ export async function generateHTML(
 
 
 /**
- * Génère la navigation de la sidebar
- */
-function generateSidebarNav(phases: Phase[], hasDefects: boolean = false): string {
-  const defectsNav = hasDefects ? `
-    <div class="nav-phase">
-        <a href="#defautheque" class="nav-phase-title" style="color: #ff6b35;">
-            Défauthèque
-        </a>
-    </div>
-  ` : '';
-
-  const phasesNav = !phases || phases.length === 0
-    ? '<p style="color: #999;">Aucune phase</p>'
-    : phases.map((phase, phaseIndex) => `
-    <div class="nav-phase">
-        <a href="#phase-${phaseIndex + 1}" class="nav-phase-title">
-            Phase ${phase.phaseNumber || phaseIndex + 1}: ${escapeHtml(phase.title)}
-        </a>
-        ${phase.steps && phase.steps.length > 0 ? `
-        <ul class="nav-steps">
-            ${phase.steps.map((step, stepIndex) => `
-            <li class="nav-step">
-                <a href="#phase-${phaseIndex + 1}-step-${stepIndex + 1}">
-                    ${stepIndex + 1}. ${escapeHtml(step.title || step.description.substring(0, 40) + '...')}
-                </a>
-            </li>
-            `).join('')}
-        </ul>
-        ` : ''}
-    </div>
-  `).join('');
-
-  return defectsNav + phasesNav;
-}
-
-/**
  * Génère le HTML pour les ressources globales
  */
 function generateGlobalResources(procedure: Procedure): string {
@@ -1533,21 +1417,12 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
             ${phase.steps.map((step, stepIndex) => `
             <div class="step" id="phase-${phaseIndex + 1}-step-${stepIndex + 1}">
                 <div class="step-header">
-                    <div class="step-label">
+                    <div class="step-label" style="color: ${difficultyColor};">
                         Phase ${phase.phaseNumber || phaseIndex + 1} - étape ${stepIndex + 1}${step.title ? ` : ${escapeHtml(step.title)}` : ''}
                     </div>
                 </div>
 
                 <div class="step-details-grid">
-                    ${step.toolId && step.toolName ? `
-                    <div class="step-tool-box">
-                        <div class="step-tool-title">🔧 Outil requis</div>
-                        <div style="font-weight: 600; font-size: 1rem; color: #2c3e50;">${escapeHtml(step.toolName)}</div>
-                        ${step.toolReference ? `<div class="step-tool-ref">${escapeHtml(step.toolReference)}</div>` : ''}
-                        ${step.toolLocation ? `<div class="step-tool-location-badge">${escapeHtml(step.toolLocation)}</div>` : ''}
-                    </div>
-                    ` : ''}
-
                     ${step.description ? `
                     <div class="step-description-box">
                         <div class="step-description-title">Description</div>
@@ -1555,8 +1430,17 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                     </div>
                     ` : ''}
 
-                    ${(step.tips && step.tips.length > 0) || (step.safetyNotes && step.safetyNotes.length > 0) ? `
+                    ${(step.toolId && step.toolName) || (step.tips && step.tips.length > 0) || (step.safetyNotes && step.safetyNotes.length > 0) ? `
                     <div class="step-bottom-row">
+                        ${step.toolId && step.toolName ? `
+                        <div class="step-tool-box">
+                            <div class="step-tool-title">Outil requis</div>
+                            <div class="step-tool-name">${escapeHtml(step.toolName)}</div>
+                            ${step.toolReference ? `<div class="step-tool-ref" style="margin-top: 2px;">${escapeHtml(step.toolReference)}</div>` : ''}
+                            ${step.toolLocation ? `<div class="step-tool-location-badge" style="margin-top: 6px;">${escapeHtml(step.toolLocation)}</div>` : ''}
+                        </div>
+                        ` : '<div></div>'}
+
                         ${step.tips && step.tips.length > 0 ? `
                         <div class="tips">
                             <div class="tips-title">Conseils</div>
