@@ -327,6 +327,8 @@ export async function generateHTML(
             justify-content: center;
             width: 20px;
             height: 20px;
+            min-width: 20px;
+            min-height: 20px;
             font-size: 1rem;
             color: #dc2626;
             transition: transform 0.3s ease;
@@ -433,6 +435,7 @@ export async function generateHTML(
             box-shadow: 0 4px 16px rgba(0,0,0,0.08);
             border: 1px solid #e8e8e8;
             max-width: 100%;
+            width: 100%;
             box-sizing: border-box;
         }
 
@@ -445,32 +448,41 @@ export async function generateHTML(
         .phase-title {
             font-size: 1.6rem;
             font-weight: 600;
-            margin-bottom: 10px;
             color: #f93705;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .phase-badges {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            width: 100%;
+            gap: 8px;
+            margin-top: 8px;
         }
 
         .difficulty-badge {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            flex-shrink: 0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: white;
         }
 
         .phase-time-badge {
-            background: #f93705;
-            color: white;
-            padding: 8px 20px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            background: #f5f5f5;
+            color: #666;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
             white-space: nowrap;
-            box-shadow: 0 2px 6px rgba(249, 55, 5, 0.3);
+            border: 1px solid #e0e0e0;
         }
 
         .phase-toggle-icon {
@@ -479,6 +491,8 @@ export async function generateHTML(
             justify-content: center;
             width: 20px;
             height: 20px;
+            min-width: 20px;
+            min-height: 20px;
             font-size: 1rem;
             color: #999;
             transition: transform 0.3s ease;
@@ -521,6 +535,9 @@ export async function generateHTML(
         .steps {
             padding: 28px;
             background: #fafafa;
+            max-width: 100%;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .step {
@@ -531,6 +548,8 @@ export async function generateHTML(
             border-radius: 8px;
             box-shadow: 0 2px 6px rgba(0,0,0,0.04);
             max-width: 100%;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .step:last-child {
@@ -557,22 +576,13 @@ export async function generateHTML(
         }
 
         .step-description-box {
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 16px 20px;
             color: #2c3e50;
             line-height: 1.8;
             font-size: 1rem;
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .step-description-left {
-            flex: 1;
-            min-width: 0;
+            margin-bottom: 16px;
+            max-width: 100%;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         .step-description-title {
@@ -583,27 +593,30 @@ export async function generateHTML(
         }
 
         .step-description-content {
+            color: #555;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
-        .step-tool-info {
-            border-left: 1px solid #e0e0e0;
-            padding-left: 20px;
-            min-width: 180px;
-            flex-shrink: 0;
+        .step-tool-box {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+            background: #fafafa;
+            margin-bottom: 16px;
+            max-width: 100%;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
-        @media (max-width: 768px) {
-            .step-description-box {
-                flex-direction: column;
-            }
-
-            .step-tool-info {
-                border-left: none;
-                border-top: 1px solid #e0e0e0;
-                padding-left: 0;
-                padding-top: 16px;
-                min-width: 100%;
-            }
+        .step-tool-title {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 12px;
+            color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .step-tool-info-label {
@@ -684,6 +697,7 @@ export async function generateHTML(
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 20px;
             margin-top: 24px;
+            max-width: 100%;
         }
 
         .step-image-wrapper {
@@ -691,12 +705,14 @@ export async function generateHTML(
             border: 1px solid #e0e0e0;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            max-width: 100%;
         }
 
         .step-image {
             width: 100%;
             height: auto;
             display: block;
+            max-width: 100%;
         }
 
         .step-image-desc {
@@ -1171,7 +1187,7 @@ export async function generateHTML(
     <!-- Sidebar Navigation -->
     <div class="sidebar">
         <h2>Navigation</h2>
-        ${generateSidebarNav(phases, !!(procedure.defects && procedure.defects.length > 0), !!(procedure.changelog && procedure.changelog.length > 0))}
+        ${generateSidebarNav(phases, !!(procedure.defects && procedure.defects.length > 0), false)}
     </div>
 
     <!-- Contenu principal -->
@@ -1204,7 +1220,6 @@ export async function generateHTML(
             ${generateGlobalResources(procedure)}
             ${generateDefects(procedure, renderedImageUrls)}
             ${generatePhasesHTML(phases, renderedImageUrls)}
-            ${generateVersionHistory(procedure)}
         </div>
     </div>
 
@@ -1641,29 +1656,16 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
     return `
     <div class="phase" id="phase-${phaseIndex + 1}">
         <div class="phase-header" onclick="togglePhase('phase-${phaseIndex + 1}')" style="cursor: pointer;">
-            <div class="phase-title">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <span class="phase-toggle-icon collapsed" id="phase-${phaseIndex + 1}-toggle">►</span>
-                    <span class="difficulty-badge" style="background: ${difficultyColor};" title="${difficultyLabel}"></span>
-                    <span>Phase ${phase.phaseNumber || phaseIndex + 1} : ${escapeHtml(phase.title)}</span>
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <span class="phase-toggle-icon collapsed" id="phase-${phaseIndex + 1}-toggle">►</span>
+                <div style="flex: 1;">
+                    <div class="phase-title">Phase ${phase.phaseNumber || phaseIndex + 1} : ${escapeHtml(phase.title)}</div>
+                    <div class="phase-badges">
+                        <span class="difficulty-badge" style="background: ${difficultyColor};">${difficultyLabel.toUpperCase()}</span>
+                        ${phase.estimatedTime ? `<span class="phase-time-badge">⏱️ ${phase.estimatedTime} min/pièce</span>` : ''}
+                    </div>
                 </div>
-                ${phase.estimatedTime ? `
-                <span class="phase-time-badge">${phase.estimatedTime} min/pièce</span>
-                ` : ''}
             </div>
-            <div class="phase-meta" style="display: none;">
-                ${phase.numberOfPeople ? `
-                <div class="phase-meta-item">
-                    <span>Personnes:</span>
-                    <span>${phase.numberOfPeople}</span>
-                </div>
-                ` : ''}
-            </div>
-            ${phase.requiredSkills && phase.requiredSkills.length > 0 ? `
-            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0; color: #555; display: none;">
-                <strong>Compétences requises:</strong> ${phase.requiredSkills.join(', ')}
-            </div>
-            ` : ''}
         </div>
         <div class="phase-content collapsed" id="phase-${phaseIndex + 1}-content">
 
@@ -1678,22 +1680,19 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                 </div>
 
                 <div class="step-details-grid">
-                    ${step.description || (step.toolId && step.toolName) ? `
-                    <div class="step-description-box" style="background: ${step.toolColor ? `${step.toolColor}15` : '#f8f9fa'};">
-                        <div class="step-description-left">
-                            ${step.description ? `
-                            <div class="step-description-title">Description</div>
-                            <div class="step-description-content">${step.description}</div>
-                            ` : ''}
-                        </div>
-                        ${step.toolId && step.toolName ? `
-                        <div class="step-tool-info">
-                            <div class="step-tool-info-label">Outil</div>
-                            <div>${escapeHtml(step.toolName)}</div>
-                            ${step.toolReference ? `<div class="step-tool-ref">${escapeHtml(step.toolReference)}</div>` : ''}
-                            ${step.toolLocation ? `<span class="step-tool-location-badge">${escapeHtml(step.toolLocation)}</span>` : ''}
-                        </div>
-                        ` : ''}
+                    ${step.toolId && step.toolName ? `
+                    <div class="step-tool-box">
+                        <div class="step-tool-title">🔧 Outil requis</div>
+                        <div style="font-weight: 600; font-size: 1rem; color: #2c3e50;">${escapeHtml(step.toolName)}</div>
+                        ${step.toolReference ? `<div class="step-tool-ref">${escapeHtml(step.toolReference)}</div>` : ''}
+                        ${step.toolLocation ? `<div class="step-tool-location-badge">${escapeHtml(step.toolLocation)}</div>` : ''}
+                    </div>
+                    ` : ''}
+
+                    ${step.description ? `
+                    <div class="step-description-box">
+                        <div class="step-description-title">Description</div>
+                        <div class="step-description-content">${step.description}</div>
                     </div>
                     ` : ''}
 
