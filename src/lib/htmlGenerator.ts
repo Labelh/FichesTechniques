@@ -382,7 +382,9 @@ export async function generateHTML(
             color: #f93705;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 12px;
+            width: 100%;
         }
 
         .difficulty-badge {
@@ -391,6 +393,28 @@ export async function generateHTML(
             border-radius: 50%;
             flex-shrink: 0;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .phase-time-badge {
+            background: #f93705;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            white-space: nowrap;
+            box-shadow: 0 2px 6px rgba(249, 55, 5, 0.3);
+        }
+
+        .phase-toggle-icon, .step-toggle-icon {
+            font-size: 1.2rem;
+            color: #999;
+            transition: transform 0.3s ease;
+            user-select: none;
+        }
+
+        .phase-toggle-icon.collapsed, .step-toggle-icon.collapsed {
+            transform: rotate(-90deg);
         }
 
         .phase-meta {
@@ -824,9 +848,15 @@ export async function generateHTML(
         .carousel-item img {
             width: 100%;
             height: auto;
-            max-height: 500px;
+            max-height: 800px;
             object-fit: contain;
             background: #000;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .carousel-item img:hover {
+            opacity: 0.95;
         }
 
 
@@ -1103,9 +1133,100 @@ export async function generateHTML(
                 if (lightbox.classList.contains('active')) {
                     lightbox.classList.remove('active');
                     document.body.style.overflow = 'auto';
+                    resetZoom();
                 }
             }
         });
+
+        // Zoom pour lightbox et carousel
+        let currentZoom = 1;
+        const MIN_ZOOM = 1;
+        const MAX_ZOOM = 5;
+
+        function resetZoom() {
+            currentZoom = 1;
+            const lightboxImg = document.getElementById('lightbox-img');
+            if (lightboxImg) {
+                lightboxImg.style.transform = 'scale(' + currentZoom + ')';
+                lightboxImg.style.cursor = 'zoom-in';
+            }
+        }
+
+        function handleZoom(delta) {
+            const lightboxImg = document.getElementById('lightbox-img');
+            if (!lightboxImg) return;
+
+            const zoomFactor = delta > 0 ? 1.2 : 0.8;
+            currentZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, currentZoom * zoomFactor));
+
+            lightboxImg.style.transform = 'scale(' + currentZoom + ')';
+            lightboxImg.style.transition = 'transform 0.3s ease';
+            lightboxImg.style.cursor = currentZoom > 1 ? 'zoom-out' : 'zoom-in';
+        }
+
+        // Zoom avec molette
+        document.getElementById('lightbox').addEventListener('wheel', function(e) {
+            if (this.classList.contains('active')) {
+                e.preventDefault();
+                handleZoom(-e.deltaY);
+            }
+        });
+
+        // Zoom au clic
+        document.getElementById('lightbox-img').addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (currentZoom === 1) {
+                currentZoom = 2;
+            } else if (currentZoom < MAX_ZOOM) {
+                currentZoom = Math.min(MAX_ZOOM, currentZoom * 1.5);
+            } else {
+                currentZoom = 1;
+            }
+            this.style.transform = 'scale(' + currentZoom + ')';
+            this.style.cursor = currentZoom > 1 ? 'zoom-out' : 'zoom-in';
+        });
+
+        // Toggle Phase
+        function togglePhase(phaseId) {
+            const content = document.getElementById(phaseId + '-content');
+            const toggle = document.getElementById(phaseId + '-toggle');
+
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                toggle.textContent = '▼';
+                toggle.classList.remove('collapsed');
+            } else {
+                content.style.display = 'none';
+                toggle.textContent = '►';
+                toggle.classList.add('collapsed');
+                // Fermer toutes les sous-étapes
+                const steps = content.querySelectorAll('.step-details-grid');
+                steps.forEach(step => {
+                    step.style.display = 'none';
+                });
+                const stepToggles = content.querySelectorAll('.step-toggle-icon');
+                stepToggles.forEach(toggle => {
+                    toggle.textContent = '►';
+                    toggle.classList.add('collapsed');
+                });
+            }
+        }
+
+        // Toggle Step
+        function toggleStep(stepId) {
+            const content = document.getElementById(stepId + '-content');
+            const toggle = document.getElementById(stepId + '-toggle');
+
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                toggle.textContent = '▼';
+                toggle.classList.remove('collapsed');
+            } else {
+                content.style.display = 'none';
+                toggle.textContent = '►';
+                toggle.classList.add('collapsed');
+            }
+        }
 
         // Carrousel JavaScript
         const carouselStates = new Map();
@@ -1408,21 +1529,22 @@ function generateDefects(procedure: Procedure, renderedImageUrls: Map<string, st
  */
 function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, string>): string {
   return phases.map((phase, phaseIndex) => {
-    const difficultyColor = phase.difficulty === 'easy' ? '#10b981' : phase.difficulty === 'medium' ? '#f59e0b' : phase.difficulty === 'hard' ? '#ef4444' : '#999';
+    const difficultyColor = phase.difficulty === 'trainee' ? '#3b82f6' : phase.difficulty === 'easy' ? '#10b981' : phase.difficulty === 'medium' ? '#eab308' : phase.difficulty === 'hard' ? '#ef4444' : '#999';
+    const difficultyLabel = phase.difficulty === 'trainee' ? 'Stagiaire' : phase.difficulty === 'easy' ? 'Facile' : phase.difficulty === 'medium' ? 'Moyen' : phase.difficulty === 'hard' ? 'Difficile' : phase.difficulty;
     return `
     <div class="phase" id="phase-${phaseIndex + 1}">
-        <div class="phase-header">
+        <div class="phase-header" onclick="togglePhase('phase-${phaseIndex + 1}')" style="cursor: pointer;">
             <div class="phase-title">
-                <span class="difficulty-badge" style="background: ${difficultyColor};"></span>
-                Phase ${phase.phaseNumber || phaseIndex + 1} : ${escapeHtml(phase.title)}
-            </div>
-            <div class="phase-meta">
-                ${phase.estimatedTime ? `
-                <div class="phase-meta-item">
-                    <span>Temps estimé par pièce:</span>
-                    <span>${phase.estimatedTime} min</span>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span class="phase-toggle-icon" id="phase-${phaseIndex + 1}-toggle">▼</span>
+                    <span class="difficulty-badge" style="background: ${difficultyColor};" title="${difficultyLabel}"></span>
+                    <span>Phase ${phase.phaseNumber || phaseIndex + 1} : ${escapeHtml(phase.title)}</span>
                 </div>
+                ${phase.estimatedTime ? `
+                <span class="phase-time-badge">${phase.estimatedTime} min/pièce</span>
                 ` : ''}
+            </div>
+            <div class="phase-meta" style="display: none;">
                 ${phase.numberOfPeople ? `
                 <div class="phase-meta-item">
                     <span>Personnes:</span>
@@ -1431,24 +1553,28 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                 ` : ''}
             </div>
             ${phase.requiredSkills && phase.requiredSkills.length > 0 ? `
-            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0; color: #555;">
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0; color: #555; display: none;">
                 <strong>Compétences requises:</strong> ${phase.requiredSkills.join(', ')}
             </div>
             ` : ''}
         </div>
+        <div class="phase-content" id="phase-${phaseIndex + 1}-content"style="display: none;">
 
         ${phase.steps && phase.steps.length > 0 ? `
         <div class="steps">
             ${phase.steps.map((step, stepIndex) => `
             <div class="step" id="phase-${phaseIndex + 1}-step-${stepIndex + 1}">
-                <div class="step-header">
-                    <div class="step-number">${stepIndex + 1}</div>
-                    <div class="step-content">
-                        ${step.title ? `<div class="step-title">${escapeHtml(step.title)}</div>` : ''}
+                <div class="step-header" onclick="toggleStep('phase-${phaseIndex + 1}-step-${stepIndex + 1}')" style="cursor: pointer;">
+                    <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
+                        <div class="step-number">${stepIndex + 1}</div>
+                        <div class="step-content" style="flex: 1;">
+                            ${step.title ? `<div class="step-title">${escapeHtml(step.title)}</div>` : ''}
+                        </div>
+                        <span class="step-toggle-icon" id="phase-${phaseIndex + 1}-step-${stepIndex + 1}-toggle">▼</span>
                     </div>
                 </div>
 
-                <div class="step-details-grid">
+                <div class="step-details-grid" id="phase-${phaseIndex + 1}-step-${stepIndex + 1}-content" style="display: none;">
                     ${step.description || (step.toolId && step.toolName) ? `
                     <div class="step-description-box" style="background: ${step.toolColor ? `${step.toolColor}15` : '#f8f9fa'};">
                         <div class="step-description-left">
@@ -1504,10 +1630,12 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                 ${step.videos && step.videos.length > 0 ? `
                 ${generateVideoCarousel(step.videos, `phase-${phaseIndex + 1}-step-${stepIndex + 1}`)}
                 ` : ''}
+                </div>
             </div>
             `).join('')}
         </div>
         ` : ''}
+        </div>
     </div>
   `}).join('');
 }
@@ -1529,49 +1657,6 @@ function sanitizeFilename(filename: string): string {
     .replace(/[<>:"/\\|?*]/g, '_')
     .replace(/\s+/g, '_')
     .substring(0, 200);
-}
-
-/**
- * Convertit une URL YouTube ou Vimeo en URL d'embed
- */
-function getVideoEmbedUrl(url: string): string | null {
-  try {
-    const urlObj = new URL(url);
-
-    // YouTube
-    if (urlObj.hostname.includes('youtube.com') || urlObj.hostname.includes('youtu.be')) {
-      let videoId = '';
-
-      if (urlObj.hostname.includes('youtu.be')) {
-        // Format: https://youtu.be/VIDEO_ID
-        videoId = urlObj.pathname.slice(1).split('?')[0];
-      } else if (urlObj.searchParams.has('v')) {
-        // Format: https://www.youtube.com/watch?v=VIDEO_ID
-        videoId = urlObj.searchParams.get('v') || '';
-      } else if (urlObj.pathname.includes('/embed/')) {
-        // Déjà au format embed
-        return url;
-      }
-
-      if (videoId) {
-        // Utiliser youtube-nocookie pour éviter certaines restrictions
-        // Ajouter des paramètres pour maximiser la compatibilité
-        return `https://www.youtube-nocookie.com/embed/${videoId}?modestbranding=1&rel=0&showinfo=0`;
-      }
-    }
-
-    // Vimeo
-    if (urlObj.hostname.includes('vimeo.com')) {
-      const videoId = urlObj.pathname.split('/').filter(Boolean).pop();
-      if (videoId && /^\d+$/.test(videoId)) {
-        return `https://player.vimeo.com/video/${videoId}`;
-      }
-    }
-
-    return null;
-  } catch {
-    return null;
-  }
 }
 
 /**
@@ -1631,28 +1716,37 @@ function generateVideoCarousel(videos: any[], carouselId: string): string {
   if (videos.length === 0) return '';
 
   const carouselItems = videos.map((video, index) => {
-    const embedUrl = getVideoEmbedUrl(video.url);
-
-    if (embedUrl) {
-      return `
-        <div class="carousel-item" style="display: ${index === 0 ? 'flex' : 'none'};">
-          <div class="step-video-wrapper">
-            <iframe src="${embedUrl}" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" frameborder="0"></iframe>
-          </div>
-          ${video.name ? `<div class="carousel-item-desc" style="padding: 12px; background: #f8f9fa; text-align: center; border-top: 1px solid #e8e8e8; color: #666;">${escapeHtml(video.name)}</div>` : ''}
+    return `
+      <div class="carousel-item" style="display: ${index === 0 ? 'flex' : 'none'};">
+        <div style="padding: 40px; text-align: center; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 12px; margin: 20px 0;">
+          <a href="${escapeHtml(video.url)}" target="_blank" rel="noopener noreferrer" class="video-button" style="
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 32px;
+            background: #f93705;
+            color: white;
+            font-size: 1.1rem;
+            text-decoration: none;
+            font-weight: 600;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(249, 55, 5, 0.3);
+            transition: all 0.3s ease;
+          " onmouseover="this.style.background='#d43004'; this.style.boxShadow='0 6px 16px rgba(249, 55, 5, 0.4)'; this.style.transform='translateY(-2px)';" onmouseout="this.style.background='#f93705'; this.style.boxShadow='0 4px 12px rgba(249, 55, 5, 0.3)'; this.style.transform='translateY(0)';">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <span>${escapeHtml(video.name || 'Voir la vidéo sur YouTube')}</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+          </a>
+          ${video.description ? `<p style="margin-top: 16px; color: #666; font-size: 0.95rem;">${escapeHtml(video.description)}</p>` : ''}
         </div>
-      `;
-    } else {
-      return `
-        <div class="carousel-item" style="display: ${index === 0 ? 'flex' : 'none'};">
-          <div style="padding: 40px; text-align: center; background: #f8f9fa;">
-            <a href="${escapeHtml(video.url)}" target="_blank" style="color: #f93705; font-size: 1.2rem; text-decoration: none; font-weight: 600;">
-              🎥 ${escapeHtml(video.name || 'Voir la vidéo')}
-            </a>
-          </div>
-        </div>
-      `;
-    }
+      </div>
+    `;
   }).join('');
 
   if (videos.length === 1) {

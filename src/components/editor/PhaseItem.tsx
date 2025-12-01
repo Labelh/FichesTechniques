@@ -344,15 +344,17 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
 
   const getDifficultyColor = (diff: DifficultyLevel) => {
     switch (diff) {
-      case 'easy': return 'bg-status-success';
-      case 'medium': return 'bg-status-warning';
-      case 'hard': return 'bg-status-danger';
+      case 'trainee': return 'bg-blue-500';
+      case 'easy': return 'bg-green-500';
+      case 'medium': return 'bg-yellow-500';
+      case 'hard': return 'bg-red-500';
       default: return 'bg-background-elevated';
     }
   };
 
   const getDifficultyLabel = (diff: DifficultyLevel) => {
     switch (diff) {
+      case 'trainee': return 'Stagiaire';
       case 'easy': return 'Facile';
       case 'medium': return 'Moyen';
       case 'hard': return 'Difficile';
@@ -449,6 +451,7 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
                   onChange={(e) => setDifficulty(e.target.value as DifficultyLevel)}
                   className="w-full rounded-md border border-[#323232] bg-transparent px-3 py-2 text-sm text-white"
                 >
+                  <option value="trainee">Stagiaire</option>
                   <option value="easy">Facile</option>
                   <option value="medium">Moyen</option>
                   <option value="hard">Difficile</option>

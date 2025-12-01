@@ -3,6 +3,7 @@
 // ==========================================
 
 export enum DifficultyLevel {
+  TRAINEE = 'trainee',
   EASY = 'easy',
   MEDIUM = 'medium',
   HARD = 'hard',
