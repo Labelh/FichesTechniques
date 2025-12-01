@@ -836,90 +836,6 @@ export async function generateHTML(
             font-size: 0.9rem;
         }
 
-        /* Version History Table */
-        .version-history {
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            overflow: hidden;
-            margin: 20px 0;
-        }
-
-        .version-history-title {
-            font-size: 1.4rem;
-            font-weight: 600;
-            color: #1a1a1a;
-            padding: 20px 24px;
-            background: #f8f9fa;
-            border-bottom: 1px solid #e0e0e0;
-            margin: 0;
-        }
-
-        .version-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .version-table th {
-            background: #f8f9fa;
-            color: #666;
-            font-weight: 600;
-            text-align: left;
-            padding: 12px 16px;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        .version-table td {
-            padding: 14px 16px;
-            border-bottom: 1px solid #f0f0f0;
-            color: #2c3e50;
-            font-size: 0.9rem;
-        }
-
-        .version-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .version-table tr:hover {
-            background: #f8f9fa;
-        }
-
-        .version-table-badge {
-            display: inline-block;
-            background: rgb(249, 55, 5);
-            color: white;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 0.85rem;
-        }
-
-        .version-type-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .version-type-major {
-            background: rgba(249, 55, 5, 0.1);
-            color: rgb(249, 55, 5);
-        }
-
-        .version-type-minor {
-            background: rgba(16, 185, 129, 0.1);
-            color: #059669;
-        }
-
-        .version-date-cell {
-            color: #666;
-            font-size: 0.85rem;
-            white-space: nowrap;
-        }
 
         /* Carrousels */
         .carousel-container {
@@ -1187,7 +1103,7 @@ export async function generateHTML(
     <!-- Sidebar Navigation -->
     <div class="sidebar">
         <h2>Navigation</h2>
-        ${generateSidebarNav(phases, !!(procedure.defects && procedure.defects.length > 0), false)}
+        ${generateSidebarNav(phases, !!(procedure.defects && procedure.defects.length > 0))}
     </div>
 
     <!-- Contenu principal -->
@@ -1473,61 +1389,11 @@ export async function generateHTML(
   URL.revokeObjectURL(url);
 }
 
-/**
- * Génère le HTML pour l'historique des versions
- */
-function generateVersionHistory(procedure: Procedure): string {
-  if (!procedure.changelog || procedure.changelog.length === 0) {
-    return '';
-  }
-
-  return `
-    <section class="section" id="versioning">
-        <div class="version-history">
-            <h2 class="version-history-title">Historique des versions</h2>
-            <table class="version-table">
-                <thead>
-                    <tr>
-                        <th style="width: 15%;">Version</th>
-                        <th style="width: 12%;">Type</th>
-                        <th style="width: 18%;">Date</th>
-                        <th>Modifications</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${procedure.changelog.map(log => {
-                        let dateStr = '';
-                        try {
-                            if (log.date && typeof log.date === 'object' && 'toDate' in log.date) {
-                                dateStr = (log.date as any).toDate().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
-                            } else if (log.date instanceof Date) {
-                                dateStr = log.date.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
-                            } else {
-                                dateStr = new Date(log.date).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
-                            }
-                        } catch (e) {
-                            dateStr = 'Date invalide';
-                        }
-                        return `
-                        <tr>
-                            <td><span class="version-table-badge">v${escapeHtml(log.version)}</span></td>
-                            <td><span class="version-type-badge ${log.type === 'major' ? 'version-type-major' : 'version-type-minor'}">${log.type === 'major' ? 'Majeure' : 'Mineure'}</span></td>
-                            <td class="version-date-cell">${dateStr}</td>
-                            <td>${escapeHtml(log.description)}</td>
-                        </tr>
-                        `;
-                    }).join('')}
-                </tbody>
-            </table>
-        </div>
-    </section>
-  `;
-}
 
 /**
  * Génère la navigation de la sidebar
  */
-function generateSidebarNav(phases: Phase[], hasDefects: boolean = false, hasVersionHistory: boolean = false): string {
+function generateSidebarNav(phases: Phase[], hasDefects: boolean = false): string {
   const defectsNav = hasDefects ? `
     <div class="nav-phase">
         <a href="#defautheque" class="nav-phase-title" style="color: #ff6b35;">
@@ -1557,15 +1423,7 @@ function generateSidebarNav(phases: Phase[], hasDefects: boolean = false, hasVer
     </div>
   `).join('');
 
-  const versioningNav = hasVersionHistory ? `
-    <div class="nav-phase">
-        <a href="#versioning" class="nav-phase-title" style="color: #f93705;">
-            Historique des versions
-        </a>
-    </div>
-  ` : '';
-
-  return defectsNav + phasesNav + versioningNav;
+  return defectsNav + phasesNav;
 }
 
 /**
