@@ -150,8 +150,10 @@ export async function generateHTML(
         .container {
             margin-left: 280px;
             background: #f8f9fa;
+            width: calc(100vw - 280px);
             max-width: calc(100vw - 280px);
             overflow-x: hidden;
+            box-sizing: border-box;
         }
 
         /* En-tête */
@@ -264,9 +266,10 @@ export async function generateHTML(
 
         /* Contenu */
         .content {
-            padding: 48px;
+            padding: 24px 32px;
             max-width: 100%;
             margin: 0 auto;
+            box-sizing: border-box;
         }
 
         /* Ressources globales */
@@ -378,6 +381,7 @@ export async function generateHTML(
             box-shadow: 0 4px 16px rgba(0,0,0,0.08);
             border: 1px solid #e8e8e8;
             max-width: 100%;
+            box-sizing: border-box;
         }
 
         .phase-header {

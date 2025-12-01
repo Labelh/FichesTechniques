@@ -513,7 +513,15 @@ export default function ProcedureEditor() {
       return;
     }
 
+    // Avertir l'utilisateur et attendre que Firestore se synchronise
+    toast.info('⏱️ Sauvegarde en cours... Veuillez patienter');
+
+    // Attendre 2 secondes pour laisser Firestore se synchroniser
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
     try {
+      toast.info('📥 Chargement des données...');
+
       // Recharger la procédure depuis Firestore pour avoir les données les plus récentes
       const { db } = await import('@/lib/firebase');
       const { doc, getDoc, collection, query, where, getDocs, orderBy } = await import('firebase/firestore');
@@ -545,17 +553,24 @@ export default function ProcedureEditor() {
         ...doc.data()
       })) as any[];
 
-      console.log('Fresh procedure loaded for HTML export:', freshProcedure);
+      console.log('=== HTML EXPORT DEBUG ===');
+      console.log('Fresh procedure loaded:', freshProcedure.designation);
       console.log('Number of phases loaded:', phases.length);
       phases.forEach((phase, idx) => {
         console.log(`Phase ${idx + 1}:`, phase.title, `Steps: ${phase.steps?.length || 0}`);
+        if (phase.steps) {
+          phase.steps.forEach((step: any, stepIdx: number) => {
+            console.log(`  Step ${stepIdx + 1}:`, step.title || 'Sans titre', `Description: ${step.description?.substring(0, 50) || 'Vide'}...`);
+          });
+        }
       });
 
       // Ajouter les phases à la procédure
       freshProcedure.phases = phases;
 
+      toast.info('📄 Génération du HTML...');
       await generateHTML(freshProcedure, phases);
-      toast.success('Procédure exportée en HTML');
+      toast.success('✅ Procédure exportée en HTML avec succès !');
     } catch (error) {
       console.error('Error exporting HTML:', error);
       toast.error('Erreur lors de l\'export HTML');
