@@ -61,13 +61,20 @@ export async function generateHTML(
             box-sizing: border-box;
         }
 
+        html {
+            overflow-x: hidden;
+            max-width: 100vw;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             line-height: 1.6;
             color: #2c3e50;
             background: #f8f9fa;
             margin: 0;
+            padding: 0;
             overflow-x: hidden;
+            max-width: 100vw;
         }
 
         /* Sidebar Navigation */
@@ -143,6 +150,8 @@ export async function generateHTML(
         .container {
             margin-left: 280px;
             background: #f8f9fa;
+            max-width: calc(100vw - 280px);
+            overflow-x: hidden;
         }
 
         /* En-tête */
@@ -417,6 +426,19 @@ export async function generateHTML(
 
         .phase-toggle-icon.collapsed {
             transform: rotate(0deg);
+        }
+
+        .phase-content {
+            overflow: hidden;
+            transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out;
+            max-height: 5000px;
+            opacity: 1;
+        }
+
+        .phase-content.collapsed {
+            max-height: 0;
+            opacity: 0;
+            transition: max-height 0.4s ease-in-out, opacity 0.2s ease-in-out;
         }
 
         .phase-meta {
@@ -926,12 +948,14 @@ export async function generateHTML(
             font-weight: 600;
         }
 
-        /* Défauthèque - Images carrées */
+        /* Défauthèque - Images complètes (non coupées) */
         .defect-item .carousel-item img {
             width: 100%;
-            height: 300px;
-            object-fit: cover;
+            height: auto;
+            max-height: 600px;
+            object-fit: contain;
             border-radius: 4px;
+            background: #f8f9fa;
         }
 
         /* Images cliquables pour zoom */
@@ -1190,17 +1214,17 @@ export async function generateHTML(
             this.style.cursor = currentZoom > 1 ? 'zoom-out' : 'zoom-in';
         });
 
-        // Toggle Phase
+        // Toggle Phase avec animation
         function togglePhase(phaseId) {
             const content = document.getElementById(phaseId + '-content');
             const toggle = document.getElementById(phaseId + '-toggle');
 
-            if (content.style.display === 'none') {
-                content.style.display = 'block';
+            if (content.classList.contains('collapsed')) {
+                content.classList.remove('collapsed');
                 toggle.textContent = '▼';
                 toggle.classList.remove('collapsed');
             } else {
-                content.style.display = 'none';
+                content.classList.add('collapsed');
                 toggle.textContent = '►';
                 toggle.classList.add('collapsed');
             }
@@ -1536,7 +1560,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
             </div>
             ` : ''}
         </div>
-        <div class="phase-content" id="phase-${phaseIndex + 1}-content"style="display: none;">
+        <div class="phase-content collapsed" id="phase-${phaseIndex + 1}-content">
 
         ${phase.steps && phase.steps.length > 0 ? `
         <div class="steps">
@@ -1692,32 +1716,40 @@ function generateVideoCarousel(videos: any[], carouselId: string): string {
   const carouselItems = videos.map((video, index) => {
     return `
       <div class="carousel-item" style="display: ${index === 0 ? 'flex' : 'none'};">
-        <div style="padding: 40px; text-align: center; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 12px; margin: 20px 0;">
+        <div style="padding: 24px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; margin: 20px 0;">
           <a href="${escapeHtml(video.url)}" target="_blank" rel="noopener noreferrer" class="video-button" style="
-            display: inline-flex;
+            display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 16px 32px;
-            background: #f93705;
-            color: white;
-            font-size: 1.1rem;
+            gap: 16px;
+            padding: 18px 24px;
+            background: white;
+            color: #1a1a1a;
             text-decoration: none;
-            font-weight: 600;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(249, 55, 5, 0.3);
+            border: 2px solid #e0e0e0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             transition: all 0.3s ease;
-          " onmouseover="this.style.background='#d43004'; this.style.boxShadow='0 6px 16px rgba(249, 55, 5, 0.4)'; this.style.transform='translateY(-2px)';" onmouseout="this.style.background='#f93705'; this.style.boxShadow='0 4px 12px rgba(249, 55, 5, 0.3)'; this.style.transform='translateY(0)';">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          " onmouseover="this.style.borderColor='#f93705'; this.style.boxShadow='0 4px 12px rgba(249, 55, 5, 0.2)'; this.style.transform='translateX(4px)';" onmouseout="this.style.borderColor='#e0e0e0'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.08)'; this.style.transform='translateX(0)';">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f93705" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+              <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+              <line x1="7" y1="2" x2="7" y2="22"></line>
+              <line x1="17" y1="2" x2="17" y2="22"></line>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <line x1="2" y1="7" x2="7" y2="7"></line>
+              <line x1="2" y1="17" x2="7" y2="17"></line>
+              <line x1="17" y1="17" x2="22" y2="17"></line>
+              <line x1="17" y1="7" x2="22" y2="7"></line>
             </svg>
-            <span>${escapeHtml(video.name || 'Voir la vidéo sur YouTube')}</span>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <div style="flex: 1; text-align: left;">
+              <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 4px;">${escapeHtml(video.name || 'Vidéo YouTube')}</div>
+              ${video.description ? `<div style="font-size: 0.9rem; color: #666;">${escapeHtml(video.description)}</div>` : ''}
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f93705" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
               <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
               <polyline points="15 3 21 3 21 9"></polyline>
               <line x1="10" y1="14" x2="21" y2="3"></line>
             </svg>
           </a>
-          ${video.description ? `<p style="margin-top: 16px; color: #666; font-size: 0.95rem;">${escapeHtml(video.description)}</p>` : ''}
         </div>
       </div>
     `;
