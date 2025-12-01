@@ -408,15 +408,15 @@ export async function generateHTML(
             box-shadow: 0 2px 6px rgba(249, 55, 5, 0.3);
         }
 
-        .phase-toggle-icon, .step-toggle-icon {
+        .phase-toggle-icon {
             font-size: 1.2rem;
             color: #999;
             transition: transform 0.3s ease;
             user-select: none;
         }
 
-        .phase-toggle-icon.collapsed, .step-toggle-icon.collapsed {
-            transform: rotate(-90deg);
+        .phase-toggle-icon.collapsed {
+            transform: rotate(0deg);
         }
 
         .phase-meta {
@@ -453,37 +453,17 @@ export async function generateHTML(
             margin-bottom: 0;
         }
 
-        .step-number {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, rgb(249, 55, 5) 0%, rgb(230, 45, 0) 100%);
-            color: white;
-            width: 40px;
-            height: 40px;
-            flex-shrink: 0;
-            font-weight: 700;
-            font-size: 1.1rem;
-            border-radius: 6px;
-            box-shadow: 0 2px 4px rgba(249, 55, 5, 0.3);
-        }
-
         .step-header {
-            display: flex;
-            align-items: flex-start;
-            gap: 16px;
             margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f93705;
         }
 
-        .step-content {
-            flex: 1;
-        }
-
-        .step-title {
-            font-size: 1.15rem;
-            font-weight: 400;
-            color: #1a1a1a;
-            margin-bottom: 8px;
+        .step-label {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #f93705;
+            letter-spacing: -0.02em;
         }
 
         .step-description {
@@ -1223,32 +1203,6 @@ export async function generateHTML(
                 content.style.display = 'none';
                 toggle.textContent = '►';
                 toggle.classList.add('collapsed');
-                // Fermer toutes les sous-étapes
-                const steps = content.querySelectorAll('.step-details-grid');
-                steps.forEach(step => {
-                    step.style.display = 'none';
-                });
-                const stepToggles = content.querySelectorAll('.step-toggle-icon');
-                stepToggles.forEach(toggle => {
-                    toggle.textContent = '►';
-                    toggle.classList.add('collapsed');
-                });
-            }
-        }
-
-        // Toggle Step
-        function toggleStep(stepId) {
-            const content = document.getElementById(stepId + '-content');
-            const toggle = document.getElementById(stepId + '-toggle');
-
-            if (content.style.display === 'none') {
-                content.style.display = 'block';
-                toggle.textContent = '▼';
-                toggle.classList.remove('collapsed');
-            } else {
-                content.style.display = 'none';
-                toggle.textContent = '►';
-                toggle.classList.add('collapsed');
             }
         }
 
@@ -1560,7 +1514,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
         <div class="phase-header" onclick="togglePhase('phase-${phaseIndex + 1}')" style="cursor: pointer;">
             <div class="phase-title">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <span class="phase-toggle-icon" id="phase-${phaseIndex + 1}-toggle">▼</span>
+                    <span class="phase-toggle-icon collapsed" id="phase-${phaseIndex + 1}-toggle">►</span>
                     <span class="difficulty-badge" style="background: ${difficultyColor};" title="${difficultyLabel}"></span>
                     <span>Phase ${phase.phaseNumber || phaseIndex + 1} : ${escapeHtml(phase.title)}</span>
                 </div>
@@ -1588,17 +1542,13 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
         <div class="steps">
             ${phase.steps.map((step, stepIndex) => `
             <div class="step" id="phase-${phaseIndex + 1}-step-${stepIndex + 1}">
-                <div class="step-header" onclick="toggleStep('phase-${phaseIndex + 1}-step-${stepIndex + 1}')" style="cursor: pointer;">
-                    <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
-                        <div class="step-number">${stepIndex + 1}</div>
-                        <div class="step-content" style="flex: 1;">
-                            ${step.title ? `<div class="step-title">${escapeHtml(step.title)}</div>` : ''}
-                        </div>
-                        <span class="step-toggle-icon" id="phase-${phaseIndex + 1}-step-${stepIndex + 1}-toggle">▼</span>
+                <div class="step-header">
+                    <div class="step-label">
+                        Phase ${phase.phaseNumber || phaseIndex + 1} - étape ${stepIndex + 1}${step.title ? ` : ${escapeHtml(step.title)}` : ''}
                     </div>
                 </div>
 
-                <div class="step-details-grid" id="phase-${phaseIndex + 1}-step-${stepIndex + 1}-content" style="display: none;">
+                <div class="step-details-grid">
                     ${step.description || (step.toolId && step.toolName) ? `
                     <div class="step-description-box" style="background: ${step.toolColor ? `${step.toolColor}15` : '#f8f9fa'};">
                         <div class="step-description-left">
