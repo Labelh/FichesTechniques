@@ -162,6 +162,9 @@ export async function generateHTML(
             color: #2c3e50;
             padding: 32px 40px;
             position: relative;
+            max-width: 100%;
+            box-sizing: border-box;
+            overflow-x: hidden;
         }
 
         .version-badge {
@@ -280,25 +283,74 @@ export async function generateHTML(
             border-left: 4px solid rgb(249, 55, 5);
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            max-width: 100%;
+            box-sizing: border-box;
+            overflow-x: hidden;
         }
 
         /* Défauthèque */
         .defects-section {
             background: white;
-            padding: 36px;
             margin-bottom: 32px;
             border-radius: 12px;
             box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
             border: 1px solid #e8e8e8;
+            overflow: hidden;
         }
 
-        .defects-section h2 {
+        .defects-header {
+            padding: 24px 36px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: white;
+        }
+
+        .defects-header:hover {
+            background: #fafafa;
+        }
+
+        .defects-header h2 {
             color: #dc2626;
-            margin-bottom: 28px;
             font-size: 1.5rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            margin: 0;
+            flex: 1;
+        }
+
+        .defects-toggle-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            font-size: 1rem;
+            color: #dc2626;
+            transition: transform 0.3s ease;
+            user-select: none;
+            flex-shrink: 0;
+        }
+
+        .defects-toggle-icon.collapsed {
+            transform: rotate(0deg);
+        }
+
+        .defects-content {
+            padding: 0 36px 36px 36px;
+            overflow: hidden;
+            transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out;
+            max-height: 5000px;
+            opacity: 1;
+        }
+
+        .defects-content.collapsed {
+            max-height: 0;
+            opacity: 0;
+            padding: 0;
+            transition: max-height 0.4s ease-in-out, opacity 0.2s ease-in-out;
         }
 
         .defects-grid {
@@ -413,8 +465,8 @@ export async function generateHTML(
         .phase-time-badge {
             background: #f93705;
             color: white;
-            padding: 6px 16px;
-            border-radius: 20px;
+            padding: 8px 20px;
+            border-radius: 8px;
             font-size: 0.9rem;
             font-weight: 600;
             white-space: nowrap;
@@ -422,10 +474,16 @@ export async function generateHTML(
         }
 
         .phase-toggle-icon {
-            font-size: 1.2rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            font-size: 1rem;
             color: #999;
             transition: transform 0.3s ease;
             user-select: none;
+            flex-shrink: 0;
         }
 
         .phase-toggle-icon.collapsed {
@@ -813,7 +871,7 @@ export async function generateHTML(
             background: #f8f9fa;
         }
 
-        .version-badge {
+        .version-table-badge {
             display: inline-block;
             background: rgb(249, 55, 5);
             color: white;
@@ -953,10 +1011,32 @@ export async function generateHTML(
         }
 
         /* Défauthèque - Images complètes (non coupées) */
+        .defect-item .carousel-container {
+            min-height: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .defect-item .carousel-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 600px;
+        }
+
+        .defect-item .carousel-item {
+            min-height: 600px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         .defect-item .carousel-item img {
             width: 100%;
             height: auto;
             max-height: 600px;
+            max-width: 100%;
             object-fit: contain;
             border-radius: 4px;
             background: #f8f9fa;
@@ -1234,6 +1314,22 @@ export async function generateHTML(
             }
         }
 
+        // Toggle Défauthèque avec animation
+        function toggleDefects() {
+            const content = document.getElementById('defects-content');
+            const toggle = document.getElementById('defects-toggle');
+
+            if (content.classList.contains('collapsed')) {
+                content.classList.remove('collapsed');
+                toggle.textContent = '▼';
+                toggle.classList.remove('collapsed');
+            } else {
+                content.classList.add('collapsed');
+                toggle.textContent = '►';
+                toggle.classList.add('collapsed');
+            }
+        }
+
         // Carrousel JavaScript
         const carouselStates = new Map();
 
@@ -1399,7 +1495,7 @@ function generateVersionHistory(procedure: Procedure): string {
                         }
                         return `
                         <tr>
-                            <td><span class="version-badge">v${escapeHtml(log.version)}</span></td>
+                            <td><span class="version-table-badge">v${escapeHtml(log.version)}</span></td>
                             <td><span class="version-type-badge ${log.type === 'major' ? 'version-type-major' : 'version-type-minor'}">${log.type === 'major' ? 'Majeure' : 'Mineure'}</span></td>
                             <td class="version-date-cell">${dateStr}</td>
                             <td>${escapeHtml(log.description)}</td>
@@ -1513,18 +1609,23 @@ function generateDefects(procedure: Procedure, renderedImageUrls: Map<string, st
 
   return `
     <div class="defects-section" id="defautheque">
-        <h2>Défauthèque</h2>
+        <div class="defects-header" onclick="toggleDefects()" style="cursor: pointer;">
+            <span class="defects-toggle-icon collapsed" id="defects-toggle">►</span>
+            <h2>Défauthèque</h2>
+        </div>
 
-        <div class="defects-grid">
-        ${procedure.defects.map((defect, defectIndex) => `
-            <div class="defect-item">
-                <div class="defect-description">${escapeHtml(defect.description)}</div>
+        <div class="defects-content collapsed" id="defects-content">
+            <div class="defects-grid">
+            ${procedure.defects.map((defect, defectIndex) => `
+                <div class="defect-item">
+                    <div class="defect-description">${escapeHtml(defect.description)}</div>
 
-                ${defect.images && defect.images.length > 0 ? `
-                ${generateImageCarousel(defect.images, renderedImageUrls, `defect-${defectIndex}`)}
-                ` : ''}
+                    ${defect.images && defect.images.length > 0 ? `
+                    ${generateImageCarousel(defect.images, renderedImageUrls, `defect-${defectIndex}`)}
+                    ` : ''}
+                </div>
+            `).join('')}
             </div>
-        `).join('')}
         </div>
     </div>
   `;
