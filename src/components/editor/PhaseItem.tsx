@@ -862,17 +862,12 @@ function SubStepItem({
                 </div>
               </div>
               {/* Zone de texte éditable */}
-              <div
-                contentEditable
-                suppressContentEditableWarning
-                onInput={(e) => {
-                  const htmlContent = e.currentTarget.innerHTML;
-                  onUpdate({ description: htmlContent });
-                }}
-                dangerouslySetInnerHTML={{ __html: step.description || '' }}
-                className="min-h-[80px] px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary"
-                style={{ maxHeight: '200px', overflowY: 'auto' }}
-                data-placeholder="Description détaillée de cette sous-étape..."
+              <textarea
+                value={step.description || ''}
+                onChange={(e) => onUpdate({ description: e.target.value })}
+                className="min-h-[80px] w-full px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary bg-transparent border-0 resize-y"
+                style={{ maxHeight: '200px' }}
+                placeholder="Description détaillée de cette sous-étape..."
               />
             </div>
           </div>

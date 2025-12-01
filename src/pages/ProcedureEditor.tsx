@@ -508,13 +508,33 @@ export default function ProcedureEditor() {
   };
 
   const handleExportHTML = async () => {
-    if (!existingProcedure) {
+    if (!id) {
       toast.error('Aucune procédure à exporter');
       return;
     }
 
     try {
-      await generateHTML(existingProcedure, existingProcedure.phases || []);
+      // Recharger la procédure depuis Firestore pour avoir les données les plus récentes
+      const { db } = await import('@/lib/firebase');
+      const { doc, getDoc } = await import('firebase/firestore');
+
+      const procedureRef = doc(db, 'procedures', id);
+      const procedureSnap = await getDoc(procedureRef);
+
+      if (!procedureSnap.exists()) {
+        toast.error('Procédure introuvable');
+        return;
+      }
+
+      const freshProcedure = {
+        id: procedureSnap.id,
+        ...procedureSnap.data()
+      } as any;
+
+      console.log('Fresh procedure loaded for HTML export:', freshProcedure);
+      console.log('Number of phases:', freshProcedure.phases?.length);
+
+      await generateHTML(freshProcedure, freshProcedure.phases || []);
       toast.success('Procédure exportée en HTML');
     } catch (error) {
       console.error('Error exporting HTML:', error);

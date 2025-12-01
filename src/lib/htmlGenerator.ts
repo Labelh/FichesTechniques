@@ -1714,6 +1714,8 @@ function generateVideoCarousel(videos: any[], carouselId: string): string {
   if (videos.length === 0) return '';
 
   const carouselItems = videos.map((video, index) => {
+    console.log('Video data:', { name: video.name, url: video.url, description: video.description });
+    const videoTitle = video.name || video.title || 'Vidéo YouTube';
     return `
       <div class="carousel-item" style="display: ${index === 0 ? 'flex' : 'none'};">
         <div style="padding: 24px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; margin: 20px 0;">
@@ -1741,7 +1743,7 @@ function generateVideoCarousel(videos: any[], carouselId: string): string {
               <line x1="17" y1="7" x2="22" y2="7"></line>
             </svg>
             <div style="flex: 1; text-align: left;">
-              <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 4px;">${escapeHtml(video.name || 'Vidéo YouTube')}</div>
+              <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 4px;">${escapeHtml(videoTitle)}</div>
               ${video.description ? `<div style="font-size: 0.9rem; color: #666;">${escapeHtml(video.description)}</div>` : ''}
             </div>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f93705" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
