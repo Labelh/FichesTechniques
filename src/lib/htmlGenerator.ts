@@ -545,8 +545,20 @@ export async function generateHTML(
 
         .step-header {
             margin-bottom: var(--spacing-sm);
-            padding-bottom: var(--spacing-xs);
+            padding: var(--spacing-sm);
             border-bottom: 2px solid var(--primary-color);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+            border-radius: var(--radius-sm);
+            margin: calc(var(--spacing-md) * -1) calc(var(--spacing-md) * -1) var(--spacing-sm);
+            transition: background 0.3s ease;
+        }
+
+        .step-header:hover {
+            background: linear-gradient(135deg, #fafbfc 0%, #f5f7fa 100%);
         }
 
         .step-label {
@@ -554,6 +566,24 @@ export async function generateHTML(
             font-weight: 700;
             color: var(--text-primary);
             letter-spacing: 0.3px;
+            flex: 1;
+        }
+
+        .step-toggle-icon {
+            display: none;
+        }
+
+        .step-content {
+            overflow: hidden;
+            transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out;
+            max-height: 10000px;
+            opacity: 1;
+        }
+
+        .step-content.collapsed {
+            max-height: 0;
+            opacity: 0;
+            transition: max-height 0.4s ease-in-out, opacity 0.2s ease-in-out;
         }
 
         .step-description {
@@ -1252,6 +1282,16 @@ export async function generateHTML(
             }
         }
 
+        // Toggle Step avec animation (sans icône)
+        function toggleStep(stepId) {
+            const content = document.getElementById(stepId + '-content');
+            if (content.classList.contains('collapsed')) {
+                content.classList.remove('collapsed');
+            } else {
+                content.classList.add('collapsed');
+            }
+        }
+
         // Carrousel JavaScript
         const carouselStates = new Map();
 
@@ -1480,12 +1520,14 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
         <div class="steps">
             ${phase.steps.map((step, stepIndex) => `
             <div class="step" id="phase-${phaseIndex + 1}-step-${stepIndex + 1}">
-                <div class="step-header">
+                <div class="step-header" onclick="toggleStep('phase-${phaseIndex + 1}-step-${stepIndex + 1}')" style="cursor: pointer;">
                     <div class="step-label" style="color: #444;">
                         Phase ${phase.phaseNumber || phaseIndex + 1} - étape ${stepIndex + 1}${step.title ? ` : ${escapeHtml(step.title)}` : ''}
                     </div>
+                    <div class="step-toggle-icon" style="display: none;">▼</div>
                 </div>
 
+                <div class="step-content collapsed" id="phase-${phaseIndex + 1}-step-${stepIndex + 1}-content">
                 <div class="step-details-grid">
                     ${step.description ? `
                     <div class="step-description-box">
@@ -1542,6 +1584,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                 ${step.videos && step.videos.length > 0 ? `
                 ${generateVideoCarousel(step.videos, `phase-${phaseIndex + 1}-step-${stepIndex + 1}`)}
                 ` : ''}
+                </div>
             </div>
             `).join('')}
         </div>
