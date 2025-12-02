@@ -62,6 +62,23 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [procedureId, phase.id, title, phaseNumber, difficulty, estimatedTime, steps]);
 
+  // Sauvegarde automatique après chaque modification (debounce de 2 secondes)
+  useEffect(() => {
+    console.log('🔄 Auto-save: Modification détectée, sauvegarde dans 2 secondes...');
+    const timeoutId = setTimeout(async () => {
+      console.log('💾 Auto-save: Sauvegarde en cours...');
+      const success = await savePhaseToFirestore();
+      if (success) {
+        console.log('✅ Auto-save: Phase sauvegardée automatiquement');
+      }
+    }, 2000); // Délai de 2 secondes
+
+    return () => {
+      console.log('⏸️ Auto-save: Timer annulé (nouvelle modification)');
+      clearTimeout(timeoutId);
+    };
+  }, [title, phaseNumber, difficulty, estimatedTime, steps]);
+
   const handleSaveAsTemplate = async () => {
     const templateName = prompt('Nom du template:', title || 'Mon template');
     if (!templateName) return;
