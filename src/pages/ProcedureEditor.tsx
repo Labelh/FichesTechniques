@@ -384,68 +384,39 @@ export default function ProcedureEditor() {
   };
 
   const handleExportHTML = async () => {
-    if (!id) {
+    if (!id || !existingProcedure) {
       toast.error('Aucune procédure à exporter');
       return;
     }
 
     // Avertir l'utilisateur et attendre que Firestore se synchronise
-    toast.info('⏱️ Sauvegarde en cours... Veuillez patienter');
+    toast.info('⏱️ Synchronisation en cours... Veuillez patienter');
 
-    // Attendre 2 secondes pour laisser Firestore se synchroniser
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Attendre 3 secondes pour laisser Firestore se synchroniser
+    await new Promise(resolve => setTimeout(resolve, 3000));
 
     try {
-      toast.info('📥 Chargement des données...');
+      toast.info('📄 Génération du HTML...');
 
-      // Recharger la procédure depuis Firestore pour avoir les données les plus récentes
-      const { db } = await import('@/lib/firebase');
-      const { doc, getDoc, collection, query, where, getDocs, orderBy } = await import('firebase/firestore');
-
-      // Charger la procédure
-      const procedureRef = doc(db, 'procedures', id);
-      const procedureSnap = await getDoc(procedureRef);
-
-      if (!procedureSnap.exists()) {
-        toast.error('Procédure introuvable');
-        return;
-      }
-
-      const freshProcedure = {
-        id: procedureSnap.id,
-        ...procedureSnap.data()
-      } as any;
-
-      // Charger les phases depuis la collection séparée
-      const phasesQuery = query(
-        collection(db, 'phases'),
-        where('procedureId', '==', id),
-        orderBy('order', 'asc')
-      );
-
-      const phasesSnap = await getDocs(phasesQuery);
-      const phases = phasesSnap.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as any[];
+      // Utiliser directement existingProcedure qui contient les données à jour
+      const phases = existingProcedure.phases || [];
 
       console.log('=== HTML EXPORT DEBUG ===');
-      console.log('Fresh procedure loaded:', freshProcedure.designation);
-      console.log('Number of phases loaded:', phases.length);
-      phases.forEach((phase, idx) => {
+      console.log('Procedure:', existingProcedure.designation);
+      console.log('Number of phases:', phases.length);
+      phases.forEach((phase: any, idx: number) => {
         console.log(`Phase ${idx + 1}:`, phase.title, `Steps: ${phase.steps?.length || 0}`);
         if (phase.steps) {
           phase.steps.forEach((step: any, stepIdx: number) => {
-            console.log(`  Step ${stepIdx + 1}:`, step.title || 'Sans titre', `Description: ${step.description?.substring(0, 50) || 'Vide'}...`);
+            console.log(`  Step ${stepIdx + 1}:`, step.title || 'Sans titre');
+            if (step.toolId && step.toolName) {
+              console.log(`    Tool: ${step.toolName} (${step.toolReference || 'no ref'})`);
+            }
           });
         }
       });
 
-      // Ajouter les phases à la procédure
-      freshProcedure.phases = phases;
-
-      toast.info('📄 Génération du HTML...');
-      await generateHTML(freshProcedure, phases);
+      await generateHTML(existingProcedure, phases);
       toast.success('✅ Procédure exportée en HTML avec succès !');
     } catch (error) {
       console.error('Error exporting HTML:', error);

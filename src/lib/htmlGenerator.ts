@@ -857,27 +857,35 @@ export async function generateHTML(
             position: relative;
             max-width: 100%;
             overflow: hidden;
+            min-height: 500px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
         }
 
         .carousel-items {
             display: flex;
             transition: transform 0.4s ease-in-out;
+            height: 500px;
         }
 
         .carousel-item {
             min-width: 100%;
+            height: 500px;
             display: flex;
             flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
         .carousel-item img {
             width: 100%;
-            height: auto;
-            max-height: 800px;
+            height: 500px;
             object-fit: contain;
             background: #000;
             cursor: pointer;
-            transition: transform 0.3s ease;
+            transition: opacity 0.3s ease;
         }
 
         .carousel-item img:hover {
@@ -949,21 +957,25 @@ export async function generateHTML(
 
         /* Défauthèque - Images complètes (non coupées) */
         .defect-item .carousel-container {
-            min-height: 600px;
+            height: 600px;
             display: flex;
             flex-direction: column;
         }
 
         .defect-item .carousel-wrapper {
-            flex: 1;
+            height: 600px;
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 600px;
+            background: #000;
+        }
+
+        .defect-item .carousel-items {
+            height: 600px;
         }
 
         .defect-item .carousel-item {
-            min-height: 600px;
+            height: 600px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -971,12 +983,10 @@ export async function generateHTML(
 
         .defect-item .carousel-item img {
             width: 100%;
-            height: auto;
-            max-height: 600px;
-            max-width: 100%;
+            height: 600px;
             object-fit: contain;
             border-radius: 4px;
-            background: #f8f9fa;
+            background: #000;
         }
 
         /* Images cliquables pour zoom */
