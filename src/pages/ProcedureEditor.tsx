@@ -401,23 +401,49 @@ export default function ProcedureEditor() {
       // Utiliser directement existingProcedure qui contient les données à jour
       const phases = existingProcedure.phases || [];
 
-      console.log('=== HTML EXPORT DEBUG ===');
-      console.log('Procedure:', existingProcedure.designation);
-      console.log('Number of phases:', phases.length);
+      console.log('=== HTML EXPORT DEBUG - DONNÉES COMPLÈTES ===');
+      console.log('PROCÉDURE COMPLÈTE:', JSON.stringify(existingProcedure, null, 2));
+      console.log('\n--- Résumé procédure ---');
+      console.log('ID:', existingProcedure.id);
+      console.log('Titre:', existingProcedure.title);
+      console.log('Désignation:', existingProcedure.designation);
+      console.log('Référence:', existingProcedure.reference);
+      console.log('Description:', existingProcedure.description);
+      console.log('Catégorie:', existingProcedure.category);
+      console.log('Tags:', existingProcedure.tags);
+      console.log('Image couverture:', existingProcedure.coverImage ? 'OUI' : 'NON');
+      console.log('Outils globaux:', existingProcedure.globalTools?.length || 0);
+      console.log('Matériaux globaux:', existingProcedure.globalMaterials?.length || 0);
+      console.log('Défauts:', existingProcedure.defects?.length || 0);
+      console.log('Changelog:', existingProcedure.changelog?.length || 0);
+      console.log('Version:', existingProcedure.versionString);
+
+      console.log('\n--- Phases détaillées ---');
+      console.log('Nombre de phases:', phases.length);
       phases.forEach((phase: any, idx: number) => {
-        console.log(`Phase ${idx + 1}:`, phase.title, `Steps: ${phase.steps?.length || 0}`);
+        console.log(`\nPhase ${idx + 1}:`, phase.title);
+        console.log('  Difficulté:', phase.difficulty);
+        console.log('  Temps estimé:', phase.estimatedTime);
+        console.log('  Étapes:', phase.steps?.length || 0);
+
         if (phase.steps) {
           phase.steps.forEach((step: any, stepIdx: number) => {
-            console.log(`  Step ${stepIdx + 1}:`, step.title || 'Sans titre');
-            if (step.toolId && step.toolName) {
-              console.log(`    Tool: ${step.toolName} (${step.toolReference || 'no ref'})`);
-            }
+            console.log(`\n  Étape ${stepIdx + 1}:`, step.title || 'Sans titre');
+            console.log('    Description:', step.description ? 'OUI' : 'NON');
+            console.log('    Outil:', step.toolId && step.toolName ? `${step.toolName} (${step.toolReference || 'no ref'})` : 'AUCUN');
+            console.log('    Emplacement outil:', step.toolLocation || 'N/A');
+            console.log('    Images:', step.images?.length || 0);
+            console.log('    Vidéos:', step.videos?.length || 0);
+            console.log('    Conseils:', step.tips?.length || 0);
+            console.log('    Consignes sécurité:', step.safetyNotes?.length || 0);
+            console.log('    Temps estimé:', step.estimatedTime || 'N/A');
           });
         }
       });
 
       await generateHTML(existingProcedure, phases);
       toast.success('✅ Procédure exportée en HTML avec succès !');
+      console.log('=== FIN HTML EXPORT DEBUG ===');
     } catch (error) {
       console.error('Error exporting HTML:', error);
       toast.error('Erreur lors de l\'export HTML');
