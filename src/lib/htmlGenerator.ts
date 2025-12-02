@@ -125,6 +125,9 @@ export async function generateHTML(
             box-shadow: var(--shadow-md);
             border: 1px solid rgba(0, 0, 0, 0.05);
             margin-bottom: var(--spacing-lg);
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
         }
 
         .version-badge {
@@ -234,7 +237,6 @@ export async function generateHTML(
 
         /* Contenu */
         .content {
-            padding: 24px 32px;
             width: 100%;
             max-width: 100%;
             margin: 0 auto;
@@ -1530,7 +1532,6 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                 ${step.videos && step.videos.length > 0 ? `
                 ${generateVideoCarousel(step.videos, `phase-${phaseIndex + 1}-step-${stepIndex + 1}`)}
                 ` : ''}
-                </div>
             </div>
             `).join('')}
         </div>
