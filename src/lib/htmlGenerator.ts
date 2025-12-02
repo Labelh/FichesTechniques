@@ -213,6 +213,7 @@ export async function generateHTML(
             border-left: 4px solid rgb(249, 55, 5);
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            width: 100%;
             max-width: 100%;
             box-sizing: border-box;
             overflow-x: hidden;
@@ -226,14 +227,23 @@ export async function generateHTML(
             box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
             border: 1px solid #e8e8e8;
             overflow: hidden;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
         }
 
         .defects-header {
             padding: 24px 36px;
+            cursor: pointer;
             display: flex;
             align-items: center;
             gap: 16px;
             background: white;
+            transition: background 0.2s ease;
+        }
+
+        .defects-header:hover {
+            background: #fafafa;
         }
 
         .defects-header h2 {
@@ -252,6 +262,17 @@ export async function generateHTML(
 
         .defects-content {
             padding: 0 36px 36px 36px;
+            overflow: hidden;
+            transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out;
+            max-height: 5000px;
+            opacity: 1;
+        }
+
+        .defects-content.collapsed {
+            max-height: 0;
+            opacity: 0;
+            padding: 0;
+            transition: max-height 0.4s ease-in-out, opacity 0.2s ease-in-out;
         }
 
         .defects-grid {
@@ -346,6 +367,12 @@ export async function generateHTML(
             align-items: center;
             justify-content: space-between;
             gap: 16px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .phase-header:hover {
+            background: #fafafa;
         }
 
         .phase-title {
@@ -394,6 +421,15 @@ export async function generateHTML(
 
         .phase-content {
             overflow: hidden;
+            transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out;
+            max-height: 5000px;
+            opacity: 1;
+        }
+
+        .phase-content.collapsed {
+            max-height: 0;
+            opacity: 0;
+            transition: max-height 0.4s ease-in-out, opacity 0.2s ease-in-out;
         }
 
         .phase-meta {
@@ -1112,6 +1148,25 @@ export async function generateHTML(
             this.style.cursor = currentZoom > 1 ? 'zoom-out' : 'zoom-in';
         });
 
+        // Toggle Phase avec animation (sans icône)
+        function togglePhase(phaseId) {
+            const content = document.getElementById(phaseId + '-content');
+            if (content.classList.contains('collapsed')) {
+                content.classList.remove('collapsed');
+            } else {
+                content.classList.add('collapsed');
+            }
+        }
+
+        // Toggle Défauthèque avec animation (sans icône)
+        function toggleDefects() {
+            const content = document.getElementById('defects-content');
+            if (content.classList.contains('collapsed')) {
+                content.classList.remove('collapsed');
+            } else {
+                content.classList.add('collapsed');
+            }
+        }
 
         // Carrousel JavaScript
         const carouselStates = new Map();
@@ -1298,11 +1353,11 @@ function generateDefects(procedure: Procedure, renderedImageUrls: Map<string, st
 
   return `
     <div class="defects-section" id="defautheque">
-        <div class="defects-header">
+        <div class="defects-header" onclick="toggleDefects()" style="cursor: pointer;">
             <h2>Défauthèque</h2>
         </div>
 
-        <div class="defects-content" id="defects-content">
+        <div class="defects-content collapsed" id="defects-content">
             <div class="defects-grid">
             ${procedure.defects.map((defect, defectIndex) => `
                 <div class="defect-item">
@@ -1328,14 +1383,14 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
     const difficultyLabel = phase.difficulty === 'trainee' ? 'Stagiaire' : phase.difficulty === 'easy' ? 'Facile' : phase.difficulty === 'medium' ? 'Moyen' : phase.difficulty === 'hard' ? 'Difficile' : phase.difficulty;
     return `
     <div class="phase" id="phase-${phaseIndex + 1}">
-        <div class="phase-header">
+        <div class="phase-header" onclick="togglePhase('phase-${phaseIndex + 1}')" style="cursor: pointer;">
             <div class="phase-title" style="color: ${difficultyColor};">Phase ${phase.phaseNumber || phaseIndex + 1} : ${escapeHtml(phase.title)}</div>
             <div class="phase-badges">
                 <span class="difficulty-badge" style="background: ${difficultyColor};">${difficultyLabel.toUpperCase()}</span>
                 ${phase.estimatedTime ? `<span class="phase-time-badge">${phase.estimatedTime} min/pièce</span>` : ''}
             </div>
         </div>
-        <div class="phase-content" id="phase-${phaseIndex + 1}-content">
+        <div class="phase-content collapsed" id="phase-${phaseIndex + 1}-content">
 
         ${phase.steps && phase.steps.length > 0 ? `
         <div class="steps">
