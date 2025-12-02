@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Save, Plus, Image as ImageIcon, X, Download, AlertTriangle, Pencil, CheckCircle, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Image as ImageIcon, X, Download, AlertTriangle, Pencil, CheckCircle, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import { useProcedure } from '@/hooks/useProcedures';
 import { createProcedure, updateProcedure, addPhase, deletePhase } from '@/services/procedureService';
 import { uploadImageToHost } from '@/services/imageHostingService';
@@ -28,11 +28,12 @@ export default function ProcedureEditor() {
   const [imageToAnnotate, setImageToAnnotate] = useState<{ defectId: string, image: AnnotatedImage } | null>(null);
   const [versionString, setVersionString] = useState('1.0');
   const [changelog, setChangelog] = useState<VersionLog[]>([]);
-  const [initialSnapshot, setInitialSnapshot] = useState<{ phaseCount: number, stepCounts: number[] } | null>(null);
   const [quickSaveSuccess, setQuickSaveSuccess] = useState(false);
-  const [versionSaveSuccess, setVersionSaveSuccess] = useState(false);
   const [showAllVersions, setShowAllVersions] = useState(false);
   const [showDefects, setShowDefects] = useState(true);
+  const [showVersionForm, setShowVersionForm] = useState(false);
+  const [newVersionType, setNewVersionType] = useState<'major' | 'minor'>('minor');
+  const [newVersionDescription, setNewVersionDescription] = useState('');
 
   useEffect(() => {
     if (existingProcedure) {
@@ -42,20 +43,12 @@ export default function ProcedureEditor() {
       setVersionString(existingProcedure.versionString || '1.0');
       setChangelog(existingProcedure.changelog || []);
 
-      // Sauvegarder le snapshot initial pour la détection des changements
-      if (!initialSnapshot && existingProcedure.phases) {
-        setInitialSnapshot({
-          phaseCount: existingProcedure.phases.length,
-          stepCounts: existingProcedure.phases.map(p => p.steps?.length || 0)
-        });
-      }
-
       if (existingProcedure.coverImage) {
         setCoverImage(existingProcedure.coverImage);
         setCoverImagePreview(existingProcedure.coverImage);
       }
     }
-  }, [existingProcedure, initialSnapshot]);
+  }, [existingProcedure]);
 
   // Raccourci Ctrl+S pour sauvegarde rapide
   useEffect(() => {
@@ -77,98 +70,6 @@ export default function ProcedureEditor() {
     } else {
       return `${major}.${minor + 1}`;
     }
-  };
-
-  const detectChangeType = (): { type: 'major' | 'minor', description: string } | null => {
-    if (!existingProcedure || !initialSnapshot) return null;
-
-    const changes: string[] = [];
-    let isMajor = false;
-
-    // MAJEUR: Changements de phases
-    const currentPhaseCount = existingProcedure.phases?.length || 0;
-    if (currentPhaseCount !== initialSnapshot.phaseCount) {
-      const diff = currentPhaseCount - initialSnapshot.phaseCount;
-      if (diff > 0) {
-        changes.push(`Ajout de ${diff} phase(s)`);
-      } else {
-        changes.push(`Suppression de ${Math.abs(diff)} phase(s)`);
-      }
-      isMajor = true;
-    }
-
-    // MAJEUR: Changements de sous-étapes
-    const currentStepCounts = existingProcedure.phases?.map(p => p.steps?.length || 0) || [];
-    for (let i = 0; i < Math.max(currentStepCounts.length, initialSnapshot.stepCounts.length); i++) {
-      const currentCount = currentStepCounts[i] || 0;
-      const initialCount = initialSnapshot.stepCounts[i] || 0;
-      if (currentCount !== initialCount) {
-        const diff = currentCount - initialCount;
-        if (diff > 0) {
-          changes.push(`Ajout de ${diff} sous-étape(s) dans phase ${i + 1}`);
-        } else {
-          changes.push(`Suppression de ${Math.abs(diff)} sous-étape(s) dans phase ${i + 1}`);
-        }
-        isMajor = true;
-      }
-    }
-
-    // MINEUR: Changements de référence ou désignation
-    if (reference.trim() !== (existingProcedure.reference || '').trim()) {
-      changes.push('Modification de la référence');
-    }
-    if (designation.trim() !== (existingProcedure.designation || existingProcedure.title || '').trim()) {
-      changes.push('Modification de la désignation');
-    }
-
-    // MINEUR: Changements de défauts
-    const existingDefectsCount = existingProcedure.defects?.length || 0;
-    const currentDefectsCount = defects.length;
-    if (currentDefectsCount !== existingDefectsCount) {
-      const diff = currentDefectsCount - existingDefectsCount;
-      if (diff > 0) {
-        changes.push(`Ajout de ${diff} défaut(s)`);
-      } else {
-        changes.push(`Suppression de ${Math.abs(diff)} défaut(s)`);
-      }
-    }
-
-    // MINEUR: Changement d'image de couverture
-    if (coverImage !== existingProcedure.coverImage) {
-      changes.push("Modification de l'image de couverture");
-    }
-
-    // MINEUR: Changements dans les descriptions de défauts
-    const existingDefects = existingProcedure.defects || [];
-    const defectDescChanged = defects.some((def, idx) => {
-      const existingDef = existingDefects[idx];
-      return existingDef && def.description !== existingDef.description;
-    });
-    if (defectDescChanged) {
-      changes.push("Modification de descriptions de défauts");
-    }
-
-    // MINEUR: Changements dans les images de défauts
-    const defectImagesChanged = defects.some((def, idx) => {
-      const existingDef = existingDefects[idx];
-      if (!existingDef) return false;
-      const existingImgCount = existingDef.images?.length || 0;
-      const currentImgCount = def.images?.length || 0;
-      return existingImgCount !== currentImgCount;
-    });
-    if (defectImagesChanged) {
-      changes.push("Modification des images de défauts");
-    }
-
-    // Si aucun changement détecté, retourner null
-    if (changes.length === 0) {
-      return null;
-    }
-
-    return {
-      type: isMajor ? 'major' : 'minor',
-      description: changes.join(', ')
-    };
   };
 
   // Sauvegarde simple sans versioning (pour sauvegardes fréquentes)
@@ -228,41 +129,28 @@ export default function ProcedureEditor() {
     }
   };
 
-  // Sauvegarde avec versioning automatique
-  const handleSave = async () => {
-    if (!reference.trim() && !designation.trim()) {
-      toast.error('La référence ou la désignation est requise');
+  // Création manuelle d'une nouvelle version
+  const handleManualVersion = async () => {
+    if (!id || !existingProcedure) {
+      toast.error('Impossible de créer une version pour une procédure non sauvegardée');
       return;
     }
 
-    if (!id || !existingProcedure) {
-      // Pour une nouvelle procédure, utiliser sauvegarde rapide
-      return handleQuickSave();
+    if (!newVersionDescription.trim()) {
+      toast.error('Veuillez entrer une description pour cette version');
+      return;
     }
 
     try {
-      // Détection automatique des changements
-      const changeDetection = detectChangeType();
-
-      if (!changeDetection) {
-        toast.info('Aucune modification détectée depuis la dernière version', {
-          duration: 3000,
-          position: 'top-right',
-        });
-        return;
-      }
-
-      const { type: versionType, description } = changeDetection;
-
       // Calculer la nouvelle version
-      const nextVersion = calculateNextVersion(versionString, versionType);
+      const nextVersion = calculateNextVersion(versionString, newVersionType);
 
       // Créer le nouveau log
       const newLog: VersionLog = {
         id: crypto.randomUUID(),
         version: nextVersion,
-        type: versionType,
-        description: description,
+        type: newVersionType,
+        description: newVersionDescription.trim(),
         date: new Date(),
       };
 
@@ -271,12 +159,6 @@ export default function ProcedureEditor() {
 
       // Sauvegarder
       await updateProcedure(id, {
-        reference: reference.trim() || undefined,
-        designation: designation.trim() || undefined,
-        title: designation.trim() || reference.trim() || 'Sans titre',
-        description: '',
-        coverImage: coverImage || undefined,
-        defects: defects,
         versionString: updatedVersionString,
         changelog: updatedChangelog,
       });
@@ -285,24 +167,18 @@ export default function ProcedureEditor() {
       setVersionString(updatedVersionString);
       setChangelog(updatedChangelog);
 
-      // Réinitialiser le snapshot pour la prochaine détection
-      if (existingProcedure.phases) {
-        setInitialSnapshot({
-          phaseCount: existingProcedure.phases.length,
-          stepCounts: existingProcedure.phases.map(p => p.steps?.length || 0)
-        });
-      }
+      // Réinitialiser le formulaire
+      setShowVersionForm(false);
+      setNewVersionDescription('');
+      setNewVersionType('minor');
 
-      // Feedback visuel vert
-      setVersionSaveSuccess(true);
-      setTimeout(() => setVersionSaveSuccess(false), 3000);
-
-      toast.success(`✅ Version ${nextVersion} créée (${versionType === 'major' ? 'Majeure' : 'Mineure'}) !\n${description}`, {
-        duration: 5000,
+      toast.success(`✅ Version ${nextVersion} créée (${newVersionType === 'major' ? 'Majeure' : 'Mineure'})`, {
+        duration: 3000,
         position: 'top-right',
       });
     } catch (error) {
-      toast.error('Erreur lors de la sauvegarde');
+      console.error('Error creating version:', error);
+      toast.error('Erreur lors de la création de la version');
     }
   };
 
@@ -605,13 +481,6 @@ export default function ProcedureEditor() {
               <CheckCircle className="h-4 w-4 mr-2" />
               Sauvegarde rapide
             </Button>
-            <Button
-              onClick={handleSave}
-              className={versionSaveSuccess ? 'bg-green-600 hover:bg-green-700' : ''}
-            >
-              <Save className="h-4 w-4 mr-2" />
-              Sauvegarder + Version
-            </Button>
           </div>
         </div>
       </div>
@@ -864,23 +733,99 @@ export default function ProcedureEditor() {
           </Card>
         )}
 
-        {/* Versioning */}
+        {/* Versioning Manuel */}
         {id && (
           <Card>
             <CardContent className="pt-6">
-              <div className="mb-4">
-                <h2 className="text-xl font-bold mb-2">
-                  Historique des versions
-                </h2>
-                <span className="text-xs text-text-muted">
-                  Versions créées automatiquement à chaque sauvegarde
-                </span>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-xl font-bold mb-1">
+                    Versioning
+                  </h2>
+                  <span className="text-xs text-text-muted">
+                    Version actuelle: v{versionString}
+                  </span>
+                </div>
+                <Button
+                  onClick={() => setShowVersionForm(!showVersionForm)}
+                  variant="outline"
+                  size="sm"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nouvelle version
+                </Button>
               </div>
 
-              {/* Changelog Table */}
+              {/* Formulaire de création de version */}
+              {showVersionForm && (
+                <div className="mb-6 p-4 border border-[#323232] rounded-lg bg-background-elevated">
+                  <h3 className="font-semibold mb-3">Créer une nouvelle version</h3>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Type de version</label>
+                      <div className="flex gap-3">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="versionType"
+                            value="minor"
+                            checked={newVersionType === 'minor'}
+                            onChange={(e) => setNewVersionType(e.target.value as 'major' | 'minor')}
+                            className="text-primary"
+                          />
+                          <span className="text-sm">Mineure (corrections, ajustements)</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="versionType"
+                            value="major"
+                            checked={newVersionType === 'major'}
+                            onChange={(e) => setNewVersionType(e.target.value as 'major' | 'minor')}
+                            className="text-primary"
+                          />
+                          <span className="text-sm">Majeure (changements importants)</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Description des modifications *
+                      </label>
+                      <textarea
+                        value={newVersionDescription}
+                        onChange={(e) => setNewVersionDescription(e.target.value)}
+                        placeholder="Ex: Ajout de 2 nouvelles phases, modification des images..."
+                        className="w-full px-3 py-2 bg-background-elevated border border-[#323232] rounded-md text-sm"
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button onClick={handleManualVersion} size="sm">
+                        Créer version {calculateNextVersion(versionString, newVersionType)}
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setShowVersionForm(false);
+                          setNewVersionDescription('');
+                        }}
+                        variant="outline"
+                        size="sm"
+                      >
+                        Annuler
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Historique des versions */}
               {changelog.length === 0 ? (
                 <p className="text-gray-400 text-center py-8">
-                  Aucune modification enregistrée. La procédure est en version initiale {versionString}.
+                  Aucune version enregistrée. Version actuelle: {versionString}
                 </p>
               ) : (
                 <>
@@ -921,7 +866,7 @@ export default function ProcedureEditor() {
                     <p className="text-sm text-text-primary">{changelog[0].description}</p>
                   </div>
 
-                  {/* Bouton pour afficher toutes les versions */}
+                  {/* Versions précédentes */}
                   {changelog.length > 1 && (
                     <>
                       <button
