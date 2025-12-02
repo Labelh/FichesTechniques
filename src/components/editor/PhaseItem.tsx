@@ -198,7 +198,15 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
   };
 
   const updateStepTool = (stepId: string, toolId: string | null, toolName: string | null, toolLocation?: string | null, toolReference?: string | null, toolColor?: string | null) => {
-    setSteps(steps.map(s =>
+    console.log('=== updateStepTool DEBUG ===');
+    console.log('Step ID:', stepId);
+    console.log('Tool ID:', toolId);
+    console.log('Tool Name:', toolName);
+    console.log('Tool Location:', toolLocation);
+    console.log('Tool Reference:', toolReference);
+    console.log('Tool Color:', toolColor);
+
+    const updatedSteps = steps.map(s =>
       s.id === stepId
         ? {
             ...s,
@@ -210,7 +218,16 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
             tool: null // On ne stocke plus l'objet complet, mais null est accepté par Firestore
           }
         : s
-    ));
+    );
+
+    console.log('Updated steps:', updatedSteps.map(s => ({
+      id: s.id,
+      title: s.title,
+      toolId: s.toolId,
+      toolName: s.toolName
+    })));
+
+    setSteps(updatedSteps);
   };
 
   const handleMovePhaseUp = async () => {
@@ -278,8 +295,27 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
       // Utiliser customSteps si fourni, sinon steps actuels
       const stepsToSave = customSteps || steps;
 
+      console.log('=== savePhaseToFirestore DEBUG ===');
+      console.log('Steps AVANT cleanUndefined:', JSON.stringify(stepsToSave.map(s => ({
+        id: s.id,
+        title: s.title,
+        toolId: s.toolId,
+        toolName: s.toolName,
+        toolLocation: s.toolLocation,
+        toolReference: s.toolReference
+      })), null, 2));
+
       // Nettoyer les valeurs undefined avant de sauvegarder
       const cleanedSteps = cleanUndefined(stepsToSave);
+
+      console.log('Steps APRÈS cleanUndefined:', JSON.stringify(cleanedSteps.map((s: any) => ({
+        id: s.id,
+        title: s.title,
+        toolId: s.toolId,
+        toolName: s.toolName,
+        toolLocation: s.toolLocation,
+        toolReference: s.toolReference
+      })), null, 2));
 
       await updatePhase(procedureId, phase.id, {
         title,
@@ -288,6 +324,8 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
         estimatedTime,
         steps: cleanedSteps,
       });
+
+      console.log('=== Phase sauvegardée avec succès dans Firestore ===');
       return true;
     } catch (error) {
       console.error('Error saving phase:', error);
