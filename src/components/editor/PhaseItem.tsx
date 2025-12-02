@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, AlertTriangle, Lightbulb, Save, Pencil, ArrowUp, ArrowDown, Video as VideoIcon, Play, Bold, Italic, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -29,8 +29,21 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
   const [estimatedTime, setEstimatedTime] = useState(phase.estimatedTime);
   const [steps, setSteps] = useState<SubStep[]>(phase.steps || []);
   const [consumables, setConsumables] = useState<Consumable[]>([]);
+  const isInitialMount = useRef(true);
 
   const availableTools = useTools();
+
+  // Synchroniser le state local avec les props quand la phase change dans Firebase
+  useEffect(() => {
+    console.log('📥 Synchronisation: Mise à jour du state local avec les nouvelles props');
+    setTitle(phase.title);
+    setPhaseNumber(phase.phaseNumber || index + 1);
+    setDifficulty(phase.difficulty);
+    setEstimatedTime(phase.estimatedTime);
+    setSteps(phase.steps || []);
+    // Réinitialiser le flag pour éviter que la synchro déclenche l'auto-save
+    isInitialMount.current = true;
+  }, [phase.id, phase.title, phase.phaseNumber, phase.difficulty, phase.estimatedTime, phase.steps, index]);
 
   // Charger les consommables
   useEffect(() => {
@@ -64,6 +77,13 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
 
   // Sauvegarde automatique après chaque modification (debounce de 2 secondes)
   useEffect(() => {
+    // Ignorer le premier rendu pour éviter d'écraser les données fraîches
+    if (isInitialMount.current) {
+      console.log('⏭️ Auto-save: Premier rendu ignoré');
+      isInitialMount.current = false;
+      return;
+    }
+
     console.log('🔄 Auto-save: Modification détectée, sauvegarde dans 2 secondes...');
     const timeoutId = setTimeout(async () => {
       console.log('💾 Auto-save: Sauvegarde en cours...');
