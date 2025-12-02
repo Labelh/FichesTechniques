@@ -105,7 +105,6 @@ export async function generateHTML(
             border-radius: 6px;
             font-size: 0.9rem;
             font-weight: 500;
-            margin-left: 12px;
             border: 1px solid #d0d0d0;
         }
 
@@ -117,6 +116,9 @@ export async function generateHTML(
             text-align: left;
             text-transform: uppercase;
             letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .header-designation {
@@ -173,8 +175,6 @@ export async function generateHTML(
             flex-wrap: wrap;
             gap: 20px;
             margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #d0d0d0;
         }
 
         .document-version {
@@ -346,13 +346,6 @@ export async function generateHTML(
             margin-top: 5px;
         }
 
-        /* Container des phases */
-        .phases-container {
-            width: 100%;
-            max-width: 100%;
-            box-sizing: border-box;
-        }
-
         /* Phases */
         .phase {
             margin-bottom: 24px;
@@ -365,6 +358,10 @@ export async function generateHTML(
             max-width: 100%;
             width: 100%;
             box-sizing: border-box;
+        }
+
+        .phase:last-child {
+            margin-bottom: 80px;
         }
 
         .phase-header {
@@ -1036,7 +1033,7 @@ export async function generateHTML(
         <!-- En-tête -->
         <div class="header">
             <div class="header-title">
-                Fiche Technique
+                <span>Fiche Technique</span>
                 ${procedure.changelog && procedure.changelog.length > 0 ? `<span class="version-badge">v${escapeHtml(procedure.changelog[0].version)}</span>` : procedure.versionString ? `<span class="version-badge">v${escapeHtml(procedure.versionString)}</span>` : ''}
             </div>
             <div class="header-designation">${escapeHtml(procedure.designation || procedure.title)}</div>
@@ -1392,7 +1389,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
     return `
     <div class="phase" id="phase-${phaseIndex + 1}">
         <div class="phase-header" onclick="togglePhase('phase-${phaseIndex + 1}')" style="cursor: pointer;">
-            <div class="phase-title" style="color: ${difficultyColor};">Phase ${phase.phaseNumber || phaseIndex + 1} : ${escapeHtml(phase.title)}</div>
+            <div class="phase-title" style="color: #444;">Phase ${phase.phaseNumber || phaseIndex + 1} : ${escapeHtml(phase.title)}</div>
             <div class="phase-badges">
                 <span class="difficulty-badge" style="background: ${difficultyColor};">${difficultyLabel.toUpperCase()}</span>
                 ${phase.estimatedTime ? `<span class="phase-time-badge">${phase.estimatedTime} min/pièce</span>` : ''}
@@ -1405,7 +1402,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
             ${phase.steps.map((step, stepIndex) => `
             <div class="step" id="phase-${phaseIndex + 1}-step-${stepIndex + 1}">
                 <div class="step-header">
-                    <div class="step-label" style="color: ${difficultyColor};">
+                    <div class="step-label" style="color: #444;">
                         Phase ${phase.phaseNumber || phaseIndex + 1} - étape ${stepIndex + 1}${step.title ? ` : ${escapeHtml(step.title)}` : ''}
                     </div>
                 </div>
@@ -1475,7 +1472,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
     </div>
   `}).join('');
 
-  return `<div class="phases-container">${phasesHTML}</div>`;
+  return phasesHTML;
 }
 
 /**
