@@ -66,76 +66,111 @@ export async function generateHTML(
             max-width: 100vw;
         }
 
+        /* Variables CSS */
+        :root {
+            --primary-color: #f93705;
+            --primary-dark: #d42f00;
+            --text-primary: #1a1a1a;
+            --text-secondary: #555;
+            --text-muted: #999;
+            --border-color: #e0e0e0;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --spacing-xs: 8px;
+            --spacing-sm: 16px;
+            --spacing-md: 24px;
+            --spacing-lg: 32px;
+            --spacing-xl: 48px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #2c3e50;
-            background: #f8f9fa;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.7;
+            color: var(--text-primary);
+            background: linear-gradient(to bottom, #f5f7fa 0%, #f8f9fa 100%);
             margin: 0;
             padding: 0;
             overflow-x: hidden;
             max-width: 100vw;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         /* Container principal */
         .container {
             margin: 0 auto;
-            background: #f8f9fa;
+            background: transparent;
             width: 90%;
             max-width: 1400px;
             overflow-x: hidden;
-            box-sizing: border-box;
+            padding: var(--spacing-md) 0;
         }
 
         /* En-tête */
         .header {
-            background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
-            color: #2c3e50;
-            padding: 32px 40px;
-            max-width: 100%;
-            box-sizing: border-box;
-            overflow-x: hidden;
+            background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+            color: var(--text-primary);
+            padding: var(--spacing-xl) var(--spacing-lg);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            margin-bottom: var(--spacing-lg);
         }
 
         .version-badge {
             display: inline-block;
-            background: #e8e8e8;
-            color: #666;
-            padding: 6px 14px;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            border: 1px solid #d0d0d0;
+            background: linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 100%);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            letter-spacing: 0.5px;
         }
 
         .header-title {
-            font-size: 2.5rem;
-            color: #666;
-            font-weight: 500;
-            margin-bottom: 6px;
+            font-size: 2.2rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
             text-align: left;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .header-designation {
-            font-size: 2rem;
-            font-weight: 400;
-            color: #1a1a1a;
-            margin-bottom: 8px;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-sm);
             text-align: left;
+            line-height: 1.2;
         }
 
         .header-reference {
-            font-size: 2.2rem;
-            color: rgb(249, 55, 5);
-            font-weight: 400;
-            margin-bottom: 16px;
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: var(--spacing-md);
             text-align: left;
-            text-shadow: 0 2px 4px rgba(249, 55, 5, 0.1);
+            padding: var(--spacing-xs) 0;
+            border-left: 4px solid var(--primary-color);
+            padding-left: var(--spacing-sm);
         }
 
         .description {
@@ -208,51 +243,61 @@ export async function generateHTML(
 
         /* Ressources globales */
         .resources {
-            background: white;
-            padding: 32px;
-            margin-bottom: 32px;
-            border-left: 4px solid rgb(249, 55, 5);
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            background: var(--bg-primary);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+            border-left: 4px solid var(--primary-color);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
             width: 100%;
-            max-width: 100%;
-            box-sizing: border-box;
-            overflow-x: hidden;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            border-left-width: 4px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .resources:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
         }
 
         /* Défauthèque */
         .defects-section {
-            background: white;
-            margin-bottom: 32px;
-            border-radius: 12px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-            border: 1px solid #e8e8e8;
+            background: var(--bg-primary);
+            margin-bottom: var(--spacing-lg);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            border: 1px solid rgba(0, 0, 0, 0.06);
             overflow: hidden;
             width: 100%;
-            max-width: 100%;
-            box-sizing: border-box;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .defects-section:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
         }
 
         .defects-header {
-            padding: 24px 36px;
+            padding: var(--spacing-md) var(--spacing-lg);
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 16px;
-            background: white;
-            transition: background 0.2s ease;
+            gap: var(--spacing-sm);
+            background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+            transition: all 0.3s ease;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
         }
 
         .defects-header:hover {
-            background: #fafafa;
+            background: linear-gradient(135deg, #fafbfc 0%, #f5f7fa 100%);
         }
 
         .defects-header h2 {
-            color: #1a1a1a;
-            font-size: 1.5rem;
+            color: var(--text-primary);
+            font-size: 1.4rem;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
             margin: 0;
             flex: 1;
         }
@@ -348,16 +393,20 @@ export async function generateHTML(
 
         /* Phases */
         .phase {
-            margin-bottom: 24px;
+            margin-bottom: var(--spacing-lg);
             break-inside: avoid;
-            background: white;
-            border-radius: 12px;
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
             overflow: hidden;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-            border: 1px solid #e8e8e8;
-            max-width: 100%;
+            box-shadow: var(--shadow-md);
+            border: 1px solid rgba(0, 0, 0, 0.06);
             width: 100%;
-            box-sizing: border-box;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .phase:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
         }
 
         .phase:last-child {
@@ -365,27 +414,29 @@ export async function generateHTML(
         }
 
         .phase-header {
-            background: white;
-            padding: 24px 32px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+            padding: var(--spacing-md) var(--spacing-lg);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 16px;
+            gap: var(--spacing-sm);
             cursor: pointer;
-            transition: background 0.2s ease;
+            transition: all 0.3s ease;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
         }
 
         .phase-header:hover {
-            background: #fafafa;
+            background: linear-gradient(135deg, #fafbfc 0%, #f5f7fa 100%);
         }
 
         .phase-title {
-            font-size: 1.6rem;
-            font-weight: 600;
+            font-size: 1.5rem;
+            font-weight: 700;
             word-wrap: break-word;
             overflow-wrap: break-word;
             flex: 1;
+            letter-spacing: 0.5px;
         }
 
         .phase-badges {
@@ -398,26 +449,28 @@ export async function generateHTML(
         .difficulty-badge {
             display: inline-flex;
             align-items: center;
-            padding: 4px 12px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
             color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .phase-time-badge {
             display: inline-flex;
             align-items: center;
-            background: #f5f5f5;
-            color: #666;
-            padding: 4px 12px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: 500;
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+            color: var(--text-secondary);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
             white-space: nowrap;
-            border: 1px solid #e0e0e0;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
         .phase-toggle-icon {
@@ -461,15 +514,20 @@ export async function generateHTML(
         }
 
         .step {
-            margin-bottom: 24px;
-            padding: 24px;
+            margin-bottom: var(--spacing-md);
+            padding: var(--spacing-md);
             background: white;
-            border: 1px solid #e8e8e8;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-            max-width: 100%;
+            border: 1px solid rgba(0, 0, 0, 0.04);
+            border-radius: var(--radius-md);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
             width: 100%;
-            box-sizing: border-box;
+            transition: all 0.2s ease;
+        }
+
+        .step:hover {
+            border-color: rgba(0, 0, 0, 0.08);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transform: translateX(4px);
         }
 
         .step:last-child {
@@ -477,14 +535,16 @@ export async function generateHTML(
         }
 
         .step-header {
-            margin-bottom: 16px;
+            margin-bottom: var(--spacing-sm);
+            padding-bottom: var(--spacing-xs);
+            border-bottom: 2px solid var(--primary-color);
         }
 
         .step-label {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #f93705;
-            letter-spacing: -0.02em;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: 0.3px;
         }
 
         .step-description {
