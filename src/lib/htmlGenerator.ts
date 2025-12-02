@@ -244,19 +244,19 @@ export async function generateHTML(
         /* Ressources globales */
         .resources {
             background: var(--bg-primary);
-            padding: var(--spacing-lg);
             margin-bottom: var(--spacing-lg);
-            border-left: 4px solid var(--primary-color);
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-md);
             width: 100%;
+            max-width: 100%;
             border: 1px solid rgba(0, 0, 0, 0.06);
-            border-left-width: 4px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border-left: 4px solid var(--primary-color);
+            overflow: hidden;
+            transition: box-shadow 0.2s ease;
+            box-sizing: border-box;
         }
 
         .resources:hover {
-            transform: translateY(-2px);
             box-shadow: var(--shadow-lg);
         }
 
@@ -269,11 +269,12 @@ export async function generateHTML(
             border: 1px solid rgba(0, 0, 0, 0.06);
             overflow: hidden;
             width: 100%;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            max-width: 100%;
+            transition: box-shadow 0.2s ease;
+            box-sizing: border-box;
         }
 
         .defects-section:hover {
-            transform: translateY(-2px);
             box-shadow: var(--shadow-lg);
         }
 
@@ -307,9 +308,9 @@ export async function generateHTML(
         }
 
         .defects-content {
-            padding: 0 36px 36px 36px;
+            padding: var(--spacing-lg);
             overflow: hidden;
-            transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out;
+            transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out, padding 0.4s ease-in-out;
             max-height: 5000px;
             opacity: 1;
         }
@@ -317,8 +318,8 @@ export async function generateHTML(
         .defects-content.collapsed {
             max-height: 0;
             opacity: 0;
-            padding: 0;
-            transition: max-height 0.4s ease-in-out, opacity 0.2s ease-in-out;
+            padding: 0 var(--spacing-lg);
+            transition: max-height 0.4s ease-in-out, opacity 0.2s ease-in-out, padding 0.4s ease-in-out;
         }
 
         .defects-grid {
@@ -351,6 +352,7 @@ export async function generateHTML(
             margin-bottom: 20px;
             font-size: 1.3rem;
             font-weight: 600;
+            padding: var(--spacing-lg) var(--spacing-lg) 0;
         }
 
         .resources h3 {
@@ -359,11 +361,16 @@ export async function generateHTML(
             margin-bottom: 10px;
             font-size: 1.1rem;
             font-weight: 600;
+            padding: 0 var(--spacing-lg);
+        }
+
+        .resources p {
+            padding: 0 var(--spacing-lg);
         }
 
         .resource-list {
             list-style: none;
-            padding-left: 0;
+            padding: 0 var(--spacing-lg) var(--spacing-lg);
         }
 
         .resource-item {
@@ -401,11 +408,12 @@ export async function generateHTML(
             box-shadow: var(--shadow-md);
             border: 1px solid rgba(0, 0, 0, 0.06);
             width: 100%;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            max-width: 100%;
+            transition: box-shadow 0.2s ease;
+            box-sizing: border-box;
         }
 
         .phase:hover {
-            transform: translateY(-2px);
             box-shadow: var(--shadow-lg);
         }
 
@@ -506,7 +514,7 @@ export async function generateHTML(
 
         /* Étapes */
         .steps {
-            padding: 28px;
+            padding: var(--spacing-lg);
             background: #fafafa;
             max-width: 100%;
             width: 100%;
@@ -527,7 +535,6 @@ export async function generateHTML(
         .step:hover {
             border-color: rgba(0, 0, 0, 0.08);
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            transform: translateX(4px);
         }
 
         .step:last-child {
