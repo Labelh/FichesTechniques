@@ -346,6 +346,13 @@ export async function generateHTML(
             margin-top: 5px;
         }
 
+        /* Container des phases */
+        .phases-container {
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
         /* Phases */
         .phase {
             margin-bottom: 24px;
@@ -1379,7 +1386,7 @@ function generateDefects(procedure: Procedure, renderedImageUrls: Map<string, st
  * Génère le HTML pour les phases
  */
 function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, string>): string {
-  return phases.map((phase, phaseIndex) => {
+  const phasesHTML = phases.map((phase, phaseIndex) => {
     const difficultyColor = phase.difficulty === 'trainee' ? '#3b82f6' : phase.difficulty === 'easy' ? '#10b981' : phase.difficulty === 'medium' ? '#eab308' : phase.difficulty === 'hard' ? '#ef4444' : '#999';
     const difficultyLabel = phase.difficulty === 'trainee' ? 'Stagiaire' : phase.difficulty === 'easy' ? 'Facile' : phase.difficulty === 'medium' ? 'Moyen' : phase.difficulty === 'hard' ? 'Difficile' : phase.difficulty;
     return `
@@ -1467,6 +1474,8 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
         </div>
     </div>
   `}).join('');
+
+  return `<div class="phases-container">${phasesHTML}</div>`;
 }
 
 /**
@@ -1549,21 +1558,20 @@ function generateVideoCarousel(videos: any[], carouselId: string): string {
     const videoTitle = video.name || video.title || 'Vidéo YouTube';
     return `
       <div class="carousel-item" style="display: ${index === 0 ? 'flex' : 'none'};">
-        <div style="padding: 24px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; margin: 20px 0;">
+        <div style="margin: 16px 0;">
           <a href="${escapeHtml(video.url)}" target="_blank" rel="noopener noreferrer" class="video-button" style="
             display: flex;
             align-items: center;
-            gap: 16px;
-            padding: 18px 24px;
-            background: white;
-            color: #1a1a1a;
+            gap: 12px;
+            padding: 12px 16px;
+            background: transparent;
+            color: #555;
             text-decoration: none;
-            border-radius: 8px;
-            border: 2px solid #e0e0e0;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            transition: all 0.3s ease;
-          " onmouseover="this.style.borderColor='#f93705'; this.style.boxShadow='0 4px 12px rgba(249, 55, 5, 0.2)'; this.style.transform='translateX(4px)';" onmouseout="this.style.borderColor='#e0e0e0'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.08)'; this.style.transform='translateX(0)';">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f93705" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+            border-radius: 6px;
+            border: 1px solid #d0d0d0;
+            transition: all 0.2s ease;
+          " onmouseover="this.style.borderColor='#999'; this.style.background='#fafafa';" onmouseout="this.style.borderColor='#d0d0d0'; this.style.background='transparent';">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
               <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
               <line x1="7" y1="2" x2="7" y2="22"></line>
               <line x1="17" y1="2" x2="17" y2="22"></line>
@@ -1574,10 +1582,10 @@ function generateVideoCarousel(videos: any[], carouselId: string): string {
               <line x1="17" y1="7" x2="22" y2="7"></line>
             </svg>
             <div style="flex: 1; text-align: left;">
-              <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 4px;">${escapeHtml(videoTitle)}</div>
-              ${video.description ? `<div style="font-size: 0.9rem; color: #666;">${escapeHtml(video.description)}</div>` : ''}
+              <div style="font-size: 0.95rem; font-weight: 500; color: #555;">${escapeHtml(videoTitle)}</div>
+              ${video.description ? `<div style="font-size: 0.85rem; color: #999; margin-top: 2px;">${escapeHtml(video.description)}</div>` : ''}
             </div>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f93705" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
               <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
               <polyline points="15 3 21 3 21 9"></polyline>
               <line x1="10" y1="14" x2="21" y2="3"></line>

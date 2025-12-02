@@ -596,6 +596,7 @@ function SubStepItem({
   const [showToolSelector, setShowToolSelector] = useState(false);
   const [showVideoInput, setShowVideoInput] = useState(false);
   const [videoUrl, setVideoUrl] = useState('');
+  const [videoTitle, setVideoTitle] = useState('');
 
   const handleImageUpload = async (files: File[]) => {
     const validImages: AnnotatedImage[] = [];
@@ -660,7 +661,7 @@ function SubStepItem({
 
     const newVideo = {
       id: crypto.randomUUID(),
-      name: extractVideoTitle(videoUrl),
+      name: videoTitle.trim() || extractVideoTitle(videoUrl),
       url: videoUrl,
       thumbnail: extractVideoThumbnail(videoUrl),
       size: 0,
@@ -671,6 +672,7 @@ function SubStepItem({
 
     onAddVideo([newVideo]);
     setVideoUrl('');
+    setVideoTitle('');
     setShowVideoInput(false);
   };
 
@@ -988,6 +990,13 @@ function SubStepItem({
               <div className="space-y-2">
                 <Input
                   type="text"
+                  value={videoTitle}
+                  onChange={(e) => setVideoTitle(e.target.value)}
+                  placeholder="Titre de la vidéo (optionnel)"
+                  className="text-xs"
+                />
+                <Input
+                  type="text"
                   value={videoUrl}
                   onChange={(e) => setVideoUrl(e.target.value)}
                   placeholder="URL de la vidéo (YouTube, Vimeo, etc.)"
@@ -998,6 +1007,7 @@ function SubStepItem({
                     } else if (e.key === 'Escape') {
                       setShowVideoInput(false);
                       setVideoUrl('');
+                      setVideoTitle('');
                     }
                   }}
                 />
@@ -1016,6 +1026,7 @@ function SubStepItem({
                     onClick={() => {
                       setShowVideoInput(false);
                       setVideoUrl('');
+                      setVideoTitle('');
                     }}
                     className="text-xs"
                   >
