@@ -575,7 +575,9 @@ export async function generateHTML(
 
         .step-content {
             overflow: hidden;
-            transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out;
+            transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                        opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                        padding 0.5s cubic-bezier(0.4, 0, 0.2, 1);
             max-height: 10000px;
             opacity: 1;
         }
@@ -583,7 +585,11 @@ export async function generateHTML(
         .step-content.collapsed {
             max-height: 0;
             opacity: 0;
-            transition: max-height 0.4s ease-in-out, opacity 0.2s ease-in-out;
+            padding-top: 0;
+            padding-bottom: 0;
+            transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                        opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                        padding 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .step-description {
@@ -1282,10 +1288,25 @@ export async function generateHTML(
             }
         }
 
-        // Toggle Step avec animation (sans icône)
+        // Toggle Step avec animation (sans icône) - Ferme les autres steps
         function toggleStep(stepId) {
             const content = document.getElementById(stepId + '-content');
-            if (content.classList.contains('collapsed')) {
+            const isCurrentlyCollapsed = content.classList.contains('collapsed');
+
+            // Fermer tous les autres steps de la même phase
+            const phaseMatch = stepId.match(/^phase-(\d+)-step-\d+$/);
+            if (phaseMatch) {
+                const phaseNumber = phaseMatch[1];
+                const allStepsInPhase = document.querySelectorAll('[id^="phase-' + phaseNumber + '-step-"][id$="-content"]');
+                allStepsInPhase.forEach(stepContent => {
+                    if (stepContent.id !== stepId + '-content') {
+                        stepContent.classList.add('collapsed');
+                    }
+                });
+            }
+
+            // Toggle le step cliqué
+            if (isCurrentlyCollapsed) {
                 content.classList.remove('collapsed');
             } else {
                 content.classList.add('collapsed');
