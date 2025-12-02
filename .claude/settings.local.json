@@ -41,7 +41,10 @@
       "Bash(firebase login:*)",
       "Bash(netstat:*)",
       "Bash(findstr:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(undefined\" qui causait \nla SUPPRESSION complète des champs lors de la sauvegarde Firebase.\n\nPROBLÈME :\n1. updateStepTool : toolId: toolId || undefined\n2. cleanUndefined : Supprime tous les champs === undefined\n3. Firestore : Ne reçoit JAMAIS les données des outils\n4. Export HTML : Les outils sont absents (normalement)\n\nEXEMPLE DE L''IMPACT :\n- L''utilisateur ajoute un outil \"Fraise boule ø4\"\n- updateStepTool le stocke comme undefined\n- cleanUndefined le SUPPRIME avant sauvegarde\n- Firebase reçoit : { } (pas de toolId/toolName)\n- Export HTML : \"Outil: AUCUN\"\n\nSOLUTION :\nRemplacer \")",
+      "Bash(undefined\" par \")",
+      "Bash(null\" car:\n✓ Firestore accepte null mais PAS undefined\n✓ cleanUndefined convertit undefined en null\n✓ Les champs sont maintenant sauvegardés correctement\n\nAVANT:\ntoolId: toolId || undefined,     ← Supprimé par cleanUndefined\ntoolName: toolName || undefined, ← Supprimé par cleanUndefined\n\nAPRÈS:\ntoolId: toolId || null,     ← Sauvegardé dans Firestore\ntoolName: toolName || null, ← Sauvegardé dans Firestore\n\nIMPACT:\nCorrige TOUS les champs d''étapes qui n''étaient pas sauvegardés:\n- Outils (toolId, toolName, toolLocation, toolReference)\n- Potentiellement autres champs affectés\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": [],
     "ask": []

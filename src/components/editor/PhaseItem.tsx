@@ -202,12 +202,12 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
       s.id === stepId
         ? {
             ...s,
-            toolId: toolId || undefined,
-            toolName: toolName || undefined,
-            toolLocation: toolLocation || undefined,
-            toolReference: toolReference || undefined,
-            toolColor: toolColor || undefined,
-            tool: undefined // On ne stocke plus l'objet complet
+            toolId: toolId || null,
+            toolName: toolName || null,
+            toolLocation: toolLocation || null,
+            toolReference: toolReference || null,
+            toolColor: toolColor || null,
+            tool: null // On ne stocke plus l'objet complet, mais null est accepté par Firestore
           }
         : s
     ));
