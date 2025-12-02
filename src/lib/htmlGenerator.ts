@@ -200,6 +200,7 @@ export async function generateHTML(
         /* Contenu */
         .content {
             padding: 24px 32px;
+            width: 100%;
             max-width: 100%;
             margin: 0 auto;
             box-sizing: border-box;
