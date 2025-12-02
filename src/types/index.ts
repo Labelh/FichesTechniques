@@ -186,12 +186,12 @@ export interface SubStep {
   estimatedTime?: number; // en minutes
 
   // Outil spécifique à cette sous-étape
-  toolId?: string;
-  toolName?: string; // Nom de l'outil (simplifié pour Firestore)
-  toolLocation?: string; // Emplacement de l'outil
-  toolReference?: string; // Référence de l'outil
-  toolColor?: string; // Couleur pour le tracé et l'affichage
-  tool?: Tool; // Objet complet (uniquement en mémoire, pas sauvegardé)
+  toolId?: string | null;
+  toolName?: string | null; // Nom de l'outil (simplifié pour Firestore)
+  toolLocation?: string | null; // Emplacement de l'outil
+  toolReference?: string | null; // Référence de l'outil
+  toolColor?: string | null; // Couleur pour le tracé et l'affichage
+  tool?: Tool | null; // Objet complet (uniquement en mémoire, pas sauvegardé)
 
   // Conseils et sécurité par sous-étape
   tips?: string[];
