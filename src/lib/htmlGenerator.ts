@@ -81,7 +81,7 @@ export async function generateHTML(
         .container {
             margin: 0 auto;
             background: #f8f9fa;
-            width: 100%;
+            width: 90%;
             max-width: 1400px;
             overflow-x: hidden;
             box-sizing: border-box;
@@ -230,15 +230,10 @@ export async function generateHTML(
 
         .defects-header {
             padding: 24px 36px;
-            cursor: pointer;
             display: flex;
             align-items: center;
             gap: 16px;
             background: white;
-        }
-
-        .defects-header:hover {
-            background: #fafafa;
         }
 
         .defects-header h2 {
@@ -252,37 +247,11 @@ export async function generateHTML(
         }
 
         .defects-toggle-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 20px;
-            height: 20px;
-            min-width: 20px;
-            min-height: 20px;
-            font-size: 1rem;
-            color: #dc2626;
-            transition: transform 0.3s ease;
-            user-select: none;
-            flex-shrink: 0;
-        }
-
-        .defects-toggle-icon.collapsed {
-            transform: rotate(0deg);
+            display: none;
         }
 
         .defects-content {
             padding: 0 36px 36px 36px;
-            overflow: hidden;
-            transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out;
-            max-height: 5000px;
-            opacity: 1;
-        }
-
-        .defects-content.collapsed {
-            max-height: 0;
-            opacity: 0;
-            padding: 0;
-            transition: max-height 0.4s ease-in-out, opacity 0.2s ease-in-out;
         }
 
         .defects-grid {
@@ -377,11 +346,6 @@ export async function generateHTML(
             align-items: center;
             justify-content: space-between;
             gap: 16px;
-            transition: background 0.2s ease;
-        }
-
-        .phase-header:hover {
-            background: #fafafa;
         }
 
         .phase-title {
@@ -425,35 +389,11 @@ export async function generateHTML(
         }
 
         .phase-toggle-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 20px;
-            height: 20px;
-            min-width: 20px;
-            min-height: 20px;
-            font-size: 1rem;
-            color: #999;
-            transition: transform 0.3s ease;
-            user-select: none;
-            flex-shrink: 0;
-        }
-
-        .phase-toggle-icon.collapsed {
-            transform: rotate(0deg);
+            display: none;
         }
 
         .phase-content {
             overflow: hidden;
-            transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out;
-            max-height: 5000px;
-            opacity: 1;
-        }
-
-        .phase-content.collapsed {
-            max-height: 0;
-            opacity: 0;
-            transition: max-height 0.4s ease-in-out, opacity 0.2s ease-in-out;
         }
 
         .phase-meta {
@@ -1172,37 +1112,6 @@ export async function generateHTML(
             this.style.cursor = currentZoom > 1 ? 'zoom-out' : 'zoom-in';
         });
 
-        // Toggle Phase avec animation
-        function togglePhase(phaseId) {
-            const content = document.getElementById(phaseId + '-content');
-            const toggle = document.getElementById(phaseId + '-toggle');
-
-            if (content.classList.contains('collapsed')) {
-                content.classList.remove('collapsed');
-                toggle.textContent = '▼';
-                toggle.classList.remove('collapsed');
-            } else {
-                content.classList.add('collapsed');
-                toggle.textContent = '►';
-                toggle.classList.add('collapsed');
-            }
-        }
-
-        // Toggle Défauthèque avec animation
-        function toggleDefects() {
-            const content = document.getElementById('defects-content');
-            const toggle = document.getElementById('defects-toggle');
-
-            if (content.classList.contains('collapsed')) {
-                content.classList.remove('collapsed');
-                toggle.textContent = '▼';
-                toggle.classList.remove('collapsed');
-            } else {
-                content.classList.add('collapsed');
-                toggle.textContent = '►';
-                toggle.classList.add('collapsed');
-            }
-        }
 
         // Carrousel JavaScript
         const carouselStates = new Map();
@@ -1389,12 +1298,11 @@ function generateDefects(procedure: Procedure, renderedImageUrls: Map<string, st
 
   return `
     <div class="defects-section" id="defautheque">
-        <div class="defects-header" onclick="toggleDefects()" style="cursor: pointer;">
-            <span class="defects-toggle-icon collapsed" id="defects-toggle">►</span>
+        <div class="defects-header">
             <h2>Défauthèque</h2>
         </div>
 
-        <div class="defects-content collapsed" id="defects-content">
+        <div class="defects-content" id="defects-content">
             <div class="defects-grid">
             ${procedure.defects.map((defect, defectIndex) => `
                 <div class="defect-item">
@@ -1420,15 +1328,14 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
     const difficultyLabel = phase.difficulty === 'trainee' ? 'Stagiaire' : phase.difficulty === 'easy' ? 'Facile' : phase.difficulty === 'medium' ? 'Moyen' : phase.difficulty === 'hard' ? 'Difficile' : phase.difficulty;
     return `
     <div class="phase" id="phase-${phaseIndex + 1}">
-        <div class="phase-header" onclick="togglePhase('phase-${phaseIndex + 1}')" style="cursor: pointer;">
+        <div class="phase-header">
             <div class="phase-title" style="color: ${difficultyColor};">Phase ${phase.phaseNumber || phaseIndex + 1} : ${escapeHtml(phase.title)}</div>
             <div class="phase-badges">
                 <span class="difficulty-badge" style="background: ${difficultyColor};">${difficultyLabel.toUpperCase()}</span>
                 ${phase.estimatedTime ? `<span class="phase-time-badge">${phase.estimatedTime} min/pièce</span>` : ''}
-                <span class="phase-toggle-icon collapsed" id="phase-${phaseIndex + 1}-toggle">►</span>
             </div>
         </div>
-        <div class="phase-content collapsed" id="phase-${phaseIndex + 1}-content">
+        <div class="phase-content" id="phase-${phaseIndex + 1}-content">
 
         ${phase.steps && phase.steps.length > 0 ? `
         <div class="steps">
