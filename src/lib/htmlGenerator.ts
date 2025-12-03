@@ -622,28 +622,26 @@ export async function generateHTML(
             max-width: 100%;
             word-wrap: break-word;
             overflow-wrap: break-word;
-            display: flex;
-            gap: 16px;
-            align-items: flex-start;
         }
 
         .step-tool-image {
-            width: 120px;
-            height: 120px;
+            width: 100px;
+            height: 100px;
             object-fit: cover;
-            border-radius: 12px; /* Bords arrondis plus prononcés */
-            border: 2px solid #e0e0e0;
-            flex-shrink: 0;
+            border-radius: 8px;
+            border: 2px solid #d1d5db;
             cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            background-color: #fff; /* Fond blanc pour images avec transparence */
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Légère ombre */
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            margin: 12px 0;
+            display: block;
         }
 
         .step-tool-image:hover {
-            transform: scale(1.05);
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-            border-color: #f93705; /* Bordure orange au survol */
+            transform: scale(1.02);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+            border-color: #9ca3af;
         }
 
         /* Modal pour agrandir l'image */
@@ -691,8 +689,8 @@ export async function generateHTML(
         }
 
         .step-tool-title {
-            font-weight: 600;
-            font-size: 1rem;
+            font-weight: 700;
+            font-size: 0.95rem;
             margin-bottom: 8px;
             color: #1a1a1a;
         }
@@ -1679,9 +1677,9 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                         <div class="step-bottom-row">
                         ${step.toolId && step.toolName ? `
                         <div class="step-tool-box">
+                            <div class="step-tool-title">Outil à utiliser</div>
                             ${step.toolImageUrl ? `<img src="${step.toolImageUrl}" alt="${escapeHtml(step.toolName)}" class="step-tool-image" loading="lazy" onclick="event.stopPropagation(); openImageModal('${step.toolImageUrl}', '${escapeHtml(step.toolName)}');">` : ''}
                             <div class="step-tool-info">
-                                <div class="step-tool-title">Outil requis</div>
                                 <div class="step-tool-name">${escapeHtml(step.toolName)}</div>
                                 ${step.toolReference ? `<div class="step-tool-ref" style="margin-top: 2px;">${escapeHtml(step.toolReference)}</div>` : ''}
                                 ${step.toolLocation ? `<div class="step-tool-location-badge" style="margin-top: 6px;">${escapeHtml(step.toolLocation)}</div>` : ''}
