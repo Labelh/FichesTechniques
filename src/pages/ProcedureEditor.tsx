@@ -186,12 +186,14 @@ export default function ProcedureEditor() {
     setDefects([...defects, {
       id: crypto.randomUUID(),
       description: '',
+      defect: '',
+      whatToDo: '',
       images: []
     }]);
   };
 
-  const handleUpdateDefect = (id: string, description: string) => {
-    setDefects(defects.map(d => d.id === id ? { ...d, description } : d));
+  const handleUpdateDefect = (id: string, field: 'description' | 'defect' | 'whatToDo', value: string) => {
+    setDefects(defects.map(d => d.id === id ? { ...d, [field]: value } : d));
   };
 
   const handleRemoveDefect = (id: string) => {
@@ -608,13 +610,33 @@ export default function ProcedureEditor() {
                           <div className="flex items-start gap-3 mb-3">
                             <AlertTriangle className="h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
                             <div className="flex-1 space-y-3">
-                              <textarea
-                                value={defect.description}
-                                onChange={(e) => handleUpdateDefect(defect.id, e.target.value)}
-                                placeholder="Description du défaut..."
-                                rows={3}
-                                className="w-full rounded-lg border border-[#323232] bg-transparent px-3 py-2 text-sm text-white focus:ring-2 focus:ring-primary focus:border-transparent"
-                              />
+                              {/* Champ Défaut */}
+                              <div>
+                                <label className="block text-sm font-medium text-red-500 mb-1">
+                                  Défaut
+                                </label>
+                                <textarea
+                                  value={defect.defect || ''}
+                                  onChange={(e) => handleUpdateDefect(defect.id, 'defect', e.target.value)}
+                                  placeholder="Description du défaut..."
+                                  rows={2}
+                                  className="w-full rounded-lg border border-[#323232] bg-transparent px-3 py-2 text-sm text-white focus:ring-2 focus:ring-primary focus:border-transparent"
+                                />
+                              </div>
+
+                              {/* Champ Que faire */}
+                              <div>
+                                <label className="block text-sm font-medium text-green-500 mb-1">
+                                  Que faire
+                                </label>
+                                <textarea
+                                  value={defect.whatToDo || ''}
+                                  onChange={(e) => handleUpdateDefect(defect.id, 'whatToDo', e.target.value)}
+                                  placeholder="Que faire face à ce défaut..."
+                                  rows={2}
+                                  className="w-full rounded-lg border border-[#323232] bg-transparent px-3 py-2 text-sm text-white focus:ring-2 focus:ring-primary focus:border-transparent"
+                                />
+                              </div>
 
                               {/* Images */}
                               <div>

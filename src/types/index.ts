@@ -172,7 +172,9 @@ export interface VersionLog {
 
 export interface DefectItem {
   id: string;
-  description: string;
+  description: string; // Ancien champ (compatibilité)
+  defect?: string; // Nouveau: Description du défaut
+  whatToDo?: string; // Nouveau: Que faire face à ce défaut
   images?: AnnotatedImage[];
 }
 
