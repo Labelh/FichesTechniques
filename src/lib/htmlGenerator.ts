@@ -634,8 +634,7 @@ export async function generateHTML(
             transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
             background-color: #fff;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            margin: 12px 0;
-            display: block;
+            flex-shrink: 0;
         }
 
         .step-tool-image:hover {
@@ -853,7 +852,6 @@ export async function generateHTML(
         .tips {
             background: rgba(16, 185, 129, 0.1);
             border: 1px solid #10b981;
-            border-left: 4px solid #10b981;
             padding: 12px 16px;
             border-radius: 8px;
             box-shadow: 0 2px 6px rgba(16, 185, 129, 0.1);
@@ -877,7 +875,6 @@ export async function generateHTML(
         .safety-notes {
             background: rgba(239, 68, 68, 0.1);
             border: 1px solid #ef4444;
-            border-left: 4px solid #ef4444;
             padding: 12px 16px;
             border-radius: 8px;
             box-shadow: 0 2px 6px rgba(239, 68, 68, 0.1);
@@ -1678,11 +1675,13 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                         ${step.toolId && step.toolName ? `
                         <div class="step-tool-box">
                             <div class="step-tool-title">Outil à utiliser</div>
-                            ${step.toolImageUrl ? `<img src="${step.toolImageUrl}" alt="${escapeHtml(step.toolName)}" class="step-tool-image" loading="lazy" onclick="event.stopPropagation(); openImageModal('${step.toolImageUrl}', '${escapeHtml(step.toolName)}');">` : ''}
-                            <div class="step-tool-info">
-                                <div class="step-tool-name">${escapeHtml(step.toolName)}</div>
-                                ${step.toolReference ? `<div class="step-tool-ref" style="margin-top: 2px;">${escapeHtml(step.toolReference)}</div>` : ''}
-                                ${step.toolLocation ? `<div class="step-tool-location-badge" style="margin-top: 6px;">${escapeHtml(step.toolLocation)}</div>` : ''}
+                            <div style="display: flex; gap: 16px; align-items: flex-start;">
+                                ${step.toolImageUrl ? `<img src="${step.toolImageUrl}" alt="${escapeHtml(step.toolName)}" class="step-tool-image" loading="lazy" onclick="event.stopPropagation(); openImageModal('${step.toolImageUrl}', '${escapeHtml(step.toolName)}');">` : ''}
+                                <div class="step-tool-info">
+                                    <div class="step-tool-name">${escapeHtml(step.toolName)}</div>
+                                    ${step.toolReference ? `<div class="step-tool-ref" style="margin-top: 2px;">${escapeHtml(step.toolReference)}</div>` : ''}
+                                    ${step.toolLocation ? `<div class="step-tool-location-badge" style="margin-top: 6px;">${escapeHtml(step.toolLocation)}</div>` : ''}
+                                </div>
                             </div>
                         </div>
                         ` : '<div></div>'}
@@ -1690,7 +1689,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                         ${step.tips && step.tips.length > 0 ? `
                         <div class="tips">
                             <div class="tips-title">Conseils</div>
-                            ${step.tips.map(tip => `<div class="tip-item">${escapeHtml(tip)}</div>`).join('')}
+                            ${step.tips.map(tip => `<div class="tip-item">• ${escapeHtml(tip)}</div>`).join('')}
                         </div>
                         ` : '<div></div>'}
 
@@ -1701,7 +1700,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                                 <div class="safety-note-title">
                                     ${note.type === 'danger' ? 'DANGER' : 'ATTENTION'}
                                 </div>
-                                <div>${escapeHtml(note.content)}</div>
+                                <div>• ${escapeHtml(note.content)}</div>
                             </div>
                             `).join('')}
                         </div>
