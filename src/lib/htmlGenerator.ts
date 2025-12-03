@@ -1,6 +1,6 @@
 import { Procedure, Phase, AnnotatedImage, Tool } from '../types';
 import { renderAllAnnotatedImagesToBase64 } from './imageAnnotationRenderer';
-import { collection, getDocs, query, where, documentId } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import { convertTimestamps } from './firestore';
 
@@ -20,46 +20,42 @@ async function fetchToolsByIds(toolIds: string[]): Promise<Map<string, Tool>> {
   try {
     const toolsMap = new Map<string, Tool>();
 
-    // Firebase limite à 10 éléments dans un "in" query, donc on doit batcher
-    const batchSize = 10;
+    console.log('Starting individual document fetches...');
 
-    console.log('Starting batch processing...');
-    for (let i = 0; i < toolIds.length; i += batchSize) {
-      const batch = toolIds.slice(i, i + batchSize);
-      console.log(`Batch ${i / batchSize + 1}:`, batch);
+    // Récupérer chaque document individuellement
+    for (const toolId of toolIds) {
+      console.log(`Fetching tool ${toolId}...`);
 
-      const q = query(
-        collection(db, 'tools'),
-        where(documentId(), 'in', batch)
-      );
-      console.log('Query created for collection "tools"');
+      const docRef = doc(db, 'tools', toolId);
+      console.log('Document reference created:', docRef.path);
 
-      const snapshot = await getDocs(q);
-      console.log('Snapshot received:', {
-        empty: snapshot.empty,
-        size: snapshot.size,
-        docsLength: snapshot.docs.length
+      const docSnap = await getDoc(docRef);
+      console.log(`Document snapshot for ${toolId}:`, {
+        exists: docSnap.exists(),
+        id: docSnap.id
       });
 
-      snapshot.docs.forEach((doc, idx) => {
-        console.log(`Doc ${idx}:`, {
-          id: doc.id,
-          exists: doc.exists(),
-          dataKeys: Object.keys(doc.data())
-        });
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        console.log(`Document ${toolId} data keys:`, Object.keys(data));
 
         const tool = convertTimestamps<Tool>({
-          id: doc.id,
-          ...doc.data(),
+          id: docSnap.id,
+          ...data,
         });
+
         console.log('Tool converted:', {
           id: tool.id,
           name: tool.name,
           hasImage: !!tool.image,
-          imageUrl: tool.image?.url
+          imageUrl: tool.image?.url,
+          imageId: tool.imageId
         });
+
         toolsMap.set(tool.id, tool);
-      });
+      } else {
+        console.warn(`⚠️ Tool ${toolId} does not exist in Firestore`);
+      }
     }
 
     console.log('Final toolsMap size:', toolsMap.size);
