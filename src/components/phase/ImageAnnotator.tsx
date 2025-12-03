@@ -48,6 +48,12 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     points: [] as Point[],
   });
 
+  // État du déplacement (non React pour performance)
+  const dragState = useRef({
+    start: null as Point | null,
+    initialPoints: [] as Point[],
+  });
+
   const toolColors = [
     { name: 'Orange-rouge', value: '#ff5722' },
     { name: 'Rouge', value: '#ef4444' },
@@ -60,6 +66,54 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     { name: 'Cyan', value: '#06b6d4' },
     { name: 'Blanc', value: '#ffffff' },
   ];
+
+  // Lissage des points du tracé à main levée
+  const smoothPoints = (points: Point[]): Point[] => {
+    if (points.length < 3) return points;
+
+    // Étape 1: Simplifier les points (réduire les points redondants)
+    const simplified: Point[] = [points[0]];
+    const minDistance = 5; // Distance minimale entre deux points
+
+    for (let i = 1; i < points.length; i++) {
+      const prev = simplified[simplified.length - 1];
+      const curr = points[i];
+      const dist = Math.sqrt((curr.x - prev.x) ** 2 + (curr.y - prev.y) ** 2);
+
+      if (dist >= minDistance) {
+        simplified.push(curr);
+      }
+    }
+
+    // Toujours ajouter le dernier point
+    if (simplified[simplified.length - 1] !== points[points.length - 1]) {
+      simplified.push(points[points.length - 1]);
+    }
+
+    // Étape 2: Lissage avec moyenne mobile
+    const smoothed: Point[] = [simplified[0]];
+    const windowSize = 3;
+
+    for (let i = 1; i < simplified.length - 1; i++) {
+      let sumX = 0, sumY = 0, count = 0;
+
+      for (let j = Math.max(0, i - Math.floor(windowSize / 2));
+           j <= Math.min(simplified.length - 1, i + Math.floor(windowSize / 2));
+           j++) {
+        sumX += simplified[j].x;
+        sumY += simplified[j].y;
+        count++;
+      }
+
+      smoothed.push({
+        x: sumX / count,
+        y: sumY / count
+      });
+    }
+
+    smoothed.push(simplified[simplified.length - 1]);
+    return smoothed;
+  };
 
   // Charger l'image
   useEffect(() => {
@@ -366,9 +420,6 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     const canvas = canvasRef.current;
     if (!canvas || !loaded) return;
 
-    let dragStart: Point | null = null;
-    let initialPoints: Point[] = [];
-
     const onMouseDown = (e: MouseEvent) => {
       if (e.button !== 0) return;
 
@@ -388,8 +439,8 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
 
         if (clickedAnn) {
           setSelectedAnnotation(clickedAnn.id);
-          dragStart = point;
-          initialPoints = clickedAnn.points ? [...clickedAnn.points] : [];
+          dragState.current.start = point;
+          dragState.current.initialPoints = clickedAnn.points ? [...clickedAnn.points] : [];
         } else {
           setSelectedAnnotation(null);
         }
@@ -408,11 +459,11 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
       const point = getCanvasPoint(e);
 
       // Mode déplacement
-      if (moveMode && selectedAnnotation && dragStart && initialPoints.length > 0) {
-        const dx = point.x - dragStart.x;
-        const dy = point.y - dragStart.y;
+      if (moveMode && selectedAnnotation && dragState.current.start && dragState.current.initialPoints.length > 0) {
+        const dx = point.x - dragState.current.start.x;
+        const dy = point.y - dragState.current.start.y;
 
-        const movedPoints = initialPoints.map(p => ({ x: p.x + dx, y: p.y + dy }));
+        const movedPoints = dragState.current.initialPoints.map(p => ({ x: p.x + dx, y: p.y + dy }));
         const updatedAnnotations = annotations.map(a =>
           a.id === selectedAnnotation ? { ...a, points: movedPoints } : a
         );
@@ -443,15 +494,15 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
 
     const onMouseUp = (e: MouseEvent) => {
       if (moveMode) {
-        if (selectedAnnotation && dragStart) {
+        if (selectedAnnotation && dragState.current.start) {
           // Sauvegarder dans l'historique
           const newHistory = history.slice(0, historyIndex + 1);
           newHistory.push([...annotations]);
           setHistory(newHistory);
           setHistoryIndex(newHistory.length - 1);
         }
-        dragStart = null;
-        initialPoints = [];
+        dragState.current.start = null;
+        dragState.current.initialPoints = [];
         return;
       }
 
@@ -462,6 +513,9 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
 
       if (currentTool !== AnnotationType.TRAJECTORY) {
         finalPoints = [drawing.current.startPoint!, point];
+      } else {
+        // Appliquer le lissage pour les trajectoires
+        finalPoints = smoothPoints(finalPoints);
       }
 
       // Texte
@@ -785,7 +839,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
               <Palette className="h-5 w-5" style={{ color: currentColor }} />
             </button>
             {showColorPicker && (
-              <div className="absolute left-full ml-2 top-0 bg-black border border-[#323232] rounded-lg p-2 z-10 grid grid-cols-2 gap-2">
+              <div className="absolute left-full ml-2 top-0 bg-black border border-[#323232] rounded-lg p-2 z-10 flex flex-col gap-2">
                 {toolColors.map((color) => (
                   <button
                     key={color.value}

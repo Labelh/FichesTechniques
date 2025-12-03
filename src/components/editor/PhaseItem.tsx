@@ -965,7 +965,7 @@ function SubStepItem({
                     <Palette className="h-4 w-4" />
                   </button>
                   {showColorPalette && (
-                    <div className="absolute top-full left-0 mt-1 p-2 bg-[#1a1a1a] border border-[#323232] rounded-lg shadow-lg z-50 grid grid-cols-5 gap-1">
+                    <div className="absolute top-full left-0 mt-1 p-2 bg-[#1a1a1a] border border-[#323232] rounded-lg shadow-lg z-50 flex flex-wrap gap-1" style={{ maxWidth: '280px' }}>
                       {textColors.map((color) => (
                         <button
                           key={color.value}
@@ -975,7 +975,7 @@ function SubStepItem({
                             document.execCommand('foreColor', false, color.value);
                             setShowColorPalette(false);
                           }}
-                          className="w-7 h-7 rounded border-2 border-[#323232] hover:border-primary transition"
+                          className="w-7 h-7 rounded border-2 border-[#323232] hover:border-primary transition flex-shrink-0"
                           style={{ backgroundColor: color.value }}
                           title={color.name}
                         />
