@@ -672,6 +672,7 @@ function SubStepItem({
   const [showVideoInput, setShowVideoInput] = useState(false);
   const [videoUrl, setVideoUrl] = useState('');
   const [videoTitle, setVideoTitle] = useState('');
+  const descriptionRef = useRef<HTMLDivElement>(null);
 
   const handleImageUpload = async (files: File[]) => {
     const validImages: AnnotatedImage[] = [];
@@ -903,6 +904,7 @@ function SubStepItem({
                 <button
                   type="button"
                   onClick={() => {
+                    descriptionRef.current?.focus();
                     document.execCommand('bold', false);
                   }}
                   className="p-1.5 hover:bg-[#323232] rounded text-gray-400 hover:text-white transition"
@@ -913,6 +915,7 @@ function SubStepItem({
                 <button
                   type="button"
                   onClick={() => {
+                    descriptionRef.current?.focus();
                     document.execCommand('italic', false);
                   }}
                   className="p-1.5 hover:bg-[#323232] rounded text-gray-400 hover:text-white transition"
@@ -931,6 +934,7 @@ function SubStepItem({
                   <input
                     type="color"
                     onChange={(e) => {
+                      descriptionRef.current?.focus();
                       document.execCommand('foreColor', false, e.target.value);
                     }}
                     className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer"
@@ -939,12 +943,17 @@ function SubStepItem({
                 </div>
               </div>
               {/* Zone de texte éditable */}
-              <textarea
-                value={step.description || ''}
-                onChange={(e) => onUpdate({ description: e.target.value })}
-                className="min-h-[150px] w-full px-3 py-2 text-sm text-white focus:outline-none bg-transparent border-0 resize-y"
-                style={{ maxHeight: '400px' }}
-                placeholder="Description détaillée de cette sous-étape..."
+              <div
+                ref={descriptionRef}
+                contentEditable
+                onInput={(e) => {
+                  const target = e.target as HTMLDivElement;
+                  onUpdate({ description: target.innerHTML });
+                }}
+                dangerouslySetInnerHTML={{ __html: step.description || '' }}
+                className="min-h-[150px] max-h-[400px] w-full px-3 py-2 text-sm text-white focus:outline-none bg-transparent border-0 overflow-y-auto"
+                style={{ wordBreak: 'break-word' }}
+                data-placeholder="Description détaillée de cette sous-étape..."
               />
             </div>
           </div>
