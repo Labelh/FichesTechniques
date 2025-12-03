@@ -1,5 +1,43 @@
-import { Procedure, Phase, AnnotatedImage } from '../types';
+import { Procedure, Phase, AnnotatedImage, Tool } from '../types';
 import { renderAllAnnotatedImagesToBase64 } from './imageAnnotationRenderer';
+import { collection, getDocs, query, where, documentId } from 'firebase/firestore';
+import { db } from './firebase';
+import { convertTimestamps } from './firestore';
+
+/**
+ * Récupère les outils depuis Firebase par leurs IDs
+ */
+async function fetchToolsByIds(toolIds: string[]): Promise<Map<string, Tool>> {
+  if (toolIds.length === 0) return new Map();
+
+  try {
+    const toolsMap = new Map<string, Tool>();
+
+    // Firebase limite à 10 éléments dans un "in" query, donc on doit batcher
+    const batchSize = 10;
+    for (let i = 0; i < toolIds.length; i += batchSize) {
+      const batch = toolIds.slice(i, i + batchSize);
+      const q = query(
+        collection(db, 'tools'),
+        where(documentId(), 'in', batch)
+      );
+
+      const snapshot = await getDocs(q);
+      snapshot.docs.forEach(doc => {
+        const tool = convertTimestamps<Tool>({
+          id: doc.id,
+          ...doc.data(),
+        });
+        toolsMap.set(tool.id, tool);
+      });
+    }
+
+    return toolsMap;
+  } catch (error) {
+    console.error('Error fetching tools:', error);
+    return new Map();
+  }
+}
 
 /**
  * Génère un fichier HTML complet et stylisé pour une procédure
@@ -8,6 +46,28 @@ export async function generateHTML(
   procedure: Procedure,
   phases: Phase[]
 ): Promise<void> {
+  // Collecter tous les toolIds uniques des steps
+  const toolIds = new Set<string>();
+  phases.forEach(phase => {
+    phase.steps.forEach(step => {
+      if (step.toolId) {
+        toolIds.add(step.toolId);
+      }
+    });
+  });
+
+  // Récupérer les outils depuis Firebase
+  const toolsMap = await fetchToolsByIds(Array.from(toolIds));
+
+  // Enrichir les steps avec les objets Tool complets
+  phases.forEach(phase => {
+    phase.steps.forEach(step => {
+      if (step.toolId && toolsMap.has(step.toolId)) {
+        step.tool = toolsMap.get(step.toolId) || null;
+      }
+    });
+  });
+
   // Collecter toutes les images annotées
   const allAnnotatedImages: AnnotatedImage[] = [];
 
@@ -631,16 +691,19 @@ export async function generateHTML(
             width: 120px;
             height: 120px;
             object-fit: cover;
-            border-radius: 8px;
-            border: 1px solid #d0d0d0;
+            border-radius: 12px; /* Bords arrondis plus prononcés */
+            border: 2px solid #e0e0e0;
             flex-shrink: 0;
             cursor: pointer;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
+            background-color: #fff; /* Fond blanc pour images avec transparence */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Légère ombre */
         }
 
         .step-tool-image:hover {
             transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+            border-color: #f93705; /* Bordure orange au survol */
         }
 
         /* Modal pour agrandir l'image */
