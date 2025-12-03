@@ -926,7 +926,7 @@ export async function generateHTML(
 
 
         .carousel-button {
-            background: var(--primary-color);
+            background: #6b7280;
             color: white;
             border: none;
             flex: 1;
@@ -944,7 +944,7 @@ export async function generateHTML(
 
         .carousel-button:hover,
         .carousel-button:active {
-            background: #d97706;
+            background: #4b5563;
             transform: scale(0.98);
         }
 
@@ -1518,7 +1518,7 @@ function generateDefects(procedure: Procedure, renderedImageUrls: Map<string, st
 
                     ${defect.whatToDo ? `
                     <div class="defect-field" style="margin-top: 16px;">
-                        <div class="defect-field-title" style="color: #10b981; font-weight: 600; margin-bottom: 8px;">Que faire</div>
+                        <div class="defect-field-title" style="color: #10b981; font-weight: 600; margin-bottom: 8px;">Intervention</div>
                         <div class="defect-field-content">${escapeHtml(defect.whatToDo)}</div>
                     </div>
                     ` : ''}
@@ -1717,13 +1717,13 @@ function generateVideoCarousel(videos: any[], carouselId: string): string {
     console.log('Video data:', { name: video.name, url: video.url, description: video.description });
     const videoTitle = video.name || video.title || 'Vidéo YouTube';
     return `
-      <div class="carousel-item" style="display: ${index === 0 ? 'flex' : 'none'};">
-        <div style="margin: 16px 0;">
+      <div class="carousel-item" style="display: ${index === 0 ? 'flex' : 'none'}; justify-content: flex-start;">
+        <div style="margin: 8px 0; width: auto; max-width: 600px;">
           <a href="${escapeHtml(video.url)}" target="_blank" rel="noopener noreferrer" class="video-button" style="
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
+            gap: 10px;
+            padding: 8px 12px;
             background: transparent;
             color: #555;
             text-decoration: none;
@@ -1731,7 +1731,7 @@ function generateVideoCarousel(videos: any[], carouselId: string): string {
             border: 1px solid #d0d0d0;
             transition: all 0.2s ease;
           " onmouseover="this.style.borderColor='#999'; this.style.background='#fafafa';" onmouseout="this.style.borderColor='#d0d0d0'; this.style.background='transparent';">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
               <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
               <line x1="7" y1="2" x2="7" y2="22"></line>
               <line x1="17" y1="2" x2="17" y2="22"></line>
@@ -1741,9 +1741,9 @@ function generateVideoCarousel(videos: any[], carouselId: string): string {
               <line x1="17" y1="17" x2="22" y2="17"></line>
               <line x1="17" y1="7" x2="22" y2="7"></line>
             </svg>
-            <div style="flex: 1; text-align: left;">
-              <div style="font-size: 0.95rem; font-weight: 500; color: #555;">${escapeHtml(videoTitle)}</div>
-              ${video.description ? `<div style="font-size: 0.85rem; color: #999; margin-top: 2px;">${escapeHtml(video.description)}</div>` : ''}
+            <div style="text-align: left;">
+              <div style="font-size: 0.9rem; font-weight: 500; color: #555;">${escapeHtml(videoTitle)}</div>
+              ${video.description ? `<div style="font-size: 0.8rem; color: #999; margin-top: 2px;">${escapeHtml(video.description)}</div>` : ''}
             </div>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
               <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
@@ -1757,7 +1757,12 @@ function generateVideoCarousel(videos: any[], carouselId: string): string {
   }).join('');
 
   if (videos.length === 1) {
-    return `<div class="carousel-container">${carouselItems}</div>`;
+    return `
+      <div class="video-section">
+        <div class="video-section-title" style="font-size: 1rem; font-weight: 600; color: #444; margin-bottom: 12px;">Vidéo</div>
+        <div class="carousel-container">${carouselItems}</div>
+      </div>
+    `;
   }
 
   const indicators = videos.map((_, index) =>
@@ -1765,18 +1770,21 @@ function generateVideoCarousel(videos: any[], carouselId: string): string {
   ).join('');
 
   return `
-    <div class="carousel-container" id="carousel-video-${carouselId}">
-      <div class="carousel-wrapper">
-        <div class="carousel-items" id="items-video-${carouselId}">
-          ${carouselItems}
+    <div class="video-section">
+      <div class="video-section-title" style="font-size: 1rem; font-weight: 600; color: #444; margin-bottom: 12px;">Vidéo</div>
+      <div class="carousel-container" id="carousel-video-${carouselId}">
+        <div class="carousel-wrapper">
+          <div class="carousel-items" id="items-video-${carouselId}">
+            ${carouselItems}
+          </div>
         </div>
-      </div>
-      <div class="carousel-controls">
-        <button class="carousel-button prev" onclick="changeSlide('video-${carouselId}', -1)">‹</button>
-        <button class="carousel-button next" onclick="changeSlide('video-${carouselId}', 1)">›</button>
-      </div>
-      <div class="carousel-indicators">
-        ${indicators}
+        <div class="carousel-controls">
+          <button class="carousel-button prev" onclick="changeSlide('video-${carouselId}', -1)">‹</button>
+          <button class="carousel-button next" onclick="changeSlide('video-${carouselId}', 1)">›</button>
+        </div>
+        <div class="carousel-indicators">
+          ${indicators}
+        </div>
       </div>
     </div>
   `;

@@ -624,15 +624,15 @@ export default function ProcedureEditor() {
                                 />
                               </div>
 
-                              {/* Champ Que faire */}
+                              {/* Champ Intervention */}
                               <div>
                                 <label className="block text-sm font-medium text-green-500 mb-1">
-                                  Que faire
+                                  Intervention
                                 </label>
                                 <textarea
                                   value={defect.whatToDo || ''}
                                   onChange={(e) => handleUpdateDefect(defect.id, 'whatToDo', e.target.value)}
-                                  placeholder="Que faire face à ce défaut..."
+                                  placeholder="Intervention face à ce défaut..."
                                   rows={2}
                                   className="w-full rounded-lg border border-[#323232] bg-transparent px-3 py-2 text-sm text-white focus:ring-2 focus:ring-primary focus:border-transparent"
                                 />
