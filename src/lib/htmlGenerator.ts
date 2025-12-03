@@ -522,7 +522,6 @@ export async function generateHTML(
 
         .step {
             margin-bottom: var(--spacing-md);
-            padding: var(--spacing-md);
             background: white;
             border: 1px solid rgba(0, 0, 0, 0.04);
             border-radius: var(--radius-md);
@@ -541,14 +540,13 @@ export async function generateHTML(
         }
 
         .step-header {
-            padding: var(--spacing-md) var(--spacing-sm);
+            padding: var(--spacing-md);
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: space-between;
             background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
-            border-radius: var(--radius-sm);
-            margin: calc(var(--spacing-md) * -1) calc(var(--spacing-md) * -1) 0 calc(var(--spacing-md) * -1);
+            border-radius: var(--radius-sm) var(--radius-sm) 0 0;
             transition: background 0.3s ease;
             min-height: 60px;
         }
@@ -568,11 +566,10 @@ export async function generateHTML(
 
         .step-content {
             overflow: hidden;
-            margin-top: var(--spacing-sm);
+            padding: var(--spacing-md);
             transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
                         opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-                        padding 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-                        margin 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+                        padding 0.5s cubic-bezier(0.4, 0, 0.2, 1);
             max-height: 10000px;
             opacity: 1;
         }
@@ -580,14 +577,12 @@ export async function generateHTML(
         .step-content.collapsed {
             max-height: 0;
             opacity: 0;
-            padding: 0;
-            margin: 0;
+            padding: 0 !important;
             border: none;
             pointer-events: none;
             transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
                         opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                        padding 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-                        margin 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+                        padding 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .step-description {

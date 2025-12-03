@@ -673,6 +673,38 @@ function SubStepItem({
   const [videoUrl, setVideoUrl] = useState('');
   const [videoTitle, setVideoTitle] = useState('');
   const descriptionRef = useRef<HTMLDivElement>(null);
+  const [showColorPalette, setShowColorPalette] = useState(false);
+
+  const textColors = [
+    { name: 'Orange-rouge', value: '#ff5722' },
+    { name: 'Rouge', value: '#ef4444' },
+    { name: 'Orange', value: '#f97316' },
+    { name: 'Jaune', value: '#eab308' },
+    { name: 'Vert', value: '#22c55e' },
+    { name: 'Bleu', value: '#3b82f6' },
+    { name: 'Violet', value: '#a855f7' },
+    { name: 'Rose', value: '#ec4899' },
+    { name: 'Cyan', value: '#06b6d4' },
+    { name: 'Blanc', value: '#ffffff' },
+  ];
+
+  // Initialiser le contenu du contentEditable
+  useEffect(() => {
+    if (descriptionRef.current && descriptionRef.current.innerHTML !== step.description) {
+      descriptionRef.current.innerHTML = step.description || '';
+    }
+  }, [step.id]); // Seulement quand on change de step
+
+  // Fermer la palette de couleurs quand on clique ailleurs
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (showColorPalette && !(e.target as HTMLElement).closest('.relative')) {
+        setShowColorPalette(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showColorPalette]);
 
   const handleImageUpload = async (files: File[]) => {
     const validImages: AnnotatedImage[] = [];
@@ -923,23 +955,33 @@ function SubStepItem({
                 >
                   <Italic className="h-4 w-4" />
                 </button>
-                <div className="relative group">
+                <div className="relative">
                   <button
                     type="button"
+                    onClick={() => setShowColorPalette(!showColorPalette)}
                     className="p-1.5 hover:bg-[#323232] rounded text-gray-400 hover:text-white transition"
                     title="Couleur du texte"
                   >
                     <Palette className="h-4 w-4" />
                   </button>
-                  <input
-                    type="color"
-                    onChange={(e) => {
-                      descriptionRef.current?.focus();
-                      document.execCommand('foreColor', false, e.target.value);
-                    }}
-                    className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer"
-                    title="Choisir une couleur"
-                  />
+                  {showColorPalette && (
+                    <div className="absolute top-full left-0 mt-1 p-2 bg-[#1a1a1a] border border-[#323232] rounded-lg shadow-lg z-50 grid grid-cols-5 gap-1">
+                      {textColors.map((color) => (
+                        <button
+                          key={color.value}
+                          type="button"
+                          onClick={() => {
+                            descriptionRef.current?.focus();
+                            document.execCommand('foreColor', false, color.value);
+                            setShowColorPalette(false);
+                          }}
+                          className="w-7 h-7 rounded border-2 border-[#323232] hover:border-primary transition"
+                          style={{ backgroundColor: color.value }}
+                          title={color.name}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
               {/* Zone de texte éditable */}
@@ -950,7 +992,6 @@ function SubStepItem({
                   const target = e.target as HTMLDivElement;
                   onUpdate({ description: target.innerHTML });
                 }}
-                dangerouslySetInnerHTML={{ __html: step.description || '' }}
                 className="min-h-[150px] max-h-[400px] w-full px-3 py-2 text-sm text-white focus:outline-none bg-transparent border-0 overflow-y-auto"
                 style={{ wordBreak: 'break-word' }}
                 data-placeholder="Description détaillée de cette sous-étape..."
