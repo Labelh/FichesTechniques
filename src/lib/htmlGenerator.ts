@@ -8,33 +8,69 @@ import { convertTimestamps } from './firestore';
  * Récupère les outils depuis Firebase par leurs IDs
  */
 async function fetchToolsByIds(toolIds: string[]): Promise<Map<string, Tool>> {
-  if (toolIds.length === 0) return new Map();
+  console.log('=== INSIDE fetchToolsByIds ===');
+  console.log('toolIds received:', toolIds);
+  console.log('toolIds.length:', toolIds.length);
+
+  if (toolIds.length === 0) {
+    console.log('No toolIds provided, returning empty Map');
+    return new Map();
+  }
 
   try {
     const toolsMap = new Map<string, Tool>();
 
     // Firebase limite à 10 éléments dans un "in" query, donc on doit batcher
     const batchSize = 10;
+
+    console.log('Starting batch processing...');
     for (let i = 0; i < toolIds.length; i += batchSize) {
       const batch = toolIds.slice(i, i + batchSize);
+      console.log(`Batch ${i / batchSize + 1}:`, batch);
+
       const q = query(
         collection(db, 'tools'),
         where(documentId(), 'in', batch)
       );
+      console.log('Query created for collection "tools"');
 
       const snapshot = await getDocs(q);
-      snapshot.docs.forEach(doc => {
+      console.log('Snapshot received:', {
+        empty: snapshot.empty,
+        size: snapshot.size,
+        docsLength: snapshot.docs.length
+      });
+
+      snapshot.docs.forEach((doc, idx) => {
+        console.log(`Doc ${idx}:`, {
+          id: doc.id,
+          exists: doc.exists(),
+          dataKeys: Object.keys(doc.data())
+        });
+
         const tool = convertTimestamps<Tool>({
           id: doc.id,
           ...doc.data(),
+        });
+        console.log('Tool converted:', {
+          id: tool.id,
+          name: tool.name,
+          hasImage: !!tool.image,
+          imageUrl: tool.image?.url
         });
         toolsMap.set(tool.id, tool);
       });
     }
 
+    console.log('Final toolsMap size:', toolsMap.size);
+    console.log('Final toolsMap keys:', Array.from(toolsMap.keys()));
     return toolsMap;
   } catch (error) {
-    console.error('Error fetching tools:', error);
+    console.error('!!! ERROR in fetchToolsByIds !!!', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return new Map();
   }
 }
