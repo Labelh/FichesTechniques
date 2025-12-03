@@ -58,12 +58,30 @@ export async function generateHTML(
 
   // Récupérer les outils depuis Firebase
   const toolsMap = await fetchToolsByIds(Array.from(toolIds));
+  console.log('=== TOOLS FETCHED ===');
+  console.log('ToolIds to fetch:', Array.from(toolIds));
+  console.log('Tools fetched:', toolsMap.size);
+  toolsMap.forEach((tool, id) => {
+    console.log(`Tool ${id}:`, {
+      name: tool.name,
+      hasImage: !!tool.image,
+      imageUrl: tool.image?.url,
+      imageId: tool.imageId
+    });
+  });
 
   // Enrichir les steps avec les objets Tool complets
-  phases.forEach(phase => {
-    phase.steps.forEach(step => {
+  phases.forEach((phase, phaseIdx) => {
+    phase.steps.forEach((step, stepIdx) => {
       if (step.toolId && toolsMap.has(step.toolId)) {
         step.tool = toolsMap.get(step.toolId) || null;
+        console.log(`Phase ${phaseIdx + 1}, Step ${stepIdx + 1}: Tool enriched`, {
+          toolId: step.toolId,
+          toolName: step.toolName,
+          hasToolObject: !!step.tool,
+          hasToolImage: !!step.tool?.image,
+          toolImageUrl: step.tool?.image?.url
+        });
       }
     });
   });
@@ -1702,7 +1720,19 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
 
         ${phase.steps && phase.steps.length > 0 ? `
         <div class="steps">
-            ${phase.steps.map((step, stepIndex) => `
+            ${phase.steps.map((step, stepIndex) => {
+              // Debug: Log step tool info
+              if (step.toolId) {
+                console.log(`=== GENERATING HTML for Phase ${phaseIndex + 1}, Step ${stepIndex + 1} ===`);
+                console.log('step.toolId:', step.toolId);
+                console.log('step.toolName:', step.toolName);
+                console.log('step.tool:', step.tool);
+                console.log('step.tool?.image:', step.tool?.image);
+                console.log('step.tool?.image?.url:', step.tool?.image?.url);
+                console.log('step.tool?.imageId:', step.tool?.imageId);
+              }
+
+              return `
             <div class="step" id="phase-${phaseIndex + 1}-step-${stepIndex + 1}">
                 <div class="step-header"
                      onclick="toggleStep('phase-${phaseIndex + 1}-step-${stepIndex + 1}')"
@@ -1780,7 +1810,8 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                 ` : ''}
                 </div>
             </div>
-            `).join('')}
+            `;
+            }).join('')}
         </div>
         ` : ''}
         </div>
