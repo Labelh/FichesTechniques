@@ -541,7 +541,7 @@ export async function generateHTML(
         }
 
         .step-header {
-            padding: var(--spacing-sm);
+            padding: var(--spacing-md) var(--spacing-sm);
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -550,6 +550,7 @@ export async function generateHTML(
             border-radius: var(--radius-sm);
             margin: calc(var(--spacing-md) * -1) calc(var(--spacing-md) * -1) 0 calc(var(--spacing-md) * -1);
             transition: background 0.3s ease;
+            min-height: 60px;
         }
 
 
@@ -631,12 +632,59 @@ export async function generateHTML(
         }
 
         .step-tool-image {
-            width: 80px;
-            height: 80px;
+            width: 120px;
+            height: 120px;
             object-fit: cover;
             border-radius: 8px;
             border: 1px solid #d0d0d0;
             flex-shrink: 0;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .step-tool-image:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Modal pour agrandir l'image */
+        .image-modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .image-modal.active {
+            display: flex;
+        }
+
+        .image-modal img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .image-modal-close {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10000;
+        }
+
+        .image-modal-close:hover {
+            color: #ccc;
         }
 
         .step-tool-info {
@@ -807,6 +855,7 @@ export async function generateHTML(
         /* Conseils (touches de vert) */
         .tips {
             background: rgba(16, 185, 129, 0.1);
+            border: 1px solid #10b981;
             border-left: 4px solid #10b981;
             padding: 12px 16px;
             border-radius: 8px;
@@ -830,6 +879,7 @@ export async function generateHTML(
         /* Consignes de sécurité (touches de rouge) */
         .safety-notes {
             background: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef4444;
             border-left: 4px solid #ef4444;
             padding: 12px 16px;
             border-radius: 8px;
@@ -1422,7 +1472,39 @@ export async function generateHTML(
         // Appeler au chargement et au redimensionnement
         window.addEventListener('load', equalizeStepBottomRowHeights);
         window.addEventListener('resize', equalizeStepBottomRowHeights);
+
+        // Fonctions pour la modal d'agrandissement d'image
+        function openImageModal(src, alt) {
+            const modal = document.getElementById('image-modal');
+            const modalImg = document.getElementById('modal-image');
+            modal.classList.add('active');
+            modalImg.src = src;
+            modalImg.alt = alt;
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('image-modal');
+            modal.classList.remove('active');
+        }
+
+        // Fermer la modal en cliquant à l'extérieur de l'image
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('image-modal');
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        closeImageModal();
+                    }
+                });
+            }
+        });
     </script>
+
+    <!-- Modal pour agrandir les images -->
+    <div id="image-modal" class="image-modal">
+        <span class="image-modal-close" onclick="closeImageModal()">&times;</span>
+        <img id="modal-image" alt="">
+    </div>
 </body>
 </html>`;
 
@@ -1568,7 +1650,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                      onmouseover="this.style.backgroundColor='${hoverColor}'"
                      onmouseout="this.style.backgroundColor='transparent'">
                     <div class="step-label" style="color: #444;">
-                        Phase ${phase.phaseNumber || phaseIndex + 1} - étape ${stepIndex + 1}${step.title ? ` : ${escapeHtml(step.title)}` : ''}
+                        Étape ${stepIndex + 1}${step.title ? ` : ${escapeHtml(step.title)}` : ''}
                     </div>
                     <div class="step-toggle-icon" style="display: none;">▼</div>
                 </div>
@@ -1586,7 +1668,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                     <div class="step-bottom-row">
                         ${step.toolId && step.toolName ? `
                         <div class="step-tool-box">
-                            ${step.tool?.image?.url ? `<img src="${step.tool.image.url}" alt="${escapeHtml(step.toolName)}" class="step-tool-image" loading="lazy">` : ''}
+                            ${step.tool?.image?.url ? `<img src="${step.tool.image.url}" alt="${escapeHtml(step.toolName)}" class="step-tool-image" loading="lazy" onclick="event.stopPropagation(); openImageModal('${step.tool.image.url}', '${escapeHtml(step.toolName)}');">` : ''}
                             <div class="step-tool-info">
                                 <div class="step-tool-title">Outil requis</div>
                                 <div class="step-tool-name">${escapeHtml(step.toolName)}</div>
