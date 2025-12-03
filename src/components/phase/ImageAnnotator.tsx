@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Save, Undo, Redo, Pencil, ArrowRight, Circle, Square, Minus, Type, Palette, ZoomIn, ZoomOut, Scan, Eraser, Move } from 'lucide-react';
+import { X, Save, Undo, Redo, Pencil, ArrowRight, Circle, Square, Minus, Type, Palette, ZoomIn, ZoomOut, Scan, Move } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import type { AnnotatedImage, Annotation, Tool } from '@/types';
 import { AnnotationType } from '@/types';
@@ -34,7 +34,6 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [edgeDetectionEnabled, setEdgeDetectionEnabled] = useState(false);
-  const [backgroundRemoved, setBackgroundRemoved] = useState(false);
   const originalImageRef = useRef<HTMLImageElement | null>(null);
   const [strokeWidth, setStrokeWidth] = useState(3);
   const [strokeOpacity, setStrokeOpacity] = useState(1);
@@ -53,6 +52,9 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     start: null as Point | null,
     initialPoints: [] as Point[],
   });
+
+  // État pour le suivi d'arêtes (pour assurer la continuité)
+  const lastEdgePoint = useRef<Point | null>(null);
 
   const toolColors = [
     { name: 'Orange-rouge', value: '#ff5722' },
@@ -183,11 +185,15 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     return { dx: gx, dy: gy, magnitude };
   };
 
-  // Suivre une arête à partir d'un point
+  // Suivre une arête à partir d'un point (version améliorée avec continuité)
   const snapToEdge = (point: Point, imageData: ImageData): Point => {
-    const searchRadius = 10;
-    let maxMagnitude = 0;
+    const searchRadius = 8;
+    const minGradient = 30; // Seuil minimal pour détecter une arête
+    let maxScore = -Infinity;
     let bestPoint = point;
+
+    // Si on a un point précédent, on favorise la continuité
+    const prevPoint = lastEdgePoint.current || point;
 
     for (let dy = -searchRadius; dy <= searchRadius; dy++) {
       for (let dx = -searchRadius; dx <= searchRadius; dx++) {
@@ -195,52 +201,43 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
         const y = Math.round(point.y + dy);
 
         const gradient = getEdgeGradient(imageData, x, y);
-        if (gradient.magnitude > maxMagnitude) {
-          maxMagnitude = gradient.magnitude;
+
+        // Skip si pas assez de gradient
+        if (gradient.magnitude < minGradient) continue;
+
+        // Calcul de la distance au point précédent (favorise la continuité)
+        const distToPrev = Math.sqrt((x - prevPoint.x) ** 2 + (y - prevPoint.y) ** 2);
+        const distToCurrent = Math.sqrt(dx * dx + dy * dy);
+
+        // Score combinant gradient (priorité) et continuité (bonus)
+        // Plus le gradient est fort, mieux c'est
+        // Plus on est proche du chemin précédent, mieux c'est
+        const gradientScore = gradient.magnitude;
+        const continuityBonus = distToPrev < 3 ? 50 : (distToPrev < 5 ? 20 : 0);
+        const proximityPenalty = distToCurrent * 2; // Pénalité légère pour les points éloignés
+
+        const score = gradientScore + continuityBonus - proximityPenalty;
+
+        if (score > maxScore) {
+          maxScore = score;
           bestPoint = { x, y };
         }
       }
     }
 
-    return maxMagnitude > 50 ? bestPoint : point;
-  };
-
-  // Supprimer le fond (simple seuillage de couleur)
-  const removeBackground = () => {
-    const canvas = canvasRef.current;
-    const img = originalImageRef.current;
-    if (!canvas || !img) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Dessiner l'image originale
-    ctx.drawImage(img, 0, 0);
-
-    // Obtenir les données d'image
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imageData.data;
-
-    // Prendre la couleur du coin supérieur gauche comme référence du fond
-    const bgR = data[0];
-    const bgG = data[1];
-    const bgB = data[2];
-    const threshold = 40; // Seuil de similarité
-
-    // Rendre transparent les pixels similaires à la couleur de fond
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
-
-      const diff = Math.abs(r - bgR) + Math.abs(g - bgG) + Math.abs(b - bgB);
-
-      if (diff < threshold) {
-        data[i + 3] = 0; // Rendre transparent
-      }
+    // Lissage du résultat avec le point précédent
+    if (lastEdgePoint.current && maxScore > minGradient) {
+      const alpha = 0.6; // Coefficient de lissage (0.6 = 60% nouveau, 40% ancien)
+      bestPoint = {
+        x: alpha * bestPoint.x + (1 - alpha) * lastEdgePoint.current.x,
+        y: alpha * bestPoint.y + (1 - alpha) * lastEdgePoint.current.y,
+      };
     }
 
-    ctx.putImageData(imageData, 0, 0);
+    // Sauvegarder pour le prochain point
+    lastEdgePoint.current = bestPoint;
+
+    return maxScore > minGradient ? bestPoint : point;
   };
 
   // Redessiner le canvas
@@ -255,12 +252,8 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     // Effacer
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Dessiner l'image (avec ou sans effets)
-    if (backgroundRemoved) {
-      removeBackground();
-    } else {
-      ctx.drawImage(img, 0, 0);
-    }
+    // Dessiner l'image
+    ctx.drawImage(img, 0, 0);
 
     // Dessiner les annotations
     annotations.forEach(ann => {
@@ -398,7 +391,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
   // Redessiner quand les annotations changent ou les effets
   useEffect(() => {
     if (loaded) redrawCanvas();
-  }, [annotations, loaded, backgroundRemoved, selectedAnnotation, strokeWidth, strokeOpacity]);
+  }, [annotations, loaded, selectedAnnotation, strokeWidth, strokeOpacity]);
 
   // Convertir coordonnées écran → canvas
   const getCanvasPoint = (e: MouseEvent): Point => {
@@ -446,6 +439,9 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
         }
         return;
       }
+
+      // Réinitialiser le suivi d'arêtes pour un nouveau tracé
+      lastEdgePoint.current = null;
 
       drawing.current = {
         active: true,
@@ -806,7 +802,6 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
           <button
             onClick={() => {
               setEdgeDetectionEnabled(!edgeDetectionEnabled);
-              setBackgroundRemoved(false);
             }}
             className={`p-3 rounded transition-colors ${
               edgeDetectionEnabled ? 'bg-primary text-white' : 'bg-black text-gray-400 hover:bg-[#1a1a1a] border border-[#323232]'
@@ -814,18 +809,6 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
             title="Suivre les arêtes (pour traits main levée)"
           >
             <Scan className="h-5 w-5" />
-          </button>
-          <button
-            onClick={() => {
-              setBackgroundRemoved(!backgroundRemoved);
-              setEdgeDetectionEnabled(false);
-            }}
-            className={`p-3 rounded transition-colors ${
-              backgroundRemoved ? 'bg-primary text-white' : 'bg-black text-gray-400 hover:bg-[#1a1a1a] border border-[#323232]'
-            }`}
-            title="Supprimer le fond"
-          >
-            <Eraser className="h-5 w-5" />
           </button>
 
           <div className="h-px bg-[#2a2a2a] my-2" />
@@ -839,7 +822,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
               <Palette className="h-5 w-5" style={{ color: currentColor }} />
             </button>
             {showColorPicker && (
-              <div className="absolute left-full ml-2 top-0 bg-black border border-[#323232] rounded-lg p-2 z-10 flex flex-col gap-2">
+              <div className="absolute left-full ml-2 top-0 bg-black border border-[#323232] rounded-lg p-2 z-10 grid grid-cols-5 gap-2">
                 {toolColors.map((color) => (
                   <button
                     key={color.value}
