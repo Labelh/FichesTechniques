@@ -193,6 +193,7 @@ export interface SubStep {
   toolLocation?: string | null; // Emplacement de l'outil
   toolReference?: string | null; // Référence de l'outil
   toolColor?: string | null; // Couleur pour le tracé et l'affichage
+  toolImageUrl?: string | null; // URL de l'image de l'outil (ImgBB)
   tool?: Tool | null; // Objet complet (uniquement en mémoire, pas sauvegardé)
 
   // Conseils et sécurité par sous-étape

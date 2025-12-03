@@ -7,7 +7,7 @@ import type { Tool, Consumable } from '@/types';
 interface ToolSelectorProps {
   availableTools: Tool[];
   availableConsumables: Consumable[];
-  onSelect: (toolId: string, toolName: string, toolLocation?: string, toolReference?: string, type?: 'tool' | 'consumable', color?: string) => void;
+  onSelect: (toolId: string, toolName: string, toolLocation?: string, toolReference?: string, type?: 'tool' | 'consumable', color?: string, imageUrl?: string) => void;
   onClose: () => void;
 }
 
@@ -69,8 +69,9 @@ export default function ToolSelector({ availableTools, availableConsumables, onS
       ? selectedItem.location
       : ((selectedItem as any).emplacement || (selectedItem as any).location);
     const reference = selectedItem.reference;
+    const imageUrl = getItemImage(selectedItem);
 
-    onSelect(selectedItem.id, name, location, reference, selectedItem.type, selectedColor);
+    onSelect(selectedItem.id, name, location, reference, selectedItem.type, selectedColor, imageUrl);
     setIsLoading(false);
     onClose();
   };

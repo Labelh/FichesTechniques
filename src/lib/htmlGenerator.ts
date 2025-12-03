@@ -1,97 +1,5 @@
-import { Procedure, Phase, AnnotatedImage, Tool } from '../types';
+import { Procedure, Phase, AnnotatedImage } from '../types';
 import { renderAllAnnotatedImagesToBase64 } from './imageAnnotationRenderer';
-import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
-import { db } from './firebase';
-import { convertTimestamps } from './firestore';
-
-/**
- * Liste tous les outils disponibles dans Firestore (pour debug)
- */
-async function listAllTools(): Promise<void> {
-  try {
-    console.log('=== LISTING ALL TOOLS IN FIRESTORE ===');
-    const snapshot = await getDocs(collection(db, 'tools'));
-    console.log(`Total tools in collection: ${snapshot.size}`);
-
-    snapshot.docs.slice(0, 10).forEach(doc => {
-      const data = doc.data();
-      console.log(`Tool ID: ${doc.id}, Name: ${data.name || 'N/A'}, Deleted: ${data.deleted || false}`);
-    });
-
-    if (snapshot.size > 10) {
-      console.log(`... and ${snapshot.size - 10} more tools`);
-    }
-  } catch (error) {
-    console.error('Error listing tools:', error);
-  }
-}
-
-/**
- * Récupère les outils depuis Firebase par leurs IDs
- */
-async function fetchToolsByIds(toolIds: string[]): Promise<Map<string, Tool>> {
-  console.log('=== INSIDE fetchToolsByIds ===');
-  console.log('toolIds received:', toolIds);
-  console.log('toolIds.length:', toolIds.length);
-
-  if (toolIds.length === 0) {
-    console.log('No toolIds provided, returning empty Map');
-    return new Map();
-  }
-
-  try {
-    const toolsMap = new Map<string, Tool>();
-
-    console.log('Starting individual document fetches...');
-
-    // Récupérer chaque document individuellement
-    for (const toolId of toolIds) {
-      console.log(`Fetching tool ${toolId}...`);
-
-      const docRef = doc(db, 'tools', toolId);
-      console.log('Document reference created:', docRef.path);
-
-      const docSnap = await getDoc(docRef);
-      console.log(`Document snapshot for ${toolId}:`, {
-        exists: docSnap.exists(),
-        id: docSnap.id
-      });
-
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        console.log(`Document ${toolId} data keys:`, Object.keys(data));
-
-        const tool = convertTimestamps<Tool>({
-          id: docSnap.id,
-          ...data,
-        });
-
-        console.log('Tool converted:', {
-          id: tool.id,
-          name: tool.name,
-          hasImage: !!tool.image,
-          imageUrl: tool.image?.url,
-          imageId: tool.imageId
-        });
-
-        toolsMap.set(tool.id, tool);
-      } else {
-        console.warn(`⚠️ Tool ${toolId} does not exist in Firestore`);
-      }
-    }
-
-    console.log('Final toolsMap size:', toolsMap.size);
-    console.log('Final toolsMap keys:', Array.from(toolsMap.keys()));
-    return toolsMap;
-  } catch (error) {
-    console.error('!!! ERROR in fetchToolsByIds !!!', error);
-    console.error('Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
-    });
-    return new Map();
-  }
-}
 
 /**
  * Génère un fichier HTML complet et stylisé pour une procédure
@@ -100,49 +8,6 @@ export async function generateHTML(
   procedure: Procedure,
   phases: Phase[]
 ): Promise<void> {
-  // Collecter tous les toolIds uniques des steps
-  const toolIds = new Set<string>();
-  phases.forEach(phase => {
-    phase.steps.forEach(step => {
-      if (step.toolId) {
-        toolIds.add(step.toolId);
-      }
-    });
-  });
-
-  // DEBUG: Lister tous les outils disponibles
-  await listAllTools();
-
-  // Récupérer les outils depuis Firebase
-  const toolsMap = await fetchToolsByIds(Array.from(toolIds));
-  console.log('=== TOOLS FETCHED ===');
-  console.log('ToolIds to fetch:', Array.from(toolIds));
-  console.log('Tools fetched:', toolsMap.size);
-  toolsMap.forEach((tool, id) => {
-    console.log(`Tool ${id}:`, {
-      name: tool.name,
-      hasImage: !!tool.image,
-      imageUrl: tool.image?.url,
-      imageId: tool.imageId
-    });
-  });
-
-  // Enrichir les steps avec les objets Tool complets
-  phases.forEach((phase, phaseIdx) => {
-    phase.steps.forEach((step, stepIdx) => {
-      if (step.toolId && toolsMap.has(step.toolId)) {
-        step.tool = toolsMap.get(step.toolId) || null;
-        console.log(`Phase ${phaseIdx + 1}, Step ${stepIdx + 1}: Tool enriched`, {
-          toolId: step.toolId,
-          toolName: step.toolName,
-          hasToolObject: !!step.tool,
-          hasToolImage: !!step.tool?.image,
-          toolImageUrl: step.tool?.image?.url
-        });
-      }
-    });
-  });
-
   // Collecter toutes les images annotées
   const allAnnotatedImages: AnnotatedImage[] = [];
 
@@ -1783,10 +1648,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                 console.log(`=== GENERATING HTML for Phase ${phaseIndex + 1}, Step ${stepIndex + 1} ===`);
                 console.log('step.toolId:', step.toolId);
                 console.log('step.toolName:', step.toolName);
-                console.log('step.tool:', step.tool);
-                console.log('step.tool?.image:', step.tool?.image);
-                console.log('step.tool?.image?.url:', step.tool?.image?.url);
-                console.log('step.tool?.imageId:', step.tool?.imageId);
+                console.log('step.toolImageUrl:', step.toolImageUrl);
               }
 
               return `
@@ -1817,7 +1679,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                         <div class="step-bottom-row">
                         ${step.toolId && step.toolName ? `
                         <div class="step-tool-box">
-                            ${step.tool?.image?.url ? `<img src="${step.tool.image.url}" alt="${escapeHtml(step.toolName)}" class="step-tool-image" loading="lazy" onclick="event.stopPropagation(); openImageModal('${step.tool.image.url}', '${escapeHtml(step.toolName)}');">` : ''}
+                            ${step.toolImageUrl ? `<img src="${step.toolImageUrl}" alt="${escapeHtml(step.toolName)}" class="step-tool-image" loading="lazy" onclick="event.stopPropagation(); openImageModal('${step.toolImageUrl}', '${escapeHtml(step.toolName)}');">` : ''}
                             <div class="step-tool-info">
                                 <div class="step-tool-title">Outil requis</div>
                                 <div class="step-tool-name">${escapeHtml(step.toolName)}</div>

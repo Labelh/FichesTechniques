@@ -234,7 +234,7 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
     ));
   };
 
-  const updateStepTool = (stepId: string, toolId: string | null, toolName: string | null, toolLocation?: string | null, toolReference?: string | null, toolColor?: string | null) => {
+  const updateStepTool = (stepId: string, toolId: string | null, toolName: string | null, toolLocation?: string | null, toolReference?: string | null, toolColor?: string | null, toolImageUrl?: string | null) => {
     console.log('=== updateStepTool DEBUG ===');
     console.log('Step ID:', stepId);
     console.log('Tool ID:', toolId);
@@ -242,6 +242,7 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
     console.log('Tool Location:', toolLocation);
     console.log('Tool Reference:', toolReference);
     console.log('Tool Color:', toolColor);
+    console.log('Tool Image URL:', toolImageUrl);
 
     const updatedSteps = steps.map(s =>
       s.id === stepId
@@ -252,6 +253,7 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
             toolLocation: toolLocation || null,
             toolReference: toolReference || null,
             toolColor: toolColor || null,
+            toolImageUrl: toolImageUrl || null,
             tool: null // On ne stocke plus l'objet complet, mais null est accepté par Firestore
           }
         : s
@@ -595,7 +597,7 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
                       onAddSafetyNote={() => addStepSafetyNote(step.id)}
                       onUpdateSafetyNote={(noteId, updates) => updateStepSafetyNote(step.id, noteId, updates)}
                       onRemoveSafetyNote={(noteId) => removeStepSafetyNote(step.id, noteId)}
-                      onUpdateTool={(toolId, toolName, toolLocation, toolReference, toolColor) => updateStepTool(step.id, toolId, toolName, toolLocation, toolReference, toolColor)}
+                      onUpdateTool={(toolId, toolName, toolLocation, toolReference, toolColor, toolImageUrl) => updateStepTool(step.id, toolId, toolName, toolLocation, toolReference, toolColor, toolImageUrl)}
                       onMoveUp={() => moveStepUp(step.id)}
                       onMoveDown={() => moveStepDown(step.id)}
                       onSaveAnnotations={(imageId, annotations, description) => handleSaveStepAnnotations(step.id, imageId, annotations, description)}
@@ -637,7 +639,7 @@ interface SubStepItemProps {
   onAddSafetyNote: () => void;
   onUpdateSafetyNote: (noteId: string, updates: Partial<SafetyNote>) => void;
   onRemoveSafetyNote: (noteId: string) => void;
-  onUpdateTool: (toolId: string | null, toolName: string | null, toolLocation?: string | null, toolReference?: string | null, toolColor?: string | null) => void;
+  onUpdateTool: (toolId: string | null, toolName: string | null, toolLocation?: string | null, toolReference?: string | null, toolColor?: string | null, toolImageUrl?: string | null) => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
   onSaveAnnotations: (imageId: string, annotations: Annotation[], description: string) => Promise<void>;
@@ -1341,8 +1343,8 @@ function SubStepItem({
         <ToolSelector
           availableTools={availableTools || []}
           availableConsumables={availableConsumables || []}
-          onSelect={(toolId, toolName, toolLocation, toolReference, _type, color) => {
-            onUpdateTool(toolId, toolName, toolLocation, toolReference, color);
+          onSelect={(toolId, toolName, toolLocation, toolReference, _type, color, imageUrl) => {
+            onUpdateTool(toolId, toolName, toolLocation, toolReference, color, imageUrl);
             setShowToolSelector(false);
           }}
           onClose={() => setShowToolSelector(false)}
