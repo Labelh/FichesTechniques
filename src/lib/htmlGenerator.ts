@@ -1665,7 +1665,9 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                     ` : ''}
 
                     ${(step.toolId && step.toolName) || (step.tips && step.tips.length > 0) || (step.safetyNotes && step.safetyNotes.length > 0) ? `
-                    <div class="step-bottom-row">
+                    <div style="margin-top: 20px;">
+                        <div style="font-size: 1.1rem; font-weight: 600; color: #444; margin-bottom: 12px;">Détail</div>
+                        <div class="step-bottom-row">
                         ${step.toolId && step.toolName ? `
                         <div class="step-tool-box">
                             ${step.tool?.image?.url ? `<img src="${step.tool.image.url}" alt="${escapeHtml(step.toolName)}" class="step-tool-image" loading="lazy" onclick="event.stopPropagation(); openImageModal('${step.tool.image.url}', '${escapeHtml(step.toolName)}');">` : ''}
@@ -1698,6 +1700,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                         </div>
                         ` : '<div></div>'}
                     </div>
+                    </div>
                     ` : ''}
                 </div>
 
@@ -1706,7 +1709,10 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                 ` : ''}
 
                 ${step.images && step.images.length > 0 ? `
-                ${generateImageCarousel(step.images, renderedImageUrls, `phase-${phaseIndex + 1}-step-${stepIndex + 1}`)}
+                <div style="margin-top: 20px;">
+                    <div style="font-size: 1.1rem; font-weight: 600; color: #444; margin-bottom: 12px;">Photo</div>
+                    ${generateImageCarousel(step.images, renderedImageUrls, `phase-${phaseIndex + 1}-step-${stepIndex + 1}`)}
+                </div>
                 ` : ''}
 
                 ${step.videos && step.videos.length > 0 ? `

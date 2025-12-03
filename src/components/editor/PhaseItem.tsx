@@ -942,8 +942,8 @@ function SubStepItem({
               <textarea
                 value={step.description || ''}
                 onChange={(e) => onUpdate({ description: e.target.value })}
-                className="min-h-[80px] w-full px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary bg-transparent border-0 resize-y"
-                style={{ maxHeight: '200px' }}
+                className="min-h-[150px] w-full px-3 py-2 text-sm text-white focus:outline-none bg-transparent border-0 resize-y"
+                style={{ maxHeight: '400px' }}
                 placeholder="Description détaillée de cette sous-étape..."
               />
             </div>
