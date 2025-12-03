@@ -1,8 +1,30 @@
 import { Procedure, Phase, AnnotatedImage, Tool } from '../types';
 import { renderAllAnnotatedImagesToBase64 } from './imageAnnotationRenderer';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from './firebase';
 import { convertTimestamps } from './firestore';
+
+/**
+ * Liste tous les outils disponibles dans Firestore (pour debug)
+ */
+async function listAllTools(): Promise<void> {
+  try {
+    console.log('=== LISTING ALL TOOLS IN FIRESTORE ===');
+    const snapshot = await getDocs(collection(db, 'tools'));
+    console.log(`Total tools in collection: ${snapshot.size}`);
+
+    snapshot.docs.slice(0, 10).forEach(doc => {
+      const data = doc.data();
+      console.log(`Tool ID: ${doc.id}, Name: ${data.name || 'N/A'}, Deleted: ${data.deleted || false}`);
+    });
+
+    if (snapshot.size > 10) {
+      console.log(`... and ${snapshot.size - 10} more tools`);
+    }
+  } catch (error) {
+    console.error('Error listing tools:', error);
+  }
+}
 
 /**
  * Récupère les outils depuis Firebase par leurs IDs
@@ -87,6 +109,9 @@ export async function generateHTML(
       }
     });
   });
+
+  // DEBUG: Lister tous les outils disponibles
+  await listAllTools();
 
   // Récupérer les outils depuis Firebase
   const toolsMap = await fetchToolsByIds(Array.from(toolIds));
