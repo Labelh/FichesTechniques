@@ -541,7 +541,6 @@ export async function generateHTML(
         }
 
         .step-header {
-            margin-bottom: var(--spacing-sm);
             padding: var(--spacing-sm);
             cursor: pointer;
             display: flex;
@@ -549,7 +548,7 @@ export async function generateHTML(
             justify-content: space-between;
             background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
             border-radius: var(--radius-sm);
-            margin: calc(var(--spacing-md) * -1) calc(var(--spacing-md) * -1) var(--spacing-sm);
+            margin: calc(var(--spacing-md) * -1) calc(var(--spacing-md) * -1) 0 calc(var(--spacing-md) * -1);
             transition: background 0.3s ease;
         }
 
@@ -568,9 +567,11 @@ export async function generateHTML(
 
         .step-content {
             overflow: hidden;
+            margin-top: var(--spacing-sm);
             transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
                         opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-                        padding 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+                        padding 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                        margin 0.5s cubic-bezier(0.4, 0, 0.2, 1);
             max-height: 10000px;
             opacity: 1;
         }
@@ -578,11 +579,13 @@ export async function generateHTML(
         .step-content.collapsed {
             max-height: 0;
             opacity: 0;
-            padding-top: 0;
-            padding-bottom: 0;
+            padding: 0;
+            margin: 0;
+            border: none;
             transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
                         opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                        padding 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+                        padding 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                        margin 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .step-description {
@@ -923,30 +926,41 @@ export async function generateHTML(
 
 
         .carousel-button {
-            background: rgba(0, 0, 0, 0.6);
+            background: var(--primary-color);
             color: white;
             border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
+            flex: 1;
+            min-height: 56px;
             cursor: pointer;
-            font-size: 1.3rem;
+            font-size: 1.8rem;
+            font-weight: bold;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background 0.3s;
+            transition: all 0.3s ease;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .carousel-button:hover {
-            background: rgba(0, 0, 0, 0.8);
+        .carousel-button:hover,
+        .carousel-button:active {
+            background: #d97706;
+            transform: scale(0.98);
+        }
+
+        .carousel-button.prev {
+            border-radius: 0 0 0 var(--radius-lg);
+        }
+
+        .carousel-button.next {
+            border-radius: 0 0 var(--radius-lg) 0;
         }
 
         .carousel-controls {
             display: flex;
-            gap: 8px;
-            align-items: center;
-            padding-left: 20px;
-            margin-top: 8px;
+            gap: 0;
+            width: 100%;
+            margin-top: 0;
         }
 
         .carousel-indicators {
@@ -1533,10 +1547,10 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
     const difficultyLabel = phase.difficulty === 'trainee' ? 'Stagiaire' : phase.difficulty === 'easy' ? 'Facile' : phase.difficulty === 'medium' ? 'Moyen' : phase.difficulty === 'hard' ? 'Difficile' : phase.difficulty;
     const hoverColor = difficultyColor + '15'; // Couleur de difficulté avec opacité faible (~8%)
     return `
-    <div class="phase" id="phase-${phaseIndex + 1}"
-         onmouseover="this.style.backgroundColor='${hoverColor}'"
-         onmouseout="this.style.backgroundColor='#fff'">
-        <div class="phase-header" onclick="togglePhase('phase-${phaseIndex + 1}')" style="cursor: pointer;">
+    <div class="phase" id="phase-${phaseIndex + 1}">
+        <div class="phase-header" onclick="togglePhase('phase-${phaseIndex + 1}')" style="cursor: pointer;"
+             onmouseover="this.style.backgroundColor='${hoverColor}'"
+             onmouseout="this.style.backgroundColor='transparent'">
             <div class="phase-title" style="color: #444;">Phase ${phase.phaseNumber || phaseIndex + 1} : ${escapeHtml(phase.title)}</div>
             <div class="phase-badges">
                 <span class="difficulty-badge" style="background: ${difficultyColor};">${difficultyLabel.toUpperCase()}</span>
@@ -1548,10 +1562,10 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
         ${phase.steps && phase.steps.length > 0 ? `
         <div class="steps">
             ${phase.steps.map((step, stepIndex) => `
-            <div class="step" id="phase-${phaseIndex + 1}-step-${stepIndex + 1}"
-                 onmouseover="this.style.backgroundColor='${hoverColor}'"
-                 onmouseout="this.style.backgroundColor='#fff'">
-                <div class="step-header" onclick="toggleStep('phase-${phaseIndex + 1}-step-${stepIndex + 1}')" style="cursor: pointer;">
+            <div class="step" id="phase-${phaseIndex + 1}-step-${stepIndex + 1}">
+                <div class="step-header" onclick="toggleStep('phase-${phaseIndex + 1}-step-${stepIndex + 1}')" style="cursor: pointer;"
+                     onmouseover="this.style.backgroundColor='${hoverColor}'"
+                     onmouseout="this.style.backgroundColor='transparent'">
                     <div class="step-label" style="color: #444;">
                         Phase ${phase.phaseNumber || phaseIndex + 1} - étape ${stepIndex + 1}${step.title ? ` : ${escapeHtml(step.title)}` : ''}
                     </div>
@@ -1664,11 +1678,9 @@ function generateImageCarousel(images: AnnotatedImage[], renderedImageUrls: Map<
   }).filter(Boolean).join('');
 
   if (images.length === 1) {
-    const desc = images[0]?.description || '';
     return `
       <div class="carousel-container">
         ${carouselItems}
-        ${desc ? `<div class="carousel-counter" style="text-align: left; padding-left: 20px;">Image 1/1 - ${escapeHtml(desc)}</div>` : '<div class="carousel-counter">Image 1/1</div>'}
       </div>
     `;
   }
@@ -1687,9 +1699,6 @@ function generateImageCarousel(images: AnnotatedImage[], renderedImageUrls: Map<
       <div class="carousel-controls">
         <button class="carousel-button prev" onclick="changeSlide('${carouselId}', -1)">‹</button>
         <button class="carousel-button next" onclick="changeSlide('${carouselId}', 1)">›</button>
-        <div class="carousel-counter">
-          Image <span id="counter-${carouselId}">1</span>/${images.length}<span id="desc-${carouselId}" style="margin-left: 10px;">${images[0]?.description ? ' - ' + escapeHtml(images[0].description) : ''}</span>
-        </div>
       </div>
       <div class="carousel-indicators">
         ${indicators}
@@ -1765,7 +1774,6 @@ function generateVideoCarousel(videos: any[], carouselId: string): string {
       <div class="carousel-controls">
         <button class="carousel-button prev" onclick="changeSlide('video-${carouselId}', -1)">‹</button>
         <button class="carousel-button next" onclick="changeSlide('video-${carouselId}', 1)">›</button>
-        <div class="carousel-counter">Vidéo <span id="counter-video-${carouselId}">1</span>/${videos.length}</div>
       </div>
       <div class="carousel-indicators">
         ${indicators}
