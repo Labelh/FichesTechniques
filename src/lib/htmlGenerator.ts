@@ -583,6 +583,7 @@ export async function generateHTML(
             padding: 0;
             margin: 0;
             border: none;
+            pointer-events: none;
             transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
                         opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
                         padding 0.5s cubic-bezier(0.4, 0, 0.2, 1),
@@ -1644,9 +1645,10 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
         ${phase.steps && phase.steps.length > 0 ? `
         <div class="steps">
             ${phase.steps.map((step, stepIndex) => `
-            <div class="step" id="phase-${phaseIndex + 1}-step-${stepIndex + 1}"
-                 onclick="toggleStep('phase-${phaseIndex + 1}-step-${stepIndex + 1}')" style="cursor: pointer;">
+            <div class="step" id="phase-${phaseIndex + 1}-step-${stepIndex + 1}">
                 <div class="step-header"
+                     onclick="toggleStep('phase-${phaseIndex + 1}-step-${stepIndex + 1}')"
+                     style="cursor: pointer;"
                      onmouseover="this.style.backgroundColor='${hoverColor}'"
                      onmouseout="this.style.backgroundColor='transparent'">
                     <div class="step-label" style="color: #444;">
