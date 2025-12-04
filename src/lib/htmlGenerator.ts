@@ -1,5 +1,29 @@
-import { Procedure, Phase, AnnotatedImage } from '../types';
+import { Procedure, Phase, AnnotatedImage, SubStep, StepTool } from '../types';
 import { renderAllAnnotatedImagesToBase64 } from './imageAnnotationRenderer';
+
+/**
+ * Migre l'ancien format d'outil (toolId, toolName...) vers le nouveau format (tools array)
+ */
+function migrateStepTools(step: SubStep): StepTool[] {
+  // Si le nouveau format existe déjà, l'utiliser
+  if (step.tools && step.tools.length > 0) {
+    return step.tools;
+  }
+
+  // Sinon, migrer l'ancien format
+  if (step.toolId && step.toolName) {
+    return [{
+      id: step.toolId,
+      name: step.toolName,
+      location: step.toolLocation || null,
+      reference: step.toolReference || null,
+      color: step.toolColor || null,
+      imageUrl: step.toolImageUrl || null,
+    }];
+  }
+
+  return [];
+}
 
 /**
  * Génère un fichier HTML complet et stylisé pour une procédure
@@ -733,6 +757,13 @@ export async function generateHTML(
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
             gap: 16px;
+        }
+
+        .step-tools-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 8px;
         }
 
         .step-tool {
@@ -1641,13 +1672,10 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
         ${phase.steps && phase.steps.length > 0 ? `
         <div class="steps">
             ${phase.steps.map((step, stepIndex) => {
-              // Debug: Log step tool info
-              if (step.toolId) {
-                console.log(`=== GENERATING HTML for Phase ${phaseIndex + 1}, Step ${stepIndex + 1} ===`);
-                console.log('step.toolId:', step.toolId);
-                console.log('step.toolName:', step.toolName);
-                console.log('step.toolImageUrl:', step.toolImageUrl);
-              }
+              // Migrer les outils vers le nouveau format
+              const tools = migrateStepTools(step);
+              const hasTools = tools.length > 0;
+              const hasConsignes = (step.tips && step.tips.length > 0) || (step.safetyNotes && step.safetyNotes.length > 0);
 
               return `
             <div class="step" id="phase-${phaseIndex + 1}-step-${stepIndex + 1}">
@@ -1671,41 +1699,48 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                     </div>
                     ` : ''}
 
-                    ${(step.toolId && step.toolName) || (step.tips && step.tips.length > 0) || (step.safetyNotes && step.safetyNotes.length > 0) ? `
+                    ${hasTools ? `
                     <div style="margin-top: 20px;">
                         <div style="font-size: 1.1rem; font-weight: 600; color: #444; margin-bottom: 12px;">Détail</div>
-                        <div class="step-bottom-row">
-                        ${step.toolId && step.toolName ? `
-                        <div class="step-tool-box">
-                            ${step.toolImageUrl ? `<img src="${step.toolImageUrl}" alt="${escapeHtml(step.toolName)}" class="step-tool-image" loading="lazy" onclick="event.stopPropagation(); openImageModal('${step.toolImageUrl}', '${escapeHtml(step.toolName)}');">` : ''}
-                            <div class="step-tool-info">
-                                <div class="step-tool-name">${escapeHtml(step.toolName)}</div>
-                                ${step.toolReference ? `<div class="step-tool-ref" style="margin-top: 2px;">${escapeHtml(step.toolReference)}</div>` : ''}
-                                ${step.toolLocation ? `<div class="step-tool-location-badge" style="margin-top: 6px;">${escapeHtml(step.toolLocation)}</div>` : ''}
-                            </div>
-                        </div>
-                        ` : '<div></div>'}
-
-                        ${step.tips && step.tips.length > 0 ? `
-                        <div class="tips">
-                            <div class="tips-title">Conseils</div>
-                            ${step.tips.map(tip => `<div class="tip-item">• ${escapeHtml(tip)}</div>`).join('')}
-                        </div>
-                        ` : '<div></div>'}
-
-                        ${step.safetyNotes && step.safetyNotes.length > 0 ? `
-                        <div class="safety-notes">
-                            ${step.safetyNotes.map(note => `
-                            <div class="safety-note ${note.type === 'danger' ? 'danger' : 'warning'}">
-                                <div class="safety-note-title">
-                                    ${note.type === 'danger' ? 'DANGER' : 'ATTENTION'}
+                        <div class="step-tools-row">
+                            ${tools.map(tool => `
+                            <div class="step-tool-box">
+                                ${tool.imageUrl ? `<img src="${tool.imageUrl}" alt="${escapeHtml(tool.name)}" class="step-tool-image" loading="lazy" onclick="event.stopPropagation(); openImageModal('${tool.imageUrl}', '${escapeHtml(tool.name)}');">` : ''}
+                                <div class="step-tool-info">
+                                    <div class="step-tool-name">${escapeHtml(tool.name)}</div>
+                                    ${tool.reference ? `<div class="step-tool-ref" style="margin-top: 2px;">${escapeHtml(tool.reference)}</div>` : ''}
+                                    ${tool.location ? `<div class="step-tool-location-badge" style="margin-top: 6px;">${escapeHtml(tool.location)}</div>` : ''}
                                 </div>
-                                <div>• ${escapeHtml(note.content)}</div>
                             </div>
                             `).join('')}
                         </div>
-                        ` : '<div></div>'}
                     </div>
+                    ` : ''}
+
+                    ${hasConsignes ? `
+                    <div style="margin-top: 20px;">
+                        <div style="font-size: 1.1rem; font-weight: 600; color: #444; margin-bottom: 12px;">Consigne</div>
+                        <div class="step-bottom-row">
+                            ${step.tips && step.tips.length > 0 ? `
+                            <div class="tips">
+                                <div class="tips-title">Conseils</div>
+                                ${step.tips.map(tip => `<div class="tip-item">• ${escapeHtml(tip)}</div>`).join('')}
+                            </div>
+                            ` : '<div></div>'}
+
+                            ${step.safetyNotes && step.safetyNotes.length > 0 ? `
+                            <div class="safety-notes">
+                                ${step.safetyNotes.map(note => `
+                                <div class="safety-note ${note.type === 'danger' ? 'danger' : 'warning'}">
+                                    <div class="safety-note-title">
+                                        ${note.type === 'danger' ? 'DANGER' : 'ATTENTION'}
+                                    </div>
+                                    <div>• ${escapeHtml(note.content)}</div>
+                                </div>
+                                `).join('')}
+                            </div>
+                            ` : '<div></div>'}
+                        </div>
                     </div>
                     ` : ''}
                 </div>
