@@ -10,7 +10,7 @@ import { fetchConsumables } from '@/services/consumablesService';
 import { useTools } from '@/hooks/useTools';
 import ImageAnnotator from '@/components/phase/ImageAnnotator';
 import ToolSelector from '@/components/tools/ToolSelector';
-import type { Phase, DifficultyLevel, SubStep, SafetyNote, AnnotatedImage, Tool, Consumable, Annotation } from '@/types';
+import type { Phase, DifficultyLevel, SubStep, SafetyNote, AnnotatedImage, Tool, Consumable, Annotation, StepTool } from '@/types';
 import { toast } from 'sonner';
 
 interface PhaseItemProps {
@@ -234,36 +234,64 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
     ));
   };
 
-  const updateStepTool = (stepId: string, toolId: string | null, toolName: string | null, toolLocation?: string | null, toolReference?: string | null, toolColor?: string | null, toolImageUrl?: string | null) => {
-    console.log('=== updateStepTool DEBUG ===');
+  const addStepTool = (stepId: string, toolId: string, toolName: string, toolLocation?: string | null, toolReference?: string | null, toolColor?: string | null, toolImageUrl?: string | null) => {
+    console.log('=== addStepTool DEBUG ===');
     console.log('Step ID:', stepId);
     console.log('Tool ID:', toolId);
     console.log('Tool Name:', toolName);
-    console.log('Tool Location:', toolLocation);
-    console.log('Tool Reference:', toolReference);
-    console.log('Tool Color:', toolColor);
-    console.log('Tool Image URL:', toolImageUrl);
 
-    const updatedSteps = steps.map(s =>
-      s.id === stepId
-        ? {
-            ...s,
-            toolId: toolId || null,
-            toolName: toolName || null,
-            toolLocation: toolLocation || null,
-            toolReference: toolReference || null,
-            toolColor: toolColor || null,
-            toolImageUrl: toolImageUrl || null,
-            tool: null // On ne stocke plus l'objet complet, mais null est accepté par Firestore
-          }
-        : s
-    );
+    const updatedSteps = steps.map(s => {
+      if (s.id !== stepId) return s;
 
-    console.log('Updated steps:', updatedSteps.map(s => ({
+      // Créer le nouvel outil
+      const newTool = {
+        id: toolId,
+        name: toolName,
+        location: toolLocation || null,
+        reference: toolReference || null,
+        color: toolColor || null,
+        imageUrl: toolImageUrl || null,
+      };
+
+      // Ajouter à la liste des outils (nouveau format)
+      const currentTools = s.tools || [];
+
+      return {
+        ...s,
+        tools: [...currentTools, newTool],
+      };
+    });
+
+    console.log('Updated steps with new tool:', updatedSteps.map(s => ({
       id: s.id,
       title: s.title,
-      toolId: s.toolId,
-      toolName: s.toolName
+      toolsCount: s.tools?.length || 0
+    })));
+
+    setSteps(updatedSteps);
+  };
+
+  const removeStepTool = (stepId: string, toolId: string) => {
+    console.log('=== removeStepTool DEBUG ===');
+    console.log('Step ID:', stepId);
+    console.log('Tool ID to remove:', toolId);
+
+    const updatedSteps = steps.map(s => {
+      if (s.id !== stepId) return s;
+
+      // Filtrer l'outil à supprimer
+      const updatedTools = (s.tools || []).filter(t => t.id !== toolId);
+
+      return {
+        ...s,
+        tools: updatedTools,
+      };
+    });
+
+    console.log('Updated steps after tool removal:', updatedSteps.map(s => ({
+      id: s.id,
+      title: s.title,
+      toolsCount: s.tools?.length || 0
     })));
 
     setSteps(updatedSteps);
@@ -597,7 +625,8 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
                       onAddSafetyNote={() => addStepSafetyNote(step.id)}
                       onUpdateSafetyNote={(noteId, updates) => updateStepSafetyNote(step.id, noteId, updates)}
                       onRemoveSafetyNote={(noteId) => removeStepSafetyNote(step.id, noteId)}
-                      onUpdateTool={(toolId, toolName, toolLocation, toolReference, toolColor, toolImageUrl) => updateStepTool(step.id, toolId, toolName, toolLocation, toolReference, toolColor, toolImageUrl)}
+                      onAddTool={(toolId, toolName, toolLocation, toolReference, toolColor, toolImageUrl) => addStepTool(step.id, toolId, toolName, toolLocation, toolReference, toolColor, toolImageUrl)}
+                      onRemoveTool={(toolId) => removeStepTool(step.id, toolId)}
                       onMoveUp={() => moveStepUp(step.id)}
                       onMoveDown={() => moveStepDown(step.id)}
                       onSaveAnnotations={(imageId, annotations, description) => handleSaveStepAnnotations(step.id, imageId, annotations, description)}
@@ -639,7 +668,8 @@ interface SubStepItemProps {
   onAddSafetyNote: () => void;
   onUpdateSafetyNote: (noteId: string, updates: Partial<SafetyNote>) => void;
   onRemoveSafetyNote: (noteId: string) => void;
-  onUpdateTool: (toolId: string | null, toolName: string | null, toolLocation?: string | null, toolReference?: string | null, toolColor?: string | null, toolImageUrl?: string | null) => void;
+  onAddTool: (toolId: string, toolName: string, toolLocation?: string | null, toolReference?: string | null, toolColor?: string | null, toolImageUrl?: string | null) => void;
+  onRemoveTool: (toolId: string) => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
   onSaveAnnotations: (imageId: string, annotations: Annotation[], description: string) => Promise<void>;
@@ -663,7 +693,8 @@ function SubStepItem({
   onAddSafetyNote,
   onUpdateSafetyNote,
   onRemoveSafetyNote,
-  onUpdateTool,
+  onAddTool,
+  onRemoveTool,
   onMoveUp,
   onMoveDown,
   onSaveAnnotations,
@@ -851,9 +882,9 @@ function SubStepItem({
                 🎥 {step.videos?.length}
               </span>
             )}
-            {step.toolId && (
+            {((step.tools?.length || 0) > 0 || step.toolId) && (
               <span className="flex items-center gap-1">
-                🔧
+                🔧 {(step.tools?.length || 0) + (step.toolId ? 1 : 0)}
               </span>
             )}
             {(step.tips?.length || 0) > 0 && (
@@ -1174,24 +1205,75 @@ function SubStepItem({
             )}
           </div>
 
-          {/* Outil */}
+          {/* Outils */}
           <div>
             <label className="block text-xs font-medium text-gray-400 mb-2">
               <Wrench className="h-3 w-3 inline mr-1" />
-              Outil requis
+              Outils requis ({(step.tools?.length || 0) + (step.toolId && step.toolName ? 1 : 0)})
             </label>
-            {step.toolId && step.toolName ? (
-              <div className="p-3 bg-background-elevated rounded border border-[#2a2a2a]" style={{ borderLeft: `4px solid ${step.toolColor || '#10b981'}` }}>
-                <div className="flex items-start gap-3">
-                  {/* Image de l'outil */}
-                  {(() => {
-                    const tool = availableTools?.find(t => t.id === step.toolId);
-                    const consumable = availableConsumables?.find(c => c.id === step.toolId);
-                    const imageUrl = tool?.image?.url || (consumable as any)?.image_url || (consumable as any)?.photo_url;
-
-                    return imageUrl ? (
+            <div className="space-y-2">
+              {/* Afficher les outils du nouveau format */}
+              {(step.tools || []).map((tool) => (
+                <div
+                  key={tool.id}
+                  className="p-3 bg-background-elevated rounded border border-[#2a2a2a]"
+                  style={{ borderLeft: `4px solid ${tool.color || '#10b981'}` }}
+                >
+                  <div className="flex items-start gap-3">
+                    {/* Image de l'outil */}
+                    {tool.imageUrl ? (
                       <img
-                        src={imageUrl}
+                        src={tool.imageUrl}
+                        alt={tool.name}
+                        className="h-16 w-16 object-cover rounded border border-[#323232] flex-shrink-0"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div className="h-16 w-16 bg-background-elevated rounded border border-[#323232] flex items-center justify-center flex-shrink-0">
+                        <Wrench className="h-6 w-6 text-text-muted" />
+                      </div>
+                    )}
+
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-white mb-1">{tool.name}</div>
+                      {tool.reference && (
+                        <div className="text-xs text-gray-400 mb-1">
+                          {tool.reference}
+                        </div>
+                      )}
+                      {tool.location && (
+                        <div className="text-xs text-gray-400">
+                          {tool.location}
+                        </div>
+                      )}
+                    </div>
+
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onRemoveTool(tool.id)}
+                      className="flex-shrink-0"
+                      title="Supprimer cet outil"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+
+              {/* Afficher l'ancien format pour compatibilité */}
+              {step.toolId && step.toolName && (
+                <div
+                  className="p-3 bg-background-elevated rounded border border-[#2a2a2a]"
+                  style={{ borderLeft: `4px solid ${step.toolColor || '#10b981'}` }}
+                >
+                  <div className="flex items-start gap-3">
+                    {/* Image de l'outil (ancien format) */}
+                    {step.toolImageUrl ? (
+                      <img
+                        src={step.toolImageUrl}
                         alt={step.toolName}
                         className="h-16 w-16 object-cover rounded border border-[#323232] flex-shrink-0"
                         onError={(e) => {
@@ -1202,44 +1284,63 @@ function SubStepItem({
                       <div className="h-16 w-16 bg-background-elevated rounded border border-[#323232] flex items-center justify-center flex-shrink-0">
                         <Wrench className="h-6 w-6 text-text-muted" />
                       </div>
-                    );
-                  })()}
+                    )}
 
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-white mb-1">{step.toolName}</div>
-                    {step.toolReference && (
-                      <div className="text-xs text-gray-400 mb-1">
-                        {step.toolReference}
-                      </div>
-                    )}
-                    {step.toolLocation && (
-                      <div className="text-xs text-gray-400">
-                        {step.toolLocation}
-                      </div>
-                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-white mb-1">{step.toolName}</div>
+                      <div className="text-xs text-orange-400 mb-1">(Ancien format)</div>
+                      {step.toolReference && (
+                        <div className="text-xs text-gray-400 mb-1">
+                          {step.toolReference}
+                        </div>
+                      )}
+                      {step.toolLocation && (
+                        <div className="text-xs text-gray-400">
+                          {step.toolLocation}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          // Migrer vers le nouveau format
+                          if (step.toolId && step.toolName) {
+                            onAddTool(
+                              step.toolId,
+                              step.toolName,
+                              step.toolLocation,
+                              step.toolReference,
+                              step.toolColor,
+                              step.toolImageUrl
+                            );
+                            // On ne peut pas supprimer l'ancien format ici car on n'a pas de fonction pour ça
+                            // L'utilisateur devra le faire manuellement ou on le supprime lors de la sauvegarde
+                          }
+                        }}
+                        className="flex-shrink-0 text-xs"
+                        title="Migrer vers le nouveau format"
+                      >
+                        ✓
+                      </Button>
+                    </div>
                   </div>
-
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onUpdateTool(null, null)}
-                    className="flex-shrink-0"
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
                 </div>
-              </div>
-            ) : (
+              )}
+
+              {/* Bouton pour ajouter un outil */}
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={() => setShowToolSelector(true)}
                 className="w-full justify-start"
               >
-                <Wrench className="h-4 w-4 mr-2" />
-                Sélectionner un outil ou consommable
+                <Plus className="h-4 w-4 mr-2" />
+                Ajouter un outil ou consommable
               </Button>
-            )}
+            </div>
           </div>
 
           {/* Conseils */}
@@ -1344,7 +1445,7 @@ function SubStepItem({
           availableTools={availableTools || []}
           availableConsumables={availableConsumables || []}
           onSelect={(toolId, toolName, toolLocation, toolReference, _type, color, imageUrl) => {
-            onUpdateTool(toolId, toolName, toolLocation, toolReference, color, imageUrl);
+            onAddTool(toolId, toolName, toolLocation, toolReference, color, imageUrl);
             setShowToolSelector(false);
           }}
           onClose={() => setShowToolSelector(false)}
