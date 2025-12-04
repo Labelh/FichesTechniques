@@ -10,7 +10,7 @@ import { fetchConsumables } from '@/services/consumablesService';
 import { useTools } from '@/hooks/useTools';
 import ImageAnnotator from '@/components/phase/ImageAnnotator';
 import ToolSelector from '@/components/tools/ToolSelector';
-import type { Phase, DifficultyLevel, SubStep, SafetyNote, AnnotatedImage, Tool, Consumable, Annotation, StepTool } from '@/types';
+import type { Phase, DifficultyLevel, SubStep, SafetyNote, AnnotatedImage, Tool, Consumable, Annotation } from '@/types';
 import { toast } from 'sonner';
 
 interface PhaseItemProps {
