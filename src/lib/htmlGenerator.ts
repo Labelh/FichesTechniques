@@ -617,11 +617,14 @@ export async function generateHTML(
         .step-tool-box {
             border: 1px solid #e0e0e0;
             border-radius: 8px;
-            padding: 16px;
+            padding: 12px;
             background: #fafafa;
             max-width: 100%;
             word-wrap: break-word;
             overflow-wrap: break-word;
+            display: flex;
+            gap: 12px;
+            align-items: center;
         }
 
         .step-tool-image {
@@ -1674,14 +1677,11 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                         <div class="step-bottom-row">
                         ${step.toolId && step.toolName ? `
                         <div class="step-tool-box">
-                            <div class="step-tool-title">Outil à utiliser</div>
-                            <div style="display: flex; gap: 16px; align-items: flex-start;">
-                                ${step.toolImageUrl ? `<img src="${step.toolImageUrl}" alt="${escapeHtml(step.toolName)}" class="step-tool-image" loading="lazy" onclick="event.stopPropagation(); openImageModal('${step.toolImageUrl}', '${escapeHtml(step.toolName)}');">` : ''}
-                                <div class="step-tool-info">
-                                    <div class="step-tool-name">${escapeHtml(step.toolName)}</div>
-                                    ${step.toolReference ? `<div class="step-tool-ref" style="margin-top: 2px;">${escapeHtml(step.toolReference)}</div>` : ''}
-                                    ${step.toolLocation ? `<div class="step-tool-location-badge" style="margin-top: 6px;">${escapeHtml(step.toolLocation)}</div>` : ''}
-                                </div>
+                            ${step.toolImageUrl ? `<img src="${step.toolImageUrl}" alt="${escapeHtml(step.toolName)}" class="step-tool-image" loading="lazy" onclick="event.stopPropagation(); openImageModal('${step.toolImageUrl}', '${escapeHtml(step.toolName)}');">` : ''}
+                            <div class="step-tool-info">
+                                <div class="step-tool-name">${escapeHtml(step.toolName)}</div>
+                                ${step.toolReference ? `<div class="step-tool-ref" style="margin-top: 2px;">${escapeHtml(step.toolReference)}</div>` : ''}
+                                ${step.toolLocation ? `<div class="step-tool-location-badge" style="margin-top: 6px;">${escapeHtml(step.toolLocation)}</div>` : ''}
                             </div>
                         </div>
                         ` : '<div></div>'}
