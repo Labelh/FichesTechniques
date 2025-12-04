@@ -178,6 +178,15 @@ export interface DefectItem {
   images?: AnnotatedImage[];
 }
 
+export interface StepTool {
+  id: string;
+  name: string;
+  location?: string | null;
+  reference?: string | null;
+  color?: string | null;
+  imageUrl?: string | null;
+}
+
 export interface SubStep {
   id: string;
   order: number;
@@ -187,14 +196,17 @@ export interface SubStep {
   videos?: Video[];
   estimatedTime?: number; // en minutes
 
-  // Outil spécifique à cette sous-étape
+  // Outils multiples (nouveau format)
+  tools?: StepTool[];
+
+  // Ancien format (un seul outil - gardé pour compatibilité)
   toolId?: string | null;
-  toolName?: string | null; // Nom de l'outil (simplifié pour Firestore)
-  toolLocation?: string | null; // Emplacement de l'outil
-  toolReference?: string | null; // Référence de l'outil
-  toolColor?: string | null; // Couleur pour le tracé et l'affichage
-  toolImageUrl?: string | null; // URL de l'image de l'outil (ImgBB)
-  tool?: Tool | null; // Objet complet (uniquement en mémoire, pas sauvegardé)
+  toolName?: string | null;
+  toolLocation?: string | null;
+  toolReference?: string | null;
+  toolColor?: string | null;
+  toolImageUrl?: string | null;
+  tool?: Tool | null;
 
   // Conseils et sécurité par sous-étape
   tips?: string[];
