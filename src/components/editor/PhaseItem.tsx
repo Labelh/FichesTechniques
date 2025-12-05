@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, AlertTriangle, Lightbulb, Save, Pencil, ArrowUp, ArrowDown, Video as VideoIcon, Play, Bold, Italic, Palette } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, AlertTriangle, Lightbulb, Save, Pencil, ArrowUp, ArrowDown, Video as VideoIcon, Play, Bold, Italic, Palette, List, ListOrdered } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -988,6 +988,28 @@ function SubStepItem({
                 >
                   <Italic className="h-4 w-4" />
                 </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    descriptionRef.current?.focus();
+                    document.execCommand('insertUnorderedList', false);
+                  }}
+                  className="p-1.5 hover:bg-[#323232] rounded text-gray-400 hover:text-white transition"
+                  title="Liste à puces"
+                >
+                  <List className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    descriptionRef.current?.focus();
+                    document.execCommand('insertOrderedList', false);
+                  }}
+                  className="p-1.5 hover:bg-[#323232] rounded text-gray-400 hover:text-white transition"
+                  title="Liste numérotée"
+                >
+                  <ListOrdered className="h-4 w-4" />
+                </button>
                 <div className="relative">
                   <button
                     type="button"
@@ -998,7 +1020,7 @@ function SubStepItem({
                     <Palette className="h-4 w-4" />
                   </button>
                   {showColorPalette && (
-                    <div className="absolute top-full left-0 mt-1 p-2 bg-[#1a1a1a] border border-[#323232] rounded-lg shadow-lg z-50 flex flex-wrap gap-1" style={{ maxWidth: '280px' }}>
+                    <div className="absolute top-full left-0 mt-1 p-2 bg-[#1a1a1a] border border-[#323232] rounded-lg shadow-lg z-50 flex flex-nowrap gap-1">
                       {textColors.map((color) => (
                         <button
                           key={color.value}
