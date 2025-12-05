@@ -463,7 +463,7 @@ export async function generateHTML(
 
 
         .phase-title {
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             font-weight: 700;
             word-wrap: break-word;
             overflow-wrap: break-word;
@@ -578,7 +578,7 @@ export async function generateHTML(
 
 
         .step-label {
-            font-size: 1.1rem;
+            font-size: 1.3rem;
             font-weight: 700;
             color: var(--text-primary);
             letter-spacing: 0.3px;
@@ -1708,16 +1708,16 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                     <div style="display: flex; gap: 20px; align-items: flex-start;">
                         ${step.description || hasConsignes ? `
                         <div style="flex: 1;">
-                            <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 12px; color: #1a1a1a;">Description de la sous-étape</div>
+                            <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 20px; color: #1a1a1a;">Description de la sous-étape</div>
                             <div style="border-radius: 8px; font-size: 1.1rem;">
                                 ${step.description ? `<div class="step-description-content" style="padding-left: 0;">${step.description}</div>` : ''}
 
                                 ${hasConsignes ? `
-                                    ${step.description ? '<div style="margin-top: 16px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 16px;"></div>' : ''}
+                                    ${step.description ? '<div style="margin-top: 16px;"></div>' : ''}
 
                                     ${step.safetyNotes && step.safetyNotes.length > 0 ? `
                                     <div style="margin-bottom: 16px;">
-                                        <div class="safety-notes-title">Consignes de sécurité</div>
+                                        <div class="safety-notes-title" style="font-size: 1.1rem;">Consignes de sécurité</div>
                                         ${step.safetyNotes.map(note => `
                                         <div class="safety-note">
                                             <div>• ${escapeHtml(note.content)}</div>
@@ -1726,13 +1726,9 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                                     </div>
                                     ` : ''}
 
-                                    ${step.safetyNotes && step.safetyNotes.length > 0 && step.tips && step.tips.length > 0 ? `
-                                    <div style="border-top: 1px solid rgba(0,0,0,0.1); padding-top: 16px; margin-bottom: 16px;"></div>
-                                    ` : ''}
-
                                     ${step.tips && step.tips.length > 0 ? `
                                     <div>
-                                        <div class="tips-title">Conseils</div>
+                                        <div class="tips-title" style="font-size: 1.1rem;">Conseils</div>
                                         ${step.tips.map(tip => `<div class="tip-item">• ${escapeHtml(tip)}</div>`).join('')}
                                     </div>
                                     ` : ''}
@@ -1743,7 +1739,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
 
                         ${hasTools ? `
                         <div style="width: 300px; flex-shrink: 0;">
-                            <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 12px; color: #1a1a1a;">Outil(s)</div>
+                            <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 20px; color: #1a1a1a;">Outil(s)</div>
                             <div class="step-tools-column">
                                 ${tools.map(tool => {
                                     const truncatedName = tool.name.length > 30 ? tool.name.substring(0, 30) + '...' : tool.name;
