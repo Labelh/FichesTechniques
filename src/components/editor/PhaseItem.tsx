@@ -1087,7 +1087,7 @@ function SubStepItem({
                     <Smile className="h-4 w-4" />
                   </button>
                   {showEmojiPicker && (
-                    <div className="absolute top-full left-0 mt-1 p-2 bg-[#1a1a1a] border border-[#323232] rounded-lg shadow-lg z-50 grid grid-cols-8 gap-1 max-w-[280px]">
+                    <div className="absolute top-full left-0 mt-1 p-2 bg-[#1a1a1a] border border-[#323232] rounded-lg shadow-lg z-50 grid grid-cols-8 gap-2 w-[300px]">
                       {emojis.map((emoji, index) => (
                         <button
                           key={index}
@@ -1106,7 +1106,7 @@ function SubStepItem({
                             }
                             setShowEmojiPicker(false);
                           }}
-                          className="w-8 h-8 rounded hover:bg-[#323232] transition flex items-center justify-center text-lg"
+                          className="w-9 h-9 rounded hover:bg-[#323232] transition flex items-center justify-center text-xl flex-shrink-0"
                           title={emoji}
                         >
                           {emoji}
