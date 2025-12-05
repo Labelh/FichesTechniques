@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, AlertTriangle, Lightbulb, Save, Pencil, ArrowUp, ArrowDown, Video as VideoIcon, Play, Bold, Italic, Palette, List, ListOrdered } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, AlertTriangle, Lightbulb, Save, Pencil, ArrowUp, ArrowDown, Video as VideoIcon, Play, Bold, Italic, Palette, List, ListOrdered, Smile } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -708,6 +708,7 @@ function SubStepItem({
   const [videoTitle, setVideoTitle] = useState('');
   const descriptionRef = useRef<HTMLDivElement>(null);
   const [showColorPalette, setShowColorPalette] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const textColors = [
     { name: 'Orange-rouge', value: '#ff5722' },
@@ -720,6 +721,14 @@ function SubStepItem({
     { name: 'Rose', value: '#ec4899' },
     { name: 'Cyan', value: '#06b6d4' },
     { name: 'Blanc', value: '#ffffff' },
+  ];
+
+  const emojis = [
+    '✅', '❌', '⚠️', '⚡', '🔧', '🔨', '⚙️', '🛠️',
+    '📏', '📐', '✂️', '📌', '📍', '🎯', '💡', '🔥',
+    '👍', '👎', '👌', '👉', '☝️', '✋', '👊', '🤝',
+    '⭐', '🌟', '💫', '✨', '🔴', '🟠', '🟡', '🟢',
+    '🔵', '🟣', '⚫', '⚪', '➡️', '⬅️', '⬆️', '⬇️',
   ];
 
   // State local pour conserver le innerHTML entre les collapse/expand
@@ -1064,6 +1073,44 @@ function SubStepItem({
                           style={{ backgroundColor: color.value }}
                           title={color.name}
                         />
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    className="p-1.5 hover:bg-[#323232] rounded text-gray-400 hover:text-white transition"
+                    title="Insérer un émoji"
+                  >
+                    <Smile className="h-4 w-4" />
+                  </button>
+                  {showEmojiPicker && (
+                    <div className="absolute top-full left-0 mt-1 p-2 bg-[#1a1a1a] border border-[#323232] rounded-lg shadow-lg z-50 grid grid-cols-8 gap-1 max-w-[280px]">
+                      {emojis.map((emoji, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => {
+                            if (descriptionRef.current) {
+                              descriptionRef.current.focus();
+                              document.execCommand('insertText', false, emoji);
+                              setTimeout(() => {
+                                if (descriptionRef.current) {
+                                  const html = descriptionRef.current.innerHTML;
+                                  setLocalDescription(html);
+                                  onUpdate({ description: html });
+                                }
+                              }, 10);
+                            }
+                            setShowEmojiPicker(false);
+                          }}
+                          className="w-8 h-8 rounded hover:bg-[#323232] transition flex items-center justify-center text-lg"
+                          title={emoji}
+                        >
+                          {emoji}
+                        </button>
                       ))}
                     </div>
                   )}
