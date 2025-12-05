@@ -636,6 +636,7 @@ export async function generateHTML(
             color: #555;
             word-wrap: break-word;
             overflow-wrap: break-word;
+            padding-left: 20px;
         }
 
         .step-tool-box {
