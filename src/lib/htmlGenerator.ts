@@ -639,6 +639,16 @@ export async function generateHTML(
             padding-left: 20px;
         }
 
+        .step-description-content ul,
+        .step-description-content ol {
+            margin-left: 0;
+            padding-left: 20px;
+        }
+
+        .step-description-content li {
+            margin-bottom: 4px;
+        }
+
         .step-tool-box {
             border: 1px solid #e0e0e0;
             border-radius: 8px;
@@ -1752,12 +1762,12 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                             </div>
                         </div>
                         ` : step.tips && step.tips.length > 0 ? `
-                        <div class="tips">
+                        <div class="tips" style="min-width: 50%;">
                             <div class="tips-title">Conseils</div>
                             ${step.tips.map(tip => `<div class="tip-item">• ${escapeHtml(tip)}</div>`).join('')}
                         </div>
                         ` : step.safetyNotes && step.safetyNotes.length > 0 ? `
-                        <div class="safety-notes">
+                        <div class="safety-notes" style="min-width: 50%;">
                             <div class="safety-notes-title">Consignes de sécurité</div>
                             ${step.safetyNotes.map(note => `
                             <div class="safety-note">
