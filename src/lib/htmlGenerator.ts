@@ -126,6 +126,7 @@ export async function generateHTML(
             padding: 0;
             overflow-x: hidden;
             max-width: 100vw;
+            font-size: 16px;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
@@ -650,7 +651,6 @@ export async function generateHTML(
         }
 
         .step-tool-box {
-            border: 1px solid #e0e0e0;
             border-radius: 8px;
             padding: 12px;
             background: #fafafa;
@@ -1716,7 +1716,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                 <div class="step-details-grid">
                     <div style="display: flex; gap: 20px; align-items: flex-start;">
                         ${step.description ? `
-                        <div style="flex: 1;">
+                        <div style="flex: 1; background: rgba(0, 0, 0, 0.03); padding: 16px; border-radius: 8px;">
                             <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 12px; color: #1a1a1a;">Description de la sous-étape</div>
                             <div class="step-description-content">${step.description}</div>
                         </div>
@@ -1728,14 +1728,14 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                             <div class="step-tools-column">
                                 ${tools.map(tool => {
                                     const truncatedName = tool.name.length > 30 ? tool.name.substring(0, 30) + '...' : tool.name;
-                                    const bgColor = tool.color ? `background-color: ${tool.color}20;` : '';
-                                    const borderColor = tool.color ? `border-color: ${tool.color};` : '';
+                                    const bgColor = tool.color ? `background-color: ${tool.color}40;` : '';
+                                    const refColor = tool.color ? tool.color : '#555';
                                     return `
-                                    <div class="step-tool-box" style="${bgColor} ${borderColor}">
+                                    <div class="step-tool-box" style="${bgColor}">
                                         ${tool.imageUrl ? `<img src="${tool.imageUrl}" alt="${escapeHtml(tool.name)}" class="step-tool-image" loading="lazy" onclick="event.stopPropagation(); openImageModal('${tool.imageUrl}', '${escapeHtml(tool.name)}');">` : ''}
                                         <div class="step-tool-info">
                                             <div class="step-tool-name" title="${escapeHtml(tool.name)}">${escapeHtml(truncatedName)}</div>
-                                            ${tool.reference ? `<div class="step-tool-ref" style="margin-top: 2px;">${escapeHtml(tool.reference)}</div>` : ''}
+                                            ${tool.reference ? `<div class="step-tool-ref" style="margin-top: 2px; color: ${refColor};">${escapeHtml(tool.reference)}</div>` : ''}
                                             ${tool.location ? `<div class="step-tool-location-badge" style="margin-top: 6px;">${escapeHtml(tool.location)}</div>` : ''}
                                         </div>
                                     </div>
@@ -1786,15 +1786,21 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                 <div class="step-time">⏱️ Temps: ${step.estimatedTime} min</div>
                 ` : ''}
 
-                ${step.images && step.images.length > 0 ? `
-                <div style="margin-top: 20px;">
-                    <div style="font-size: 1.1rem; font-weight: 600; color: #444; margin-bottom: 12px;">Photo</div>
-                    ${generateImageCarousel(step.images, renderedImageUrls, `phase-${phaseIndex + 1}-step-${stepIndex + 1}`)}
-                </div>
-                ` : ''}
+                ${(step.images && step.images.length > 0) || (step.videos && step.videos.length > 0) ? `
+                <div style="margin-top: 20px; display: flex; gap: 20px; align-items: flex-start;">
+                    ${step.images && step.images.length > 0 ? `
+                    <div style="flex: ${step.videos && step.videos.length > 0 ? '4' : '1'};">
+                        <div style="font-size: 1.1rem; font-weight: 600; color: #444; margin-bottom: 12px;">Photo</div>
+                        ${generateImageCarousel(step.images, renderedImageUrls, `phase-${phaseIndex + 1}-step-${stepIndex + 1}`)}
+                    </div>
+                    ` : ''}
 
-                ${step.videos && step.videos.length > 0 ? `
-                ${generateVideoCarousel(step.videos, `phase-${phaseIndex + 1}-step-${stepIndex + 1}`)}
+                    ${step.videos && step.videos.length > 0 ? `
+                    <div style="flex: ${step.images && step.images.length > 0 ? '1' : '1'};">
+                        ${generateVideoCarousel(step.videos, `phase-${phaseIndex + 1}-step-${stepIndex + 1}`)}
+                    </div>
+                    ` : ''}
+                </div>
                 ` : ''}
                 </div>
             </div>
