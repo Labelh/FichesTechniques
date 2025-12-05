@@ -1708,6 +1708,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                     <div style="display: flex; gap: 20px; align-items: flex-start;">
                         ${step.description || hasConsignes ? `
                         <div style="flex: 1;">
+                            <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 20px; color: #1a1a1a;">Description</div>
                             <div style="border-radius: 8px; font-size: 1.1rem;">
                                 ${step.description ? `<div class="step-description-content" style="padding-left: 0;">${step.description}</div>` : ''}
 
