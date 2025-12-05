@@ -721,12 +721,21 @@ function SubStepItem({
     { name: 'Blanc', value: '#ffffff' },
   ];
 
+  // State local pour conserver le innerHTML entre les collapse/expand
+  const [localDescription, setLocalDescription] = useState(step.description || '');
+
+  // Sync localDescription quand step.description change (ex: après save)
+  useEffect(() => {
+    setLocalDescription(step.description || '');
+  }, [step.id, step.description]);
+
   // Initialiser le contenu du contentEditable
   useEffect(() => {
-    if (descriptionRef.current && descriptionRef.current.innerHTML !== step.description) {
-      descriptionRef.current.innerHTML = step.description || '';
+    if (descriptionRef.current) {
+      // Restaurer le contenu local si on réouvre après un collapse
+      descriptionRef.current.innerHTML = localDescription;
     }
-  }, [step.id]); // Seulement quand on change de step
+  }, [step.id, isExpanded]); // Quand on change de step OU qu'on expand
 
   // Fermer la palette de couleurs quand on clique ailleurs
   useEffect(() => {
@@ -1045,7 +1054,9 @@ function SubStepItem({
                 contentEditable
                 onInput={(e) => {
                   const target = e.target as HTMLDivElement;
-                  onUpdate({ description: target.innerHTML });
+                  const html = target.innerHTML;
+                  setLocalDescription(html); // Sauvegarder localement
+                  onUpdate({ description: html }); // Et mettre à jour le parent
                 }}
                 className="min-h-[150px] max-h-[400px] w-full px-3 py-2 text-sm text-white focus:outline-none bg-transparent border-0 overflow-y-auto"
                 style={{ wordBreak: 'break-word' }}
