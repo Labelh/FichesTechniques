@@ -209,7 +209,7 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
   const addStepSafetyNote = (stepId: string) => {
     setSteps(steps.map(s =>
       s.id === stepId
-        ? { ...s, safetyNotes: [...(s.safetyNotes || []), { id: crypto.randomUUID(), type: 'warning', content: '' }] }
+        ? { ...s, safetyNotes: [...(s.safetyNotes || []), { id: crypto.randomUUID(), content: '' }] }
         : s
     ));
   };
@@ -1441,33 +1441,20 @@ function SubStepItem({
             </label>
             <div className="space-y-2">
               {(step.safetyNotes || []).map((note) => (
-                <div key={note.id} className="p-2 bg-orange-500/10 border border-orange-500/30 rounded">
-                  <div className="flex gap-2 items-start mb-2">
-                    <select
-                      value={note.type}
-                      onChange={(e) => onUpdateSafetyNote(note.id, { type: e.target.value as any })}
-                      className="rounded border border-[#323232] bg-transparent px-2 py-1 text-xs text-white"
-                    >
-                      <option value="info">Information</option>
-                      <option value="warning">Attention</option>
-                      <option value="danger">Danger</option>
-                      <option value="mandatory">Obligatoire</option>
-                      <option value="forbidden">Interdit</option>
-                    </select>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onRemoveSafetyNote(note.id)}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
+                <div key={note.id} className="flex gap-2">
                   <Input
                     value={note.content}
                     onChange={(e) => onUpdateSafetyNote(note.id, { content: e.target.value })}
                     placeholder="Consigne de sécurité..."
                     className="text-xs"
                   />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onRemoveSafetyNote(note.id)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
                 </div>
               ))}
               <Button

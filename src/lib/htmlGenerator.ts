@@ -886,7 +886,6 @@ export async function generateHTML(
         /* Conseils (touches de vert) */
         .tips {
             background: rgba(16, 185, 129, 0.1);
-            border: 1px solid #10b981;
             padding: 12px 16px;
             border-radius: 8px;
             box-shadow: 0 2px 6px rgba(16, 185, 129, 0.1);
@@ -909,7 +908,6 @@ export async function generateHTML(
         /* Consignes de sécurité (touches de rouge) */
         .safety-notes {
             background: rgba(239, 68, 68, 0.1);
-            border: 1px solid #ef4444;
             padding: 12px 16px;
             border-radius: 8px;
             box-shadow: 0 2px 6px rgba(239, 68, 68, 0.1);
@@ -1696,14 +1694,12 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                 <div class="step-details-grid">
                     ${step.description ? `
                     <div class="step-description-box">
-                        <div class="step-description-title">Description</div>
                         <div class="step-description-content">${step.description}</div>
                     </div>
                     ` : ''}
 
                     ${hasTools ? `
                     <div style="margin-top: 20px;">
-                        <div style="font-size: 1.1rem; font-weight: 600; color: #444; margin-bottom: 12px;">Détail</div>
                         <div class="step-tools-row">
                             ${tools.map(tool => `
                             <div class="step-tool-box">
@@ -1721,20 +1717,17 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
 
                     ${hasConsignes ? `
                     <div style="margin-top: 20px;">
-                        <div style="font-size: 1.1rem; font-weight: 600; color: #444; margin-bottom: 12px;">Consigne</div>
                         ${step.tips && step.tips.length > 0 && step.safetyNotes && step.safetyNotes.length > 0 ? `
                         <div class="step-bottom-row">
                             <div class="tips">
-                                <div class="tips-title">Conseils</div>
+                                <div style="font-size: 1.5rem; margin-bottom: 8px;">💡</div>
                                 ${step.tips.map(tip => `<div class="tip-item">• ${escapeHtml(tip)}</div>`).join('')}
                             </div>
                             <div></div>
                             <div class="safety-notes">
+                                <div style="font-size: 1.5rem; margin-bottom: 8px;">⚠️</div>
                                 ${step.safetyNotes.map(note => `
-                                <div class="safety-note ${note.type === 'danger' ? 'danger' : 'warning'}">
-                                    <div class="safety-note-title">
-                                        ${note.type === 'danger' ? 'DANGER' : 'ATTENTION'}
-                                    </div>
+                                <div class="safety-note">
                                     <div>• ${escapeHtml(note.content)}</div>
                                 </div>
                                 `).join('')}
@@ -1742,16 +1735,14 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                         </div>
                         ` : step.tips && step.tips.length > 0 ? `
                         <div class="tips">
-                            <div class="tips-title">Conseils</div>
+                            <div style="font-size: 1.5rem; margin-bottom: 8px;">💡</div>
                             ${step.tips.map(tip => `<div class="tip-item">• ${escapeHtml(tip)}</div>`).join('')}
                         </div>
                         ` : step.safetyNotes && step.safetyNotes.length > 0 ? `
                         <div class="safety-notes">
+                            <div style="font-size: 1.5rem; margin-bottom: 8px;">⚠️</div>
                             ${step.safetyNotes.map(note => `
-                            <div class="safety-note ${note.type === 'danger' ? 'danger' : 'warning'}">
-                                <div class="safety-note-title">
-                                    ${note.type === 'danger' ? 'DANGER' : 'ATTENTION'}
-                                </div>
+                            <div class="safety-note">
                                 <div>• ${escapeHtml(note.content)}</div>
                             </div>
                             `).join('')}
