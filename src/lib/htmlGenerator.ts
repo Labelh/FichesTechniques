@@ -1728,8 +1728,10 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                             <div class="step-tools-column">
                                 ${tools.map(tool => {
                                     const truncatedName = tool.name.length > 30 ? tool.name.substring(0, 30) + '...' : tool.name;
+                                    const bgColor = tool.color ? `background-color: ${tool.color}20;` : '';
+                                    const borderColor = tool.color ? `border-color: ${tool.color};` : '';
                                     return `
-                                    <div class="step-tool-box">
+                                    <div class="step-tool-box" style="${bgColor} ${borderColor}">
                                         ${tool.imageUrl ? `<img src="${tool.imageUrl}" alt="${escapeHtml(tool.name)}" class="step-tool-image" loading="lazy" onclick="event.stopPropagation(); openImageModal('${tool.imageUrl}', '${escapeHtml(tool.name)}');">` : ''}
                                         <div class="step-tool-info">
                                             <div class="step-tool-name" title="${escapeHtml(tool.name)}">${escapeHtml(truncatedName)}</div>

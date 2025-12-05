@@ -77,6 +77,7 @@ export default function ToolSelector({ availableTools, availableConsumables, onS
   };
 
   const colorPresets = [
+    { name: 'Aucune', value: '' },
     { name: 'Vert', value: '#10b981' },
     { name: 'Bleu', value: '#3b82f6' },
     { name: 'Rouge', value: '#ef4444' },
@@ -333,16 +334,20 @@ export default function ToolSelector({ availableTools, availableConsumables, onS
                     <div className="flex flex-wrap gap-2">
                       {colorPresets.map((color) => (
                         <button
-                          key={color.value}
+                          key={color.value || 'none'}
                           onClick={() => setSelectedColor(color.value)}
                           className={`w-8 h-8 rounded-full border-2 transition-all ${
                             selectedColor === color.value
                               ? 'border-white scale-110'
                               : 'border-transparent hover:border-gray-500'
-                          }`}
-                          style={{ backgroundColor: color.value }}
+                          } ${!color.value ? 'bg-gray-700 relative' : ''}`}
+                          style={color.value ? { backgroundColor: color.value } : {}}
                           title={color.name}
-                        />
+                        >
+                          {!color.value && (
+                            <span className="absolute inset-0 flex items-center justify-center text-white text-lg">×</span>
+                          )}
+                        </button>
                       ))}
                     </div>
                   </div>
