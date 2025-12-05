@@ -1000,8 +1000,18 @@ function SubStepItem({
                 <button
                   type="button"
                   onClick={() => {
-                    descriptionRef.current?.focus();
-                    document.execCommand('insertUnorderedList', false);
+                    if (descriptionRef.current) {
+                      descriptionRef.current.focus();
+                      document.execCommand('insertUnorderedList', false);
+                      // Mettre à jour après que le DOM soit modifié
+                      setTimeout(() => {
+                        if (descriptionRef.current) {
+                          const html = descriptionRef.current.innerHTML;
+                          setLocalDescription(html);
+                          onUpdate({ description: html });
+                        }
+                      }, 10);
+                    }
                   }}
                   className="p-1.5 hover:bg-[#323232] rounded text-gray-400 hover:text-white transition"
                   title="Liste à puces"
@@ -1011,8 +1021,18 @@ function SubStepItem({
                 <button
                   type="button"
                   onClick={() => {
-                    descriptionRef.current?.focus();
-                    document.execCommand('insertOrderedList', false);
+                    if (descriptionRef.current) {
+                      descriptionRef.current.focus();
+                      document.execCommand('insertOrderedList', false);
+                      // Mettre à jour après que le DOM soit modifié
+                      setTimeout(() => {
+                        if (descriptionRef.current) {
+                          const html = descriptionRef.current.innerHTML;
+                          setLocalDescription(html);
+                          onUpdate({ description: html });
+                        }
+                      }, 10);
+                    }
                   }}
                   className="p-1.5 hover:bg-[#323232] rounded text-gray-400 hover:text-white transition"
                   title="Liste numérotée"
