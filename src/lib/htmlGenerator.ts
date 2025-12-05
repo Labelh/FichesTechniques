@@ -912,6 +912,7 @@ export async function generateHTML(
             padding: 12px 16px;
             border-radius: 8px;
             box-shadow: 0 2px 6px rgba(239, 68, 68, 0.1);
+            max-width: 33.33%;
         }
 
         .safety-note {

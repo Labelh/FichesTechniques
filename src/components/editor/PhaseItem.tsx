@@ -569,9 +569,10 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
                 </label>
                 <Input
                   type="number"
-                  min="1"
+                  min="0"
+                  step="0.01"
                   value={estimatedTime}
-                  onChange={(e) => setEstimatedTime(parseInt(e.target.value) || 0)}
+                  onChange={(e) => setEstimatedTime(parseFloat(e.target.value) || 0)}
                 />
               </div>
             </div>
