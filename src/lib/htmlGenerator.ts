@@ -767,6 +767,12 @@ export async function generateHTML(
             margin-top: 8px;
         }
 
+        .step-tools-column {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
         .step-tool {
             background: rgba(16, 185, 129, 0.1);
             padding: 18px 20px;
@@ -1698,38 +1704,44 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
 
                 <div class="step-content collapsed" id="phase-${phaseIndex + 1}-step-${stepIndex + 1}-content">
                 <div class="step-details-grid">
-                    ${step.description ? `
-                    <div class="step-description-box">
-                        <div class="step-description-content">${step.description}</div>
-                    </div>
-                    ` : ''}
-
-                    ${hasTools ? `
-                    <div style="margin-top: 20px;">
-                        <div class="step-tools-row">
-                            ${tools.map(tool => `
-                            <div class="step-tool-box">
-                                ${tool.imageUrl ? `<img src="${tool.imageUrl}" alt="${escapeHtml(tool.name)}" class="step-tool-image" loading="lazy" onclick="event.stopPropagation(); openImageModal('${tool.imageUrl}', '${escapeHtml(tool.name)}');">` : ''}
-                                <div class="step-tool-info">
-                                    <div class="step-tool-name">${escapeHtml(tool.name)}</div>
-                                    ${tool.reference ? `<div class="step-tool-ref" style="margin-top: 2px;">${escapeHtml(tool.reference)}</div>` : ''}
-                                    ${tool.location ? `<div class="step-tool-location-badge" style="margin-top: 6px;">${escapeHtml(tool.location)}</div>` : ''}
-                                </div>
-                            </div>
-                            `).join('')}
+                    <div style="display: flex; gap: 20px; align-items: flex-start;">
+                        ${step.description ? `
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 12px; color: #1a1a1a;">Description de la sous-étape</div>
+                            <div class="step-description-content">${step.description}</div>
                         </div>
+                        ` : ''}
+
+                        ${hasTools ? `
+                        <div style="width: 300px; flex-shrink: 0;">
+                            <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 12px; color: #1a1a1a;">Outil(s)</div>
+                            <div class="step-tools-column">
+                                ${tools.map(tool => {
+                                    const truncatedName = tool.name.length > 30 ? tool.name.substring(0, 30) + '...' : tool.name;
+                                    return `
+                                    <div class="step-tool-box">
+                                        ${tool.imageUrl ? `<img src="${tool.imageUrl}" alt="${escapeHtml(tool.name)}" class="step-tool-image" loading="lazy" onclick="event.stopPropagation(); openImageModal('${tool.imageUrl}', '${escapeHtml(tool.name)}');">` : ''}
+                                        <div class="step-tool-info">
+                                            <div class="step-tool-name" title="${escapeHtml(tool.name)}">${escapeHtml(truncatedName)}</div>
+                                            ${tool.reference ? `<div class="step-tool-ref" style="margin-top: 2px;">${escapeHtml(tool.reference)}</div>` : ''}
+                                            ${tool.location ? `<div class="step-tool-location-badge" style="margin-top: 6px;">${escapeHtml(tool.location)}</div>` : ''}
+                                        </div>
+                                    </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
                     </div>
-                    ` : ''}
 
                     ${hasConsignes ? `
                     <div style="margin-top: 20px;">
                         ${step.tips && step.tips.length > 0 && step.safetyNotes && step.safetyNotes.length > 0 ? `
-                        <div class="step-bottom-row">
+                        <div style="display: flex; gap: 16px; align-items: flex-start;">
                             <div class="tips">
                                 <div class="tips-title">Conseils</div>
                                 ${step.tips.map(tip => `<div class="tip-item">• ${escapeHtml(tip)}</div>`).join('')}
                             </div>
-                            <div></div>
                             <div class="safety-notes">
                                 <div class="safety-notes-title">Consignes de sécurité</div>
                                 ${step.safetyNotes.map(note => `
