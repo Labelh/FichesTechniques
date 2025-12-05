@@ -156,7 +156,7 @@ export interface Consumable {
 
 export interface SafetyNote {
   id: string;
-  type: 'warning' | 'danger' | 'info' | 'mandatory' | 'forbidden';
+  type?: 'warning' | 'danger' | 'info' | 'mandatory' | 'forbidden';
   content: string;
   icon?: string;
 }
