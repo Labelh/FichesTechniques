@@ -637,7 +637,6 @@ export async function generateHTML(
             color: #555;
             word-wrap: break-word;
             overflow-wrap: break-word;
-            padding-left: 20px;
         }
 
         .step-description-content ul,
@@ -1710,8 +1709,8 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                         ${step.description || hasConsignes ? `
                         <div style="flex: 1;">
                             <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 12px; color: #1a1a1a;">Description de la sous-étape</div>
-                            <div style="background: rgba(0, 0, 0, 0.03); padding: 16px; border-radius: 8px;">
-                                ${step.description ? `<div class="step-description-content">${step.description}</div>` : ''}
+                            <div style="border-radius: 8px; font-size: 1.1rem;">
+                                ${step.description ? `<div class="step-description-content" style="padding-left: 0;">${step.description}</div>` : ''}
 
                                 ${hasConsignes ? `
                                     ${step.description ? '<div style="margin-top: 16px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 16px;"></div>' : ''}
@@ -1725,6 +1724,10 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                                         </div>
                                         `).join('')}
                                     </div>
+                                    ` : ''}
+
+                                    ${step.safetyNotes && step.safetyNotes.length > 0 && step.tips && step.tips.length > 0 ? `
+                                    <div style="border-top: 1px solid rgba(0,0,0,0.1); padding-top: 16px; margin-bottom: 16px;"></div>
                                     ` : ''}
 
                                     ${step.tips && step.tips.length > 0 ? `
