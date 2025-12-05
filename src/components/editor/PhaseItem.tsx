@@ -1078,7 +1078,7 @@ function SubStepItem({
                   setLocalDescription(html); // Sauvegarder localement
                   onUpdate({ description: html }); // Et mettre à jour le parent
                 }}
-                className="min-h-[150px] max-h-[400px] w-full px-3 py-2 text-sm text-white focus:outline-none bg-transparent border-0 overflow-y-auto"
+                className="min-h-[150px] max-h-[400px] w-full px-3 py-2 text-sm text-white focus:outline-none bg-transparent border-0 overflow-y-auto [&_ul]:list-disc [&_ul]:ml-6 [&_ol]:list-decimal [&_ol]:ml-6"
                 style={{ wordBreak: 'break-word' }}
                 data-placeholder="Description détaillée de cette sous-étape..."
               />

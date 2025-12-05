@@ -1720,15 +1720,13 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                     ${hasConsignes ? `
                     <div style="margin-top: 20px;">
                         <div style="font-size: 1.1rem; font-weight: 600; color: #444; margin-bottom: 12px;">Consigne</div>
+                        ${step.tips && step.tips.length > 0 && step.safetyNotes && step.safetyNotes.length > 0 ? `
                         <div class="step-bottom-row">
-                            ${step.tips && step.tips.length > 0 ? `
                             <div class="tips">
                                 <div class="tips-title">Conseils</div>
                                 ${step.tips.map(tip => `<div class="tip-item">• ${escapeHtml(tip)}</div>`).join('')}
                             </div>
-                            ` : '<div></div>'}
-
-                            ${step.safetyNotes && step.safetyNotes.length > 0 ? `
+                            <div></div>
                             <div class="safety-notes">
                                 ${step.safetyNotes.map(note => `
                                 <div class="safety-note ${note.type === 'danger' ? 'danger' : 'warning'}">
@@ -1739,8 +1737,24 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                                 </div>
                                 `).join('')}
                             </div>
-                            ` : '<div></div>'}
                         </div>
+                        ` : step.tips && step.tips.length > 0 ? `
+                        <div class="tips">
+                            <div class="tips-title">Conseils</div>
+                            ${step.tips.map(tip => `<div class="tip-item">• ${escapeHtml(tip)}</div>`).join('')}
+                        </div>
+                        ` : step.safetyNotes && step.safetyNotes.length > 0 ? `
+                        <div class="safety-notes">
+                            ${step.safetyNotes.map(note => `
+                            <div class="safety-note ${note.type === 'danger' ? 'danger' : 'warning'}">
+                                <div class="safety-note-title">
+                                    ${note.type === 'danger' ? 'DANGER' : 'ATTENTION'}
+                                </div>
+                                <div>• ${escapeHtml(note.content)}</div>
+                            </div>
+                            `).join('')}
+                        </div>
+                        ` : ''}
                     </div>
                     ` : ''}
                 </div>
