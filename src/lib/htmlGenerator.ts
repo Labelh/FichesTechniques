@@ -901,10 +901,6 @@ export async function generateHTML(
 
         /* Conseils (touches de vert) */
         .tips {
-            background: rgba(16, 185, 129, 0.1);
-            padding: 12px 16px;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.1);
         }
 
         .tips-title {
@@ -930,10 +926,6 @@ export async function generateHTML(
 
         /* Consignes de sécurité (touches de rouge) */
         .safety-notes {
-            background: rgba(239, 68, 68, 0.1);
-            padding: 12px 16px;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(239, 68, 68, 0.1);
         }
 
         .safety-note {
@@ -1715,11 +1707,33 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                 <div class="step-content collapsed" id="phase-${phaseIndex + 1}-step-${stepIndex + 1}-content">
                 <div class="step-details-grid">
                     <div style="display: flex; gap: 20px; align-items: flex-start;">
-                        ${step.description ? `
+                        ${step.description || hasConsignes ? `
                         <div style="flex: 1;">
                             <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 12px; color: #1a1a1a;">Description de la sous-étape</div>
                             <div style="background: rgba(0, 0, 0, 0.03); padding: 16px; border-radius: 8px;">
-                                <div class="step-description-content">${step.description}</div>
+                                ${step.description ? `<div class="step-description-content">${step.description}</div>` : ''}
+
+                                ${hasConsignes ? `
+                                    ${step.description ? '<div style="margin-top: 16px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 16px;"></div>' : ''}
+
+                                    ${step.safetyNotes && step.safetyNotes.length > 0 ? `
+                                    <div style="margin-bottom: 16px;">
+                                        <div class="safety-notes-title">Consignes de sécurité</div>
+                                        ${step.safetyNotes.map(note => `
+                                        <div class="safety-note">
+                                            <div>• ${escapeHtml(note.content)}</div>
+                                        </div>
+                                        `).join('')}
+                                    </div>
+                                    ` : ''}
+
+                                    ${step.tips && step.tips.length > 0 ? `
+                                    <div>
+                                        <div class="tips-title">Conseils</div>
+                                        ${step.tips.map(tip => `<div class="tip-item">• ${escapeHtml(tip)}</div>`).join('')}
+                                    </div>
+                                    ` : ''}
+                                ` : ''}
                             </div>
                         </div>
                         ` : ''}
@@ -1747,41 +1761,6 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                         </div>
                         ` : ''}
                     </div>
-
-                    ${hasConsignes ? `
-                    <div style="margin-top: 20px;">
-                        ${step.tips && step.tips.length > 0 && step.safetyNotes && step.safetyNotes.length > 0 ? `
-                        <div style="display: flex; gap: 16px; align-items: flex-start; max-width: calc(100% - 320px);">
-                            <div class="tips" style="flex: 1;">
-                                <div class="tips-title">Conseils</div>
-                                ${step.tips.map(tip => `<div class="tip-item">• ${escapeHtml(tip)}</div>`).join('')}
-                            </div>
-                            <div class="safety-notes" style="flex: 1;">
-                                <div class="safety-notes-title">Consignes de sécurité</div>
-                                ${step.safetyNotes.map(note => `
-                                <div class="safety-note">
-                                    <div>• ${escapeHtml(note.content)}</div>
-                                </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                        ` : step.tips && step.tips.length > 0 ? `
-                        <div class="tips" style="width: 50%; max-width: calc((100% - 320px) / 2);">
-                            <div class="tips-title">Conseils</div>
-                            ${step.tips.map(tip => `<div class="tip-item">• ${escapeHtml(tip)}</div>`).join('')}
-                        </div>
-                        ` : step.safetyNotes && step.safetyNotes.length > 0 ? `
-                        <div class="safety-notes" style="width: 50%; max-width: calc((100% - 320px) / 2);">
-                            <div class="safety-notes-title">Consignes de sécurité</div>
-                            ${step.safetyNotes.map(note => `
-                            <div class="safety-note">
-                                <div>• ${escapeHtml(note.content)}</div>
-                            </div>
-                            `).join('')}
-                        </div>
-                        ` : ''}
-                    </div>
-                    ` : ''}
                 </div>
 
                 ${step.estimatedTime ? `
