@@ -1716,9 +1716,11 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                 <div class="step-details-grid">
                     <div style="display: flex; gap: 20px; align-items: flex-start;">
                         ${step.description ? `
-                        <div style="flex: 1; background: rgba(0, 0, 0, 0.03); padding: 16px; border-radius: 8px;">
+                        <div style="flex: 1;">
                             <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 12px; color: #1a1a1a;">Description de la sous-étape</div>
-                            <div class="step-description-content">${step.description}</div>
+                            <div style="background: rgba(0, 0, 0, 0.03); padding: 16px; border-radius: 8px;">
+                                <div class="step-description-content">${step.description}</div>
+                            </div>
                         </div>
                         ` : ''}
 
@@ -1749,12 +1751,12 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                     ${hasConsignes ? `
                     <div style="margin-top: 20px;">
                         ${step.tips && step.tips.length > 0 && step.safetyNotes && step.safetyNotes.length > 0 ? `
-                        <div style="display: flex; gap: 16px; align-items: flex-start;">
-                            <div class="tips">
+                        <div style="display: flex; gap: 16px; align-items: flex-start; max-width: calc(100% - 320px);">
+                            <div class="tips" style="flex: 1;">
                                 <div class="tips-title">Conseils</div>
                                 ${step.tips.map(tip => `<div class="tip-item">• ${escapeHtml(tip)}</div>`).join('')}
                             </div>
-                            <div class="safety-notes">
+                            <div class="safety-notes" style="flex: 1;">
                                 <div class="safety-notes-title">Consignes de sécurité</div>
                                 ${step.safetyNotes.map(note => `
                                 <div class="safety-note">
@@ -1764,12 +1766,12 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                             </div>
                         </div>
                         ` : step.tips && step.tips.length > 0 ? `
-                        <div class="tips" style="min-width: 50%;">
+                        <div class="tips" style="width: 50%; max-width: calc((100% - 320px) / 2);">
                             <div class="tips-title">Conseils</div>
                             ${step.tips.map(tip => `<div class="tip-item">• ${escapeHtml(tip)}</div>`).join('')}
                         </div>
                         ` : step.safetyNotes && step.safetyNotes.length > 0 ? `
-                        <div class="safety-notes" style="min-width: 50%;">
+                        <div class="safety-notes" style="width: 50%; max-width: calc((100% - 320px) / 2);">
                             <div class="safety-notes-title">Consignes de sécurité</div>
                             ${step.safetyNotes.map(note => `
                             <div class="safety-note">
