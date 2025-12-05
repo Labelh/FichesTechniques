@@ -898,6 +898,13 @@ export async function generateHTML(
             font-size: 0.95rem;
         }
 
+        .safety-notes-title {
+            font-weight: 700;
+            color: #ef4444;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
         .tip-item {
             padding: 4px 0;
             color: #555;
@@ -911,7 +918,6 @@ export async function generateHTML(
             padding: 12px 16px;
             border-radius: 8px;
             box-shadow: 0 2px 6px rgba(239, 68, 68, 0.1);
-            max-width: 33.33%;
         }
 
         .safety-note {
@@ -1720,12 +1726,12 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                         ${step.tips && step.tips.length > 0 && step.safetyNotes && step.safetyNotes.length > 0 ? `
                         <div class="step-bottom-row">
                             <div class="tips">
-                                <div style="font-size: 1.5rem; margin-bottom: 8px;">💡</div>
+                                <div class="tips-title">Conseils</div>
                                 ${step.tips.map(tip => `<div class="tip-item">• ${escapeHtml(tip)}</div>`).join('')}
                             </div>
                             <div></div>
                             <div class="safety-notes">
-                                <div style="font-size: 1.5rem; margin-bottom: 8px;">⚠️</div>
+                                <div class="safety-notes-title">Consignes de sécurité</div>
                                 ${step.safetyNotes.map(note => `
                                 <div class="safety-note">
                                     <div>• ${escapeHtml(note.content)}</div>
@@ -1735,12 +1741,12 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                         </div>
                         ` : step.tips && step.tips.length > 0 ? `
                         <div class="tips">
-                            <div style="font-size: 1.5rem; margin-bottom: 8px;">💡</div>
+                            <div class="tips-title">Conseils</div>
                             ${step.tips.map(tip => `<div class="tip-item">• ${escapeHtml(tip)}</div>`).join('')}
                         </div>
                         ` : step.safetyNotes && step.safetyNotes.length > 0 ? `
                         <div class="safety-notes">
-                            <div style="font-size: 1.5rem; margin-bottom: 8px;">⚠️</div>
+                            <div class="safety-notes-title">Consignes de sécurité</div>
                             ${step.safetyNotes.map(note => `
                             <div class="safety-note">
                                 <div>• ${escapeHtml(note.content)}</div>
