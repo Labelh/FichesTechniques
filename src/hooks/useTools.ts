@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { fetchConsumables } from '@/services/consumablesService';
-import { getCategories, getStorageZones } from '@/services/supabaseService';
-import type { Tool, Consumable } from '@/types';
+import { base64ToBlob } from '@/lib/utils';
+import type { Tool, Consumable, Image } from '@/types';
 
 /**
  * Hook pour récupérer les outils depuis Supabase (consommables)
- * et enrichissement avec les données Supabase (catégories et zones de stockage)
  */
 export function useTools() {
   const [tools, setTools] = useState<Tool[]>([]);
@@ -28,16 +27,46 @@ export function useTools() {
           hasPhotoUrl: !!c.photo_url
         })));
 
-        // Récupérer les catégories et zones de stockage pour enrichissement
-        const [categories, storageZones] = await Promise.all([
-          getCategories(),
-          getStorageZones()
-        ]);
-
         // Convertir les consommables en outils
         const convertedTools: Tool[] = consumables.map((consumable: Consumable) => {
           // Déterminer l'URL de l'image (priorité: photo > image_url > photo_url)
           const imageUrl = consumable.photo || consumable.image_url || consumable.photo_url;
+
+          // Créer un objet Image si on a une URL
+          let image: Image | undefined = undefined;
+          if (imageUrl) {
+            try {
+              // Si c'est une chaîne base64, créer un Blob
+              if (imageUrl.startsWith('data:image')) {
+                const blob = base64ToBlob(imageUrl);
+                image = {
+                  id: `${consumable.id}-image`,
+                  name: `${consumable.designation || 'image'}.jpg`,
+                  blob: blob,
+                  size: blob.size,
+                  mimeType: blob.type,
+                  url: imageUrl,
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                };
+              } else {
+                // Si c'est une URL externe, créer un Blob vide avec l'URL
+                const emptyBlob = new Blob([''], { type: 'image/jpeg' });
+                image = {
+                  id: `${consumable.id}-image`,
+                  name: `${consumable.designation || 'image'}.jpg`,
+                  blob: emptyBlob,
+                  size: 0,
+                  mimeType: 'image/jpeg',
+                  url: imageUrl,
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                };
+              }
+            } catch (error) {
+              console.error('Error creating image object for tool:', consumable.designation, error);
+            }
+          }
 
           const tool: Tool = {
             id: consumable.id,
@@ -46,7 +75,7 @@ export function useTools() {
             category: consumable.category || '',
             reference: consumable.reference,
             price: consumable.price,
-            image: imageUrl ? { url: imageUrl } : undefined,
+            image: image,
             deleted: false,
             createdAt: consumable.created_at ? new Date(consumable.created_at) : new Date(),
             updatedAt: consumable.updated_at ? new Date(consumable.updated_at) : new Date(),
