@@ -57,19 +57,32 @@ export function useTools() {
     const unsubscribe = onSnapshot(
       collection(db, 'tools'),
       async (snapshot) => {
-        const baseTools = snapshot.docs
-          .map(doc =>
-            convertTimestamps<Tool>({
-              id: doc.id,
-              ...doc.data(),
-            })
-          )
-          // Filtrer les outils non supprimés
-          .filter(tool => !tool.deleted);
+        console.log('🔧 useTools: Firestore snapshot received, docs count:', snapshot.docs.length);
+
+        const allTools = snapshot.docs.map(doc =>
+          convertTimestamps<Tool>({
+            id: doc.id,
+            ...doc.data(),
+          })
+        );
+
+        console.log('🔧 useTools: Total tools before filter:', allTools.length);
+        console.log('🔧 useTools: First 3 tools:', allTools.slice(0, 3).map(t => ({
+          id: t.id,
+          name: t.name,
+          deleted: t.deleted,
+          hasImage: !!t.image,
+          imageUrl: t.image?.url
+        })));
+
+        const baseTools = allTools.filter(tool => !tool.deleted);
+
+        console.log('🔧 useTools: Tools after filter (not deleted):', baseTools.length);
 
         // Enrichir les outils avec les données Supabase
         const enrichedTools = await enrichToolsData(baseTools);
 
+        console.log('🔧 useTools: Enriched tools count:', enrichedTools.length);
         setTools(enrichedTools);
         setLoading(false);
       },
