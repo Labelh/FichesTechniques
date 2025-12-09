@@ -15,14 +15,14 @@ export function useProcedures(filters?: SearchFilters, sort?: SortOption) {
   useEffect(() => {
     setLoading(true);
 
-    // Construire la requête Firestore
+    // Construire la requête Firestore pour les procédures
     let q = query(collection(db, 'procedures'));
 
     // Note: Firestore a des limitations sur les requêtes complexes
     // On appliquera certains filtres côté client
 
-    // Écouter les changements en temps réel
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    // Écouter les changements en temps réel des procédures
+    const unsubscribeProcedures = onSnapshot(q, async (snapshot) => {
       let results = snapshot.docs.map(doc =>
         convertTimestamps<Procedure>({
           id: doc.id,
@@ -30,61 +30,80 @@ export function useProcedures(filters?: SearchFilters, sort?: SortOption) {
         })
       );
 
-      // Appliquer les filtres côté client
-      if (filters?.status && filters.status.length > 0) {
-        results = results.filter(p => filters.status!.includes(p.status));
-      }
-
-      if (filters?.categories && filters.categories.length > 0) {
-        results = results.filter(p => filters.categories!.includes(p.category));
-      }
-
-      if (filters?.tags && filters.tags.length > 0) {
-        results = results.filter(p =>
-          p.tags && p.tags.some(tag => filters.tags!.includes(tag))
+      // Charger toutes les phases en une seule requête
+      const phasesQuery = query(collection(db, 'phases'));
+      const phasesSnapshot = await onSnapshot(phasesQuery, (phasesSnap) => {
+        const allPhases = phasesSnap.docs.map(doc =>
+          convertTimestamps<any>({
+            id: doc.id,
+            ...doc.data(),
+          })
         );
-      }
 
-      if (filters?.priority && filters.priority.length > 0) {
-        results = results.filter(p => filters.priority!.includes(p.priority));
-      }
+        // Associer les phases aux procédures
+        results = results.map(proc => ({
+          ...proc,
+          phases: allPhases.filter((phase: any) => phase.procedureId === proc.id).sort((a: any, b: any) => a.order - b.order)
+        }));
 
-      if (filters?.query) {
-        const searchLower = filters.query.toLowerCase();
-        results = results.filter(p =>
-          p.title.toLowerCase().includes(searchLower) ||
-          (p.description && p.description.toLowerCase().includes(searchLower)) ||
-          (p.reference && p.reference.toLowerCase().includes(searchLower))
-        );
-      }
+        // Appliquer les filtres côté client
+        if (filters?.status && filters.status.length > 0) {
+          results = results.filter(p => filters.status!.includes(p.status));
+        }
 
-      // Tri
-      if (sort) {
-        results.sort((a, b) => {
-          const aVal = (a as any)[sort.field];
-          const bVal = (b as any)[sort.field];
+        if (filters?.categories && filters.categories.length > 0) {
+          results = results.filter(p => filters.categories!.includes(p.category));
+        }
 
-          if (aVal < bVal) return sort.direction === 'asc' ? -1 : 1;
-          if (aVal > bVal) return sort.direction === 'asc' ? 1 : -1;
-          return 0;
-        });
-      } else {
-        // Tri par défaut : updatedAt desc
-        results.sort((a, b) => {
-          const aDate = a.updatedAt instanceof Date ? a.updatedAt : new Date(a.updatedAt);
-          const bDate = b.updatedAt instanceof Date ? b.updatedAt : new Date(b.updatedAt);
-          return bDate.getTime() - aDate.getTime();
-        });
-      }
+        if (filters?.tags && filters.tags.length > 0) {
+          results = results.filter(p =>
+            p.tags && p.tags.some(tag => filters.tags!.includes(tag))
+          );
+        }
 
-      setProcedures(results);
-      setLoading(false);
+        if (filters?.priority && filters.priority.length > 0) {
+          results = results.filter(p => filters.priority!.includes(p.priority));
+        }
+
+        if (filters?.query) {
+          const searchLower = filters.query.toLowerCase();
+          results = results.filter(p =>
+            p.title.toLowerCase().includes(searchLower) ||
+            (p.description && p.description.toLowerCase().includes(searchLower)) ||
+            (p.reference && p.reference.toLowerCase().includes(searchLower))
+          );
+        }
+
+        // Tri
+        if (sort) {
+          results.sort((a, b) => {
+            const aVal = (a as any)[sort.field];
+            const bVal = (b as any)[sort.field];
+
+            if (aVal < bVal) return sort.direction === 'asc' ? -1 : 1;
+            if (aVal > bVal) return sort.direction === 'asc' ? 1 : -1;
+            return 0;
+          });
+        } else {
+          // Tri par défaut : updatedAt desc
+          results.sort((a, b) => {
+            const aDate = a.updatedAt instanceof Date ? a.updatedAt : new Date(a.updatedAt);
+            const bDate = b.updatedAt instanceof Date ? b.updatedAt : new Date(b.updatedAt);
+            return bDate.getTime() - aDate.getTime();
+          });
+        }
+
+        setProcedures(results);
+        setLoading(false);
+      });
+
+      return () => phasesSnapshot();
     }, (error) => {
       console.error('Error fetching procedures:', error);
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => unsubscribeProcedures();
   }, [filters?.status, filters?.categories, filters?.tags, filters?.priority, filters?.query, sort]);
 
   return loading ? undefined : procedures;
