@@ -42,19 +42,25 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
     setEstimatedTime(phase.estimatedTime);
 
     // Enrichir les steps avec les imageUrl depuis availableTools
+    console.log('🔧 Enrichment: availableTools loaded?', !!availableTools, availableTools?.length || 0);
     const enrichedSteps = (phase.steps || []).map(step => {
       if (!step.tools || !availableTools) return step;
 
       const enrichedTools = step.tools.map(tool => {
         // Si l'outil a déjà une imageUrl, la garder
-        if (tool.imageUrl) return tool;
+        if (tool.imageUrl) {
+          console.log('✅ Tool already has imageUrl:', tool.name, tool.imageUrl.substring(0, 50));
+          return tool;
+        }
 
         // Sinon, chercher l'imageUrl dans availableTools
         const fullTool = availableTools.find(t => t.id === tool.id);
         if (fullTool?.image?.url) {
+          console.log('✅ Enriching tool with imageUrl:', tool.name, fullTool.image.url.substring(0, 50));
           return { ...tool, imageUrl: fullTool.image.url };
         }
 
+        console.log('❌ No imageUrl found for tool:', tool.name, 'in availableTools');
         return tool;
       });
 
