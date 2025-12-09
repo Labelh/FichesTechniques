@@ -1,5 +1,6 @@
 import type { AnnotatedImage, Annotation } from '../types';
 import { AnnotationType } from '../types';
+import { blobToBase64 } from './utils';
 
 /**
  * Convertir hex en rgba avec opacité
@@ -292,10 +293,20 @@ export async function renderAllAnnotatedImagesToBase64(
           // Fallback à l'URL originale
           urlMap.set(img.imageId, img.image.url);
         }
+      } else if (img.image.blob) {
+        // Image avec blob uniquement - convertir en base64
+        console.log(`Converting image ${img.imageId} blob to base64`);
+        try {
+          const base64Url = await blobToBase64(img.image.blob);
+          urlMap.set(img.imageId, base64Url);
+          console.log(`Image ${img.imageId} blob converted successfully`);
+        } catch (error) {
+          console.error(`Failed to convert blob ${img.imageId} to base64:`, error);
+        }
       }
     } catch (error) {
       console.error(`Failed to render image ${img.imageId}:`, error);
-      // En cas d'erreur, utiliser l'URL originale
+      // En cas d'erreur, utiliser l'URL originale si disponible
       if (img.image.url) {
         urlMap.set(img.imageId, img.image.url);
       }
