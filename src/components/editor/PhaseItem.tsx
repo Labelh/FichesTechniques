@@ -335,13 +335,13 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
 
   // Nettoie les valeurs undefined d'un objet (Firestore n'accepte pas undefined)
   // Exclut aussi imageUrl des outils (trop gros pour Firestore en base64)
-  const cleanUndefined = (obj: any, isToolObject = false): any => {
+  const cleanUndefined = (obj: any): any => {
     if (obj === null || obj === undefined) {
       return null;
     }
 
     if (Array.isArray(obj)) {
-      return obj.map(item => cleanUndefined(item, false));
+      return obj.map(item => cleanUndefined(item));
     }
 
     if (typeof obj === 'object') {
@@ -358,7 +358,7 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
 
         const value = obj[key];
         if (value !== undefined) {
-          cleaned[key] = cleanUndefined(value, isCurrentToolObject);
+          cleaned[key] = cleanUndefined(value);
         }
       }
       return cleaned;
