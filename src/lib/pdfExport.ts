@@ -39,8 +39,15 @@ export function exportProceduresToPDF(procedures: Procedure[]): void {
   doc.setTextColor(100);
   doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')}`, 14, 22);
 
+  // Trier les procédures par référence (ordre alphabétique)
+  const sortedProcedures = [...procedures].sort((a, b) => {
+    const refA = (a.reference || '').toLowerCase();
+    const refB = (b.reference || '').toLowerCase();
+    return refA.localeCompare(refB);
+  });
+
   // Préparer les données du tableau
-  const tableData = procedures.map(procedure => {
+  const tableData = sortedProcedures.map(procedure => {
     return [
       procedure.reference || '-',
       procedure.designation || procedure.title || '-',
@@ -73,7 +80,7 @@ export function exportProceduresToPDF(procedures: Procedure[]): void {
     didDrawCell: (data) => {
       // Dessiner les rectangles de difficulté dans la colonne 3
       if (data.column.index === 3 && data.section === 'body') {
-        const procedure = procedures[data.row.index];
+        const procedure = sortedProcedures[data.row.index];
         if (procedure.phases && procedure.phases.length > 0) {
           const cellX = data.cell.x + 2;
           const cellY = data.cell.y + (data.cell.height / 2) - 2.5;
