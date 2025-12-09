@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Plus, Image as ImageIcon, X, Download, AlertTriangle, Pencil, CheckCircle, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import { useProcedure } from '@/hooks/useProcedures';
+import { useTools } from '@/hooks/useTools';
 import { createProcedure, updateProcedure, addPhase, deletePhase } from '@/services/procedureService';
 import { uploadImageToHost } from '@/services/imageHostingService';
 import { Button } from '@/components/ui/Button';
@@ -18,6 +19,7 @@ export default function ProcedureEditor() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const existingProcedure = useProcedure(id);
+  const availableTools = useTools();
 
   const [reference, setReference] = useState('');
   const [designation, setDesignation] = useState('');
@@ -443,7 +445,7 @@ export default function ProcedureEditor() {
         }
       });
 
-      await generateHTML(existingProcedure, phases);
+      await generateHTML(existingProcedure, phases, availableTools);
       toast.success('✅ Procédure exportée en HTML avec succès !');
       console.log('=== FIN HTML EXPORT DEBUG ===');
     } catch (error) {

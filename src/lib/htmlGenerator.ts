@@ -30,7 +30,8 @@ function migrateStepTools(step: SubStep): StepTool[] {
  */
 export async function generateHTML(
   procedure: Procedure,
-  phases: Phase[]
+  phases: Phase[],
+  availableTools?: any[]
 ): Promise<void> {
   // Collecter toutes les images annotées
   const allAnnotatedImages: AnnotatedImage[] = [];
@@ -65,16 +66,18 @@ export async function generateHTML(
     });
   }
 
-  // Créer une map des outils avec leurs images depuis globalTools
+  // Créer une map des outils avec leurs images depuis availableTools ou globalTools
   const toolImageMap = new Map<string, string>();
-  if (procedure.globalTools && procedure.globalTools.length > 0) {
-    procedure.globalTools.forEach(tool => {
+  const toolsSource = availableTools || procedure.globalTools || [];
+  if (toolsSource && toolsSource.length > 0) {
+    toolsSource.forEach((tool: any) => {
       if (tool.image?.url) {
         toolImageMap.set(tool.id, tool.image.url);
       }
     });
   }
   console.log('Tool image map size:', toolImageMap.size);
+  console.log('Tools source:', availableTools ? 'availableTools' : 'globalTools');
 
   // Enrichir les step.tools avec les imageUrl depuis globalTools
   phases.forEach(phase => {
