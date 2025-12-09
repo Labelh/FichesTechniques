@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { convertTimestamps } from '@/lib/firestore';
+import { fetchConsumables } from '@/services/consumablesService';
 import { getCategories, getStorageZones } from '@/services/supabaseService';
-import type { Tool } from '@/types';
+import type { Tool, Consumable } from '@/types';
 
 /**
- * Hook pour récupérer les outils avec synchronisation temps réel
+ * Hook pour récupérer les outils depuis Supabase (consommables)
  * et enrichissement avec les données Supabase (catégories et zones de stockage)
  */
 export function useTools() {
@@ -14,85 +12,67 @@ export function useTools() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
-
-    // Récupérer les catégories et zones de stockage
-    const enrichToolsData = async (baseTools: Tool[]) => {
+    const loadTools = async () => {
+      setLoading(true);
       try {
+        console.log('🔧 useTools: Loading tools from Supabase...');
+
+        // Récupérer les consommables depuis Supabase
+        const consumables = await fetchConsumables();
+        console.log('🔧 useTools: Consumables loaded:', consumables.length);
+        console.log('🔧 useTools: First 3 consumables:', consumables.slice(0, 3).map(c => ({
+          id: c.id,
+          designation: c.designation,
+          hasPhoto: !!c.photo,
+          hasImageUrl: !!c.image_url,
+          hasPhotoUrl: !!c.photo_url
+        })));
+
+        // Récupérer les catégories et zones de stockage pour enrichissement
         const [categories, storageZones] = await Promise.all([
           getCategories(),
           getStorageZones()
         ]);
 
-        return baseTools.map(tool => {
-          const enrichedTool = { ...tool };
+        // Convertir les consommables en outils
+        const convertedTools: Tool[] = consumables.map((consumable: Consumable) => {
+          // Déterminer l'URL de l'image (priorité: photo > image_url > photo_url)
+          const imageUrl = consumable.photo || consumable.image_url || consumable.photo_url;
 
-          // Enrichir avec la catégorie
-          if (tool.category_id) {
-            const category = categories.get(tool.category_id);
-            if (category) {
-              enrichedTool.categoryData = category;
-              // Mettre à jour aussi le champ category avec le nom
-              enrichedTool.category = category.name;
-            }
-          }
+          const tool: Tool = {
+            id: consumable.id,
+            name: consumable.designation || '',
+            description: consumable.description || '',
+            category: consumable.category || '',
+            reference: consumable.reference,
+            price: consumable.price,
+            image: imageUrl ? { url: imageUrl } : undefined,
+            deleted: false,
+            createdAt: consumable.created_at ? new Date(consumable.created_at) : new Date(),
+            updatedAt: consumable.updated_at ? new Date(consumable.updated_at) : new Date(),
+          };
 
-          // Enrichir avec la zone de stockage
-          if (tool.storage_zone_id) {
-            const zone = storageZones.get(tool.storage_zone_id);
-            if (zone) {
-              enrichedTool.storageZoneData = zone;
-            }
-          }
-
-          return enrichedTool;
+          return tool;
         });
+
+        console.log('🔧 useTools: Converted tools count:', convertedTools.length);
+        console.log('🔧 useTools: First 3 converted tools:', convertedTools.slice(0, 3).map(t => ({
+          id: t.id,
+          name: t.name,
+          hasImage: !!t.image,
+          imageUrl: t.image?.url?.substring(0, 50)
+        })));
+
+        setTools(convertedTools);
+        setLoading(false);
       } catch (error) {
-        console.error('Error enriching tools data:', error);
-        return baseTools;
+        console.error('🔧 useTools: Error loading tools from Supabase:', error);
+        setTools([]);
+        setLoading(false);
       }
     };
 
-    // Écouter les changements en temps réel
-    const unsubscribe = onSnapshot(
-      collection(db, 'tools'),
-      async (snapshot) => {
-        console.log('🔧 useTools: Firestore snapshot received, docs count:', snapshot.docs.length);
-
-        const allTools = snapshot.docs.map(doc =>
-          convertTimestamps<Tool>({
-            id: doc.id,
-            ...doc.data(),
-          })
-        );
-
-        console.log('🔧 useTools: Total tools before filter:', allTools.length);
-        console.log('🔧 useTools: First 3 tools:', allTools.slice(0, 3).map(t => ({
-          id: t.id,
-          name: t.name,
-          deleted: t.deleted,
-          hasImage: !!t.image,
-          imageUrl: t.image?.url
-        })));
-
-        const baseTools = allTools.filter(tool => !tool.deleted);
-
-        console.log('🔧 useTools: Tools after filter (not deleted):', baseTools.length);
-
-        // Enrichir les outils avec les données Supabase
-        const enrichedTools = await enrichToolsData(baseTools);
-
-        console.log('🔧 useTools: Enriched tools count:', enrichedTools.length);
-        setTools(enrichedTools);
-        setLoading(false);
-      },
-      (error) => {
-        console.error('Error fetching tools:', error);
-        setLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
+    loadTools();
   }, []);
 
   return loading ? undefined : tools;
