@@ -1746,7 +1746,16 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                             <div class="step-tools-column">
                                 ${tools.map(tool => {
                                     const truncatedName = tool.name.length > 30 ? tool.name.substring(0, 30) + '...' : tool.name;
-                                    const bgColor = tool.color ? `background-color: ${tool.color}40;` : '';
+                                    // Convertir la couleur en RGBA avec opacité 0.25
+                                    let bgColor = '';
+                                    if (tool.color) {
+                                        const match = tool.color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+                                        if (match) {
+                                            bgColor = `background-color: rgba(${match[1]}, ${match[2]}, ${match[3]}, 0.25);`;
+                                        } else if (tool.color.startsWith('#')) {
+                                            bgColor = `background-color: ${tool.color}40;`;
+                                        }
+                                    }
                                     const refColor = tool.color ? tool.color : '#555';
                                     return `
                                     <div class="step-tool-box" style="${bgColor}">
