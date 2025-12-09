@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, AlertTriangle, Lightbulb, Save, Pencil, ArrowUp, ArrowDown, Video as VideoIcon, Play, Bold, Italic, Palette, List, ListOrdered, Smile } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, Save, Pencil, ArrowUp, ArrowDown, Video as VideoIcon, Play, Bold, Italic, Palette, List, ListOrdered, Smile } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -10,7 +10,7 @@ import { fetchConsumables } from '@/services/consumablesService';
 import { useTools } from '@/hooks/useTools';
 import ImageAnnotator from '@/components/phase/ImageAnnotator';
 import ToolSelector from '@/components/tools/ToolSelector';
-import type { Phase, DifficultyLevel, SubStep, SafetyNote, AnnotatedImage, Tool, Consumable, Annotation } from '@/types';
+import type { Phase, DifficultyLevel, SubStep, AnnotatedImage, Tool, Consumable, Annotation } from '@/types';
 import { toast } from 'sonner';
 
 interface PhaseItemProps {
@@ -202,61 +202,6 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
     setSteps(steps.map(s =>
       s.id === stepId
         ? { ...s, videos: (s.videos || []).filter(vid => vid.id !== videoId) }
-        : s
-    ));
-  };
-
-  const addStepTip = (stepId: string) => {
-    setSteps(steps.map(s =>
-      s.id === stepId
-        ? { ...s, tips: [...(s.tips || []), ''] }
-        : s
-    ));
-  };
-
-  const updateStepTip = (stepId: string, index: number, value: string) => {
-    setSteps(steps.map(s => {
-      if (s.id === stepId) {
-        const newTips = [...(s.tips || [])];
-        newTips[index] = value;
-        return { ...s, tips: newTips };
-      }
-      return s;
-    }));
-  };
-
-  const removeStepTip = (stepId: string, index: number) => {
-    setSteps(steps.map(s =>
-      s.id === stepId
-        ? { ...s, tips: (s.tips || []).filter((_, i) => i !== index) }
-        : s
-    ));
-  };
-
-  const addStepSafetyNote = (stepId: string) => {
-    setSteps(steps.map(s =>
-      s.id === stepId
-        ? { ...s, safetyNotes: [...(s.safetyNotes || []), { id: crypto.randomUUID(), content: '' }] }
-        : s
-    ));
-  };
-
-  const updateStepSafetyNote = (stepId: string, noteId: string, updates: Partial<SafetyNote>) => {
-    setSteps(steps.map(s => {
-      if (s.id === stepId) {
-        return {
-          ...s,
-          safetyNotes: (s.safetyNotes || []).map(n => n.id === noteId ? { ...n, ...updates } : n)
-        };
-      }
-      return s;
-    }));
-  };
-
-  const removeStepSafetyNote = (stepId: string, noteId: string) => {
-    setSteps(steps.map(s =>
-      s.id === stepId
-        ? { ...s, safetyNotes: (s.safetyNotes || []).filter(n => n.id !== noteId) }
         : s
     ));
   };
@@ -651,12 +596,6 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
                       onRemoveImage={(imageId) => removeStepImage(step.id, imageId)}
                       onAddVideo={(videos) => addStepVideo(step.id, videos)}
                       onRemoveVideo={(videoId) => removeStepVideo(step.id, videoId)}
-                      onAddTip={() => addStepTip(step.id)}
-                      onUpdateTip={(tipIdx, value) => updateStepTip(step.id, tipIdx, value)}
-                      onRemoveTip={(tipIdx) => removeStepTip(step.id, tipIdx)}
-                      onAddSafetyNote={() => addStepSafetyNote(step.id)}
-                      onUpdateSafetyNote={(noteId, updates) => updateStepSafetyNote(step.id, noteId, updates)}
-                      onRemoveSafetyNote={(noteId) => removeStepSafetyNote(step.id, noteId)}
                       onAddTool={(toolId, toolName, toolLocation, toolReference, toolColor, toolImageUrl) => addStepTool(step.id, toolId, toolName, toolLocation, toolReference, toolColor, toolImageUrl)}
                       onRemoveTool={(toolId) => removeStepTool(step.id, toolId)}
                       onMoveUp={() => moveStepUp(step.id)}
@@ -694,12 +633,6 @@ interface SubStepItemProps {
   onRemoveImage: (imageId: string) => void;
   onAddVideo: (videos: any[]) => void;
   onRemoveVideo: (videoId: string) => void;
-  onAddTip: () => void;
-  onUpdateTip: (index: number, value: string) => void;
-  onRemoveTip: (index: number) => void;
-  onAddSafetyNote: () => void;
-  onUpdateSafetyNote: (noteId: string, updates: Partial<SafetyNote>) => void;
-  onRemoveSafetyNote: (noteId: string) => void;
   onAddTool: (toolId: string, toolName: string, toolLocation?: string | null, toolReference?: string | null, toolColor?: string | null, toolImageUrl?: string | null) => void;
   onRemoveTool: (toolId: string) => void;
   onMoveUp: () => void;
@@ -719,12 +652,6 @@ function SubStepItem({
   onRemoveImage,
   onAddVideo,
   onRemoveVideo,
-  onAddTip,
-  onUpdateTip,
-  onRemoveTip,
-  onAddSafetyNote,
-  onUpdateSafetyNote,
-  onRemoveSafetyNote,
   onAddTool,
   onRemoveTool,
   onMoveUp,
@@ -1471,78 +1398,6 @@ function SubStepItem({
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Ajouter un outil ou consommable
-              </Button>
-            </div>
-          </div>
-
-          {/* Conseils */}
-          <div>
-            <label className="block text-xs font-medium text-gray-400 mb-2">
-              <Lightbulb className="h-3 w-3 inline mr-1 text-yellow-500" />
-              Conseils pratiques
-            </label>
-            <div className="space-y-2">
-              {(step.tips || []).map((tip, tipIdx) => (
-                <div key={tipIdx} className="flex gap-2">
-                  <Input
-                    value={tip}
-                    onChange={(e) => onUpdateTip(tipIdx, e.target.value)}
-                    placeholder="Conseil..."
-                    className="text-xs"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onRemoveTip(tipIdx)}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </div>
-              ))}
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={onAddTip}
-                className="text-xs"
-              >
-                <Plus className="h-3 w-3 mr-1" />
-                Ajouter un conseil
-              </Button>
-            </div>
-          </div>
-
-          {/* Sécurité */}
-          <div>
-            <label className="block text-xs font-medium text-gray-400 mb-2">
-              <AlertTriangle className="h-3 w-3 inline mr-1 text-orange-500" />
-              Consignes de sécurité
-            </label>
-            <div className="space-y-2">
-              {(step.safetyNotes || []).map((note) => (
-                <div key={note.id} className="flex gap-2">
-                  <Input
-                    value={note.content}
-                    onChange={(e) => onUpdateSafetyNote(note.id, { content: e.target.value })}
-                    placeholder="Consigne de sécurité..."
-                    className="text-xs"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onRemoveSafetyNote(note.id)}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </div>
-              ))}
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={onAddSafetyNote}
-                className="text-xs"
-              >
-                <Plus className="h-3 w-3 mr-1" />
-                Ajouter une consigne
               </Button>
             </div>
           </div>
