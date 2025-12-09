@@ -51,6 +51,7 @@ export default function ProcedureList({ procedures }: ProcedureListProps) {
     }
   };
 
+
   return (
     <div className="bg-background-surface rounded-xl border border-[#323232] overflow-hidden">
       <table className="table">

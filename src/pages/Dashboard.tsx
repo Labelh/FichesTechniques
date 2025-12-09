@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Filter, SortAsc, FileText, Plus } from 'lucide-react';
+import { Search, Filter, SortAsc, FileText, Plus, Download } from 'lucide-react';
 import { useProcedures } from '@/hooks/useProcedures';
 import { useAppStore } from '@/store/useAppStore';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import ProcedureList from '@/components/dashboard/ProcedureList';
 import FilterPanel from '@/components/dashboard/FilterPanel';
+import { exportProceduresToPDF } from '@/lib/pdfExport';
+import { toast } from 'sonner';
 
 export default function Dashboard() {
   const {
@@ -23,6 +25,15 @@ export default function Dashboard() {
     sortOption
   );
 
+  const handleExportPDF = () => {
+    if (!procedures || procedures.length === 0) {
+      toast.error('Aucune procédure à exporter');
+      return;
+    }
+    exportProceduresToPDF(procedures);
+    toast.success('PDF exporté avec succès');
+  };
+
   return (
     <div className="container-fluid">
       {/* Header */}
@@ -35,12 +46,18 @@ export default function Dashboard() {
             Gérez vos procédures techniques
           </p>
         </div>
-        <Link to="/procedures/new">
-          <Button size="lg">
-            <Plus className="mr-2" size={20} />
-            Nouvelle Procédure
+        <div className="flex gap-3">
+          <Button variant="secondary" size="lg" onClick={handleExportPDF}>
+            <Download className="mr-2" size={20} />
+            Exporter PDF
           </Button>
-        </Link>
+          <Link to="/procedures/new">
+            <Button size="lg">
+              <Plus className="mr-2" size={20} />
+              Nouvelle Procédure
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Search & Filters Bar */}
