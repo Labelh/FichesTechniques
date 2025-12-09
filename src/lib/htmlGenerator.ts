@@ -1759,7 +1759,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                                     const refColor = tool.color ? tool.color : '#555';
                                     return `
                                     <div class="step-tool-box" style="${bgColor}">
-                                        ${tool.imageUrl ? `<img src="${tool.imageUrl}" alt="${escapeHtml(tool.name)}" class="step-tool-image" loading="lazy" onclick="event.stopPropagation(); openImageModal('${tool.imageUrl}', '${escapeHtml(tool.name)}');">` : ''}
+                                        ${tool.imageUrl ? `<img src="${tool.imageUrl}" alt="${escapeHtml(tool.name)}" class="step-tool-image" loading="lazy" onclick="event.stopPropagation(); openImageModal('${tool.imageUrl.replace(/'/g, "\\'")}', '${escapeHtml(tool.name)}');">` : ''}
                                         <div class="step-tool-info">
                                             <div class="step-tool-name" title="${escapeHtml(tool.name)}">${escapeHtml(truncatedName)}</div>
                                             ${tool.reference ? `<div class="step-tool-ref" style="margin-top: 2px; color: ${refColor};">${escapeHtml(tool.reference)}</div>` : ''}
@@ -1834,11 +1834,16 @@ function generateImageCarousel(images: AnnotatedImage[], renderedImageUrls: Map<
 
   const carouselItems = images.map((img, index) => {
     const imageUrl = renderedImageUrls.get(img.imageId) || img.image?.url || (img.image?.blob ? URL.createObjectURL(img.image.blob) : '');
-    if (!imageUrl) return '';
+    if (!imageUrl) {
+      console.warn(`No image URL found for imageId: ${img.imageId}`);
+      return '';
+    }
+
+    console.log(`Carousel image ${index}: ${imageUrl.substring(0, 50)}...`);
 
     return `
       <div class="carousel-item" style="display: ${index === 0 ? 'flex' : 'none'};" data-description="${escapeHtml(img.description || '')}">
-        <img src="${imageUrl}" alt="${escapeHtml(img.description || 'Image')}" loading="lazy" onclick="openLightbox('${imageUrl}', '${escapeHtml(img.description || '')}')">
+        <img src="${imageUrl}" alt="${escapeHtml(img.description || 'Image')}" loading="lazy" onclick="openLightbox('${imageUrl.replace(/'/g, "\\'")}', '${escapeHtml(img.description || '')}')">
       </div>
     `;
   }).filter(Boolean).join('');
