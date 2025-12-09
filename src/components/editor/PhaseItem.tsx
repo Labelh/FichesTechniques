@@ -366,10 +366,7 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
       console.log('Steps AVANT cleanUndefined:', JSON.stringify(stepsToSave.map(s => ({
         id: s.id,
         title: s.title,
-        toolId: s.toolId,
-        toolName: s.toolName,
-        toolLocation: s.toolLocation,
-        toolReference: s.toolReference
+        tools: s.tools
       })), null, 2));
 
       // Nettoyer les valeurs undefined avant de sauvegarder
@@ -378,10 +375,7 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
       console.log('Steps APRÈS cleanUndefined:', JSON.stringify(cleanedSteps.map((s: any) => ({
         id: s.id,
         title: s.title,
-        toolId: s.toolId,
-        toolName: s.toolName,
-        toolLocation: s.toolLocation,
-        toolReference: s.toolReference
+        tools: s.tools
       })), null, 2));
 
       await updatePhase(procedureId, phase.id, {
