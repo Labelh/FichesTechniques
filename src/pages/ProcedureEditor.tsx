@@ -445,6 +445,14 @@ export default function ProcedureEditor() {
         }
       });
 
+      // Attendre que les outils soient chargés
+      if (!availableTools) {
+        toast.error('⏳ Les outils sont en cours de chargement, veuillez réessayer dans un instant');
+        console.log('=== FIN HTML EXPORT DEBUG ===');
+        return;
+      }
+
+      console.log('📦 Available tools for HTML export:', availableTools.length);
       await generateHTML(existingProcedure, phases, availableTools);
       toast.success('✅ Procédure exportée en HTML avec succès !');
       console.log('=== FIN HTML EXPORT DEBUG ===');

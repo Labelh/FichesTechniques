@@ -40,10 +40,31 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
     setPhaseNumber(phase.phaseNumber || index + 1);
     setDifficulty(phase.difficulty);
     setEstimatedTime(phase.estimatedTime);
-    setSteps(phase.steps || []);
+
+    // Enrichir les steps avec les imageUrl depuis availableTools
+    const enrichedSteps = (phase.steps || []).map(step => {
+      if (!step.tools || !availableTools) return step;
+
+      const enrichedTools = step.tools.map(tool => {
+        // Si l'outil a déjà une imageUrl, la garder
+        if (tool.imageUrl) return tool;
+
+        // Sinon, chercher l'imageUrl dans availableTools
+        const fullTool = availableTools.find(t => t.id === tool.id);
+        if (fullTool?.image?.url) {
+          return { ...tool, imageUrl: fullTool.image.url };
+        }
+
+        return tool;
+      });
+
+      return { ...step, tools: enrichedTools };
+    });
+
+    setSteps(enrichedSteps);
     // Réinitialiser le flag pour éviter que la synchro déclenche l'auto-save
     isInitialMount.current = true;
-  }, [phase.id, phase.title, phase.phaseNumber, phase.difficulty, phase.estimatedTime, phase.steps, index]);
+  }, [phase.id, phase.title, phase.phaseNumber, phase.difficulty, phase.estimatedTime, phase.steps, index, availableTools]);
 
   // Charger les consommables
   useEffect(() => {
