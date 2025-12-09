@@ -29,7 +29,7 @@ export default function ProcedureList({ procedures }: ProcedureListProps) {
     }
   };
 
-  // Calculer le temps total par pièce (somme des temps des phases)
+  // Calculer le temps total par pièce (somme des temps des phases) en centièmes de minutes
   const getTotalTime = (procedure: Procedure): string => {
     if (!procedure.phases || procedure.phases.length === 0) {
       return '-';
@@ -37,16 +37,7 @@ export default function ProcedureList({ procedures }: ProcedureListProps) {
     const totalMinutes = procedure.phases.reduce((sum, phase) => sum + (phase.estimatedTime || 0), 0);
     if (totalMinutes === 0) return '-';
 
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-
-    if (hours > 0 && minutes > 0) {
-      return `${hours}h${minutes.toString().padStart(2, '0')}`;
-    } else if (hours > 0) {
-      return `${hours}h`;
-    } else {
-      return `${minutes}min`;
-    }
+    return totalMinutes.toFixed(2);
   };
 
   // Obtenir la couleur de difficulté
