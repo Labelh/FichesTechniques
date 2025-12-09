@@ -65,6 +65,29 @@ export async function generateHTML(
     });
   }
 
+  // Créer une map des outils avec leurs images depuis globalTools
+  const toolImageMap = new Map<string, string>();
+  if (procedure.globalTools && procedure.globalTools.length > 0) {
+    procedure.globalTools.forEach(tool => {
+      if (tool.image?.url) {
+        toolImageMap.set(tool.id, tool.image.url);
+      }
+    });
+  }
+  console.log('Tool image map size:', toolImageMap.size);
+
+  // Enrichir les step.tools avec les imageUrl depuis globalTools
+  phases.forEach(phase => {
+    phase.steps.forEach(step => {
+      if (step.tools && step.tools.length > 0) {
+        step.tools = step.tools.map(tool => ({
+          ...tool,
+          imageUrl: tool.imageUrl || toolImageMap.get(tool.id) || null
+        }));
+      }
+    });
+  });
+
   // Rendre toutes les images avec annotations en base64
   console.log('Generating HTML for', allAnnotatedImages.length, 'images');
   const renderedImageUrls = await renderAllAnnotatedImagesToBase64(allAnnotatedImages);
