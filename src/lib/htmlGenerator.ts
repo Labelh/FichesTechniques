@@ -69,6 +69,15 @@ export async function generateHTML(
   // Créer une map des outils avec leurs images depuis availableTools ou globalTools
   const toolImageMap = new Map<string, string>();
   const toolsSource = availableTools || procedure.globalTools || [];
+  console.log('Available tools count:', toolsSource.length);
+  console.log('First 3 tools:', toolsSource.slice(0, 3).map((t: any) => ({
+    id: t.id,
+    name: t.name,
+    hasImage: !!t.image,
+    hasImageUrl: !!t.image?.url,
+    imageKeys: t.image ? Object.keys(t.image) : []
+  })));
+
   if (toolsSource && toolsSource.length > 0) {
     toolsSource.forEach((tool: any) => {
       if (tool.image?.url) {
