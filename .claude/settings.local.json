@@ -4,7 +4,8 @@
       "Bash(git add:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nFeat: Ajout boutons listes + palette horizontale\n\n- Ajout boutons liste à puces et liste numérotée dans éditeur description\n- Palette de couleurs sur 1 ligne (flex-nowrap)\n- Import List et ListOrdered de lucide-react\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git commit:*)",
-      "Bash(gh run list:*)"
+      "Bash(gh run list:*)",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "ask": []

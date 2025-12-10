@@ -13,7 +13,6 @@ import PhaseTemplateSelector from '@/components/editor/PhaseTemplateSelector';
 import ImageAnnotator from '@/components/phase/ImageAnnotator';
 import { toast } from 'sonner';
 import { generateHTML } from '@/lib/htmlGenerator';
-import { exportProcedureToPDF } from '@/lib/pdfProcedureExport';
 import type { DefectItem, AnnotatedImage, Annotation, VersionLog } from '@/types';
 
 export default function ProcedureEditor() {
@@ -463,25 +462,6 @@ export default function ProcedureEditor() {
     }
   };
 
-  const handleExportPDF = async () => {
-    if (!id || !existingProcedure) {
-      toast.error('Aucune procédure à exporter');
-      return;
-    }
-
-    try {
-      toast.info('📄 Génération du PDF en cours...');
-
-      const phases = existingProcedure.phases || [];
-
-      await exportProcedureToPDF(existingProcedure, phases);
-      toast.success('✅ Procédure exportée en PDF avec succès !');
-    } catch (error) {
-      console.error('Error exporting PDF:', error);
-      toast.error('Erreur lors de l\'export PDF');
-    }
-  };
-
   return (
     <div className="max-w-5xl mx-auto pb-20">
       {/* Header */}
@@ -496,16 +476,10 @@ export default function ProcedureEditor() {
         <div className="flex items-center gap-3">
           <div className="flex gap-2">
             {id && existingProcedure && (
-              <>
-                <Button variant="secondary" onClick={handleExportHTML}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Exporter HTML
-                </Button>
-                <Button variant="secondary" onClick={handleExportPDF}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Exporter PDF
-                </Button>
-              </>
+              <Button variant="secondary" onClick={handleExportHTML}>
+                <Download className="h-4 w-4 mr-2" />
+                Exporter HTML
+              </Button>
             )}
             <Button
               onClick={handleQuickSave}
