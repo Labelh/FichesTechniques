@@ -87,7 +87,6 @@ async function compressImage(file: File, maxSizeMB: number = 2): Promise<Blob> {
 
       // Compression progressive pour atteindre la taille cible
       const targetSize = maxSizeMB * 1024 * 1024;
-      let quality = 0.9;
       let blob: Blob | null = null;
 
       const tryCompress = (q: number): Promise<Blob | null> => {
