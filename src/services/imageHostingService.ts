@@ -49,14 +49,15 @@ interface ImgBBResponse {
 }
 
 /**
- * Compresse une image avant l'upload
+ * Compresse une image avant l'upload de manière progressive
+ * Réduit automatiquement la qualité jusqu'à atteindre la taille cible
  */
 async function compressImage(file: File, maxSizeMB: number = 2): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
 
-    img.onload = () => {
+    img.onload = async () => {
       const canvas = document.createElement('canvas');
       let width = img.width;
       let height = img.height;
@@ -84,36 +85,37 @@ async function compressImage(file: File, maxSizeMB: number = 2): Promise<Blob> {
 
       ctx.drawImage(img, 0, 0, width, height);
 
-      // Ajuster la qualité selon la taille cible
-      let quality = 0.8;
-      canvas.toBlob(
-        (blob) => {
-          URL.revokeObjectURL(url);
-          if (blob) {
-            // Si toujours trop gros, réduire la qualité
-            if (blob.size > maxSizeMB * 1024 * 1024) {
-              quality = 0.6;
-              canvas.toBlob(
-                (compressedBlob) => {
-                  if (compressedBlob) {
-                    resolve(compressedBlob);
-                  } else {
-                    resolve(blob);
-                  }
-                },
-                'image/jpeg',
-                quality
-              );
-            } else {
-              resolve(blob);
-            }
-          } else {
-            reject(new Error('Could not compress image'));
-          }
-        },
-        'image/jpeg',
-        quality
-      );
+      // Compression progressive pour atteindre la taille cible
+      const targetSize = maxSizeMB * 1024 * 1024;
+      let quality = 0.9;
+      let blob: Blob | null = null;
+
+      const tryCompress = (q: number): Promise<Blob | null> => {
+        return new Promise((res) => {
+          canvas.toBlob(
+            (b) => res(b),
+            'image/jpeg',
+            q
+          );
+        });
+      };
+
+      // Essayer différentes qualités jusqu'à atteindre la taille cible
+      for (let q = 0.9; q >= 0.5; q -= 0.1) {
+        blob = await tryCompress(q);
+        if (blob && blob.size <= targetSize) {
+          console.log(`Image compressée: ${(file.size / 1024 / 1024).toFixed(2)}MB → ${(blob.size / 1024 / 1024).toFixed(2)}MB (qualité: ${Math.round(q * 100)}%)`);
+          break;
+        }
+      }
+
+      URL.revokeObjectURL(url);
+
+      if (blob) {
+        resolve(blob);
+      } else {
+        reject(new Error('Could not compress image'));
+      }
     };
 
     img.onerror = () => {
@@ -160,11 +162,11 @@ export async function uploadImageToHost(file: File): Promise<string> {
       throw new Error('Image trop volumineuse (max 15 MB)');
     }
 
-    // Compresser l'image si nécessaire
+    // Compresser l'image si nécessaire (seuil abaissé à 1MB pour optimiser davantage)
     let imageToUpload: File | Blob = file;
-    if (file.size > 2 * 1024 * 1024) {
-      console.log('Compressing image...');
-      imageToUpload = await compressImage(file, 2);
+    if (file.size > 1 * 1024 * 1024) {
+      console.log('Compression de l\'image en cours...');
+      imageToUpload = await compressImage(file, 1.5);
     }
 
     // Convertir en base64

@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Filter, SortAsc, FileText, Plus, Download } from 'lucide-react';
 import { useProcedures } from '@/hooks/useProcedures';
+import { useDebounce } from '@/hooks/useDebounce';
 import { useAppStore } from '@/store/useAppStore';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -19,6 +20,22 @@ export default function Dashboard() {
   } = useAppStore();
 
   const [showFilters, setShowFilters] = useState(false);
+
+  // État local pour le champ de recherche (mis à jour immédiatement)
+  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
+
+  // Valeur debounced (mise à jour après 300ms sans changement)
+  const debouncedSearchQuery = useDebounce(localSearchQuery, 300);
+
+  // Synchroniser la valeur debounced avec le store
+  useEffect(() => {
+    setSearchQuery(debouncedSearchQuery);
+  }, [debouncedSearchQuery, setSearchQuery]);
+
+  // Synchroniser l'état local avec le store (pour les changements externes)
+  useEffect(() => {
+    setLocalSearchQuery(searchQuery);
+  }, [searchQuery]);
 
   const procedures = useProcedures(
     { ...searchFilters, query: searchQuery },
@@ -70,8 +87,8 @@ export default function Dashboard() {
               <Input
                 type="text"
                 placeholder="Rechercher une procédure..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={localSearchQuery}
+                onChange={(e) => setLocalSearchQuery(e.target.value)}
                 className="pl-10"
               />
             </div>

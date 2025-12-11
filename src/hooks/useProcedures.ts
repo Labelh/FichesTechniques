@@ -65,13 +65,66 @@ export function useProcedures(filters?: SearchFilters, sort?: SortOption) {
           results = results.filter(p => filters.priority!.includes(p.priority));
         }
 
+        // Filtre par difficulté des phases
+        if (filters?.difficulty && filters.difficulty.length > 0) {
+          results = results.filter(p => {
+            if (!p.phases || p.phases.length === 0) return false;
+            return p.phases.some((phase: any) =>
+              filters.difficulty!.includes(phase.difficulty)
+            );
+          });
+        }
+
+        // Recherche avancée dans tous les champs
         if (filters?.query) {
           const searchLower = filters.query.toLowerCase();
-          results = results.filter(p =>
-            p.title.toLowerCase().includes(searchLower) ||
-            (p.description && p.description.toLowerCase().includes(searchLower)) ||
-            (p.reference && p.reference.toLowerCase().includes(searchLower))
-          );
+          results = results.filter(p => {
+            // Recherche dans les champs principaux
+            if (
+              p.title.toLowerCase().includes(searchLower) ||
+              (p.description && p.description.toLowerCase().includes(searchLower)) ||
+              (p.reference && p.reference.toLowerCase().includes(searchLower)) ||
+              (p.designation && p.designation.toLowerCase().includes(searchLower))
+            ) {
+              return true;
+            }
+
+            // Recherche dans les phases
+            if (p.phases && p.phases.length > 0) {
+              return p.phases.some((phase: any) => {
+                // Recherche dans le titre et la description de la phase
+                if (
+                  (phase.title && phase.title.toLowerCase().includes(searchLower)) ||
+                  (phase.description && phase.description.toLowerCase().includes(searchLower))
+                ) {
+                  return true;
+                }
+
+                // Recherche dans les étapes de la phase
+                if (phase.steps && phase.steps.length > 0) {
+                  return phase.steps.some((step: any) => {
+                    if (step.content && step.content.toLowerCase().includes(searchLower)) {
+                      return true;
+                    }
+
+                    // Recherche dans les sous-étapes
+                    if (step.substeps && step.substeps.length > 0) {
+                      return step.substeps.some((substep: any) =>
+                        (substep.description && substep.description.toLowerCase().includes(searchLower)) ||
+                        (substep.expectedResult && substep.expectedResult.toLowerCase().includes(searchLower))
+                      );
+                    }
+
+                    return false;
+                  });
+                }
+
+                return false;
+              });
+            }
+
+            return false;
+          });
         }
 
         // Tri
@@ -104,7 +157,7 @@ export function useProcedures(filters?: SearchFilters, sort?: SortOption) {
     });
 
     return () => unsubscribeProcedures();
-  }, [filters?.status, filters?.categories, filters?.tags, filters?.priority, filters?.query, sort]);
+  }, [filters?.status, filters?.categories, filters?.tags, filters?.priority, filters?.difficulty, filters?.query, sort]);
 
   return loading ? undefined : procedures;
 }

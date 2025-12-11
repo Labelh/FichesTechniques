@@ -1,13 +1,16 @@
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { initializeFirestore } from '@/lib/firestore';
 import { testFirestoreConnection } from './test-firestore';
 import Layout from './components/layout/Layout';
-import Dashboard from './pages/Dashboard';
-import ProcedureEditor from './pages/ProcedureEditor';
-import ToolsLibrary from './pages/ToolsLibrary';
-import Templates from './pages/Templates';
+import LoadingSpinner from './components/ui/LoadingSpinner';
 import NotFound from './pages/NotFound';
+
+// Lazy loading des pages principales pour réduire la taille du bundle initial
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const ProcedureEditor = lazy(() => import('./pages/ProcedureEditor'));
+const ToolsLibrary = lazy(() => import('./pages/ToolsLibrary'));
+const Templates = lazy(() => import('./pages/Templates'));
 
 function App() {
   // Activer le mode sombre par défaut et initialiser Firestore
@@ -29,7 +32,7 @@ function App() {
   }, []);
 
   return (
-    <>
+    <Suspense fallback={<LoadingSpinner />}>
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
@@ -40,7 +43,7 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
-    </>
+    </Suspense>
   );
 }
 

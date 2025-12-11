@@ -8,15 +8,19 @@ export default function FilterPanel() {
   const categories = useCategories();
 
   const difficulties = [
-    'very_easy',
-    'easy',
-    'medium',
-    'hard',
-    'very_hard',
-    'expert',
+    { value: 'trainee', label: 'Stagiaire', color: 'bg-blue-500' },
+    { value: 'easy', label: 'Facile', color: 'bg-green-500' },
+    { value: 'medium', label: 'Moyen', color: 'bg-yellow-500' },
+    { value: 'hard', label: 'Difficile', color: 'bg-red-500' },
   ];
 
-  const statuses = ['draft', 'in_progress', 'in_review', 'completed', 'archived'];
+  const statuses = [
+    { value: 'draft', label: 'Brouillon' },
+    { value: 'in_progress', label: 'En cours' },
+    { value: 'in_review', label: 'En révision' },
+    { value: 'completed', label: 'Terminé' },
+    { value: 'archived', label: 'Archivé' },
+  ];
 
   const toggleFilter = (key: string, value: any) => {
     const current = (searchFilters as any)[key] || [];
@@ -39,12 +43,12 @@ export default function FilterPanel() {
         <div className="flex flex-wrap gap-2">
           {statuses.map((status) => (
             <Badge
-              key={status}
-              variant={isActive('status', status) ? 'default' : 'secondary'}
+              key={status.value}
+              variant={isActive('status', status.value) ? 'default' : 'secondary'}
               className="cursor-pointer"
-              onClick={() => toggleFilter('status', status)}
+              onClick={() => toggleFilter('status', status.value)}
             >
-              {status}
+              {status.label}
             </Badge>
           ))}
         </div>
@@ -56,12 +60,13 @@ export default function FilterPanel() {
         <div className="flex flex-wrap gap-2">
           {difficulties.map((diff) => (
             <Badge
-              key={diff}
-              variant={isActive('difficulty', diff) ? 'default' : 'secondary'}
-              className="cursor-pointer"
-              onClick={() => toggleFilter('difficulty', diff)}
+              key={diff.value}
+              variant={isActive('difficulty', diff.value) ? 'default' : 'secondary'}
+              className="cursor-pointer flex items-center gap-1"
+              onClick={() => toggleFilter('difficulty', diff.value)}
             >
-              {diff}
+              <div className={`w-2 h-2 rounded-full ${diff.color}`}></div>
+              {diff.label}
             </Badge>
           ))}
         </div>
