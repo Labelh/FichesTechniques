@@ -2120,7 +2120,7 @@ function generateImageCarousel(images: AnnotatedImage[], renderedImageUrls: Map<
   }
 
   // Générer les miniatures
-  const thumbnails = images.map((img, index) => {
+  const thumbnails = images.map((_img, index) => {
     const imageUrl = imageUrls[index];
     if (!imageUrl) return '';
     return `
@@ -2200,10 +2200,10 @@ function convertToFileUrl(path: string): string {
 /**
  * Génère un carrousel de vidéos - ouvre directement avec le lecteur système
  */
-function generateVideoCarousel(videos: any[], carouselId: string): string {
+function generateVideoCarousel(videos: any[], _carouselId: string): string {
   if (videos.length === 0) return '';
 
-  const videoButtons = videos.map((video, index) => {
+  const videoButtons = videos.map((video) => {
     const videoTitle = video.name || video.title || 'Vidéo';
     const videoUrl = convertToFileUrl(video.url);
     return `
