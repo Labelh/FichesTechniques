@@ -5,10 +5,11 @@ import type { Procedure, DifficultyLevel } from '@/types';
 // Obtenir les couleurs RGB pour le PDF
 const getDifficultyRGB = (difficulty: DifficultyLevel): [number, number, number] => {
   switch (difficulty) {
-    case 'trainee': return [59, 130, 246]; // blue-500
+    case 'trainee': return [59, 130, 246]; // blue-500 (Apprenti)
     case 'easy': return [34, 197, 94];     // green-500
     case 'medium': return [234, 179, 8];   // yellow-500
     case 'hard': return [239, 68, 68];     // red-500
+    case 'control': return [249, 115, 22]; // orange-500
     default: return [107, 114, 128];       // gray-500
   }
 };

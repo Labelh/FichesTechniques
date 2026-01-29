@@ -47,6 +47,7 @@ export default function ProcedureList({ procedures }: ProcedureListProps) {
       case 'easy': return 'bg-green-500';
       case 'medium': return 'bg-yellow-500';
       case 'hard': return 'bg-red-500';
+      case 'control': return 'bg-orange-500';
       default: return 'bg-gray-500';
     }
   };

@@ -66,8 +66,8 @@ export async function generateHTML(
     });
   }
 
-  // Créer une map des outils avec leurs images depuis availableTools ou globalTools
-  const toolImageMap = new Map<string, string>();
+  // Créer une map des outils avec leurs données depuis availableTools ou globalTools
+  const toolDataMap = new Map<string, { imageUrl?: string; location?: string }>();
   const toolsSource = availableTools || procedure.globalTools || [];
   console.log('Available tools count:', toolsSource.length);
   console.log('First 3 tools:', toolsSource.slice(0, 3).map((t: any) => ({
@@ -75,27 +75,33 @@ export async function generateHTML(
     name: t.name,
     hasImage: !!t.image,
     hasImageUrl: !!t.image?.url,
+    location: t.location,
     imageKeys: t.image ? Object.keys(t.image) : []
   })));
 
   if (toolsSource && toolsSource.length > 0) {
     toolsSource.forEach((tool: any) => {
-      if (tool.image?.url) {
-        toolImageMap.set(tool.id, tool.image.url);
-      }
+      toolDataMap.set(tool.id, {
+        imageUrl: tool.image?.url || null,
+        location: tool.location || null
+      });
     });
   }
-  console.log('Tool image map size:', toolImageMap.size);
+  console.log('Tool data map size:', toolDataMap.size);
   console.log('Tools source:', availableTools ? 'availableTools' : 'globalTools');
 
-  // Enrichir les step.tools avec les imageUrl depuis globalTools
+  // Enrichir les step.tools avec les imageUrl et location depuis globalTools
   phases.forEach(phase => {
     phase.steps.forEach(step => {
       if (step.tools && step.tools.length > 0) {
-        step.tools = step.tools.map(tool => ({
-          ...tool,
-          imageUrl: tool.imageUrl || toolImageMap.get(tool.id) || null
-        }));
+        step.tools = step.tools.map(tool => {
+          const toolData = toolDataMap.get(tool.id);
+          return {
+            ...tool,
+            imageUrl: tool.imageUrl || toolData?.imageUrl || null,
+            location: tool.location || toolData?.location || null
+          };
+        });
       }
     });
   });
@@ -688,22 +694,22 @@ export async function generateHTML(
         }
 
         .step-tool-box {
-            border-radius: 8px;
-            padding: 12px;
+            border-radius: 6px;
+            padding: 8px 10px;
             background: #fafafa;
             max-width: 100%;
             word-wrap: break-word;
             overflow-wrap: break-word;
             display: flex;
-            gap: 12px;
+            gap: 10px;
             align-items: center;
         }
 
         .step-tool-image {
-            width: 100px;
-            height: 100px;
+            width: 70px;
+            height: 70px;
             object-fit: cover;
-            border-radius: 8px;
+            border-radius: 6px;
             border: 2px solid #d1d5db;
             cursor: pointer;
             transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
@@ -771,15 +777,15 @@ export async function generateHTML(
 
         .step-tool-name {
             font-weight: 600;
-            font-size: 1rem;
+            font-size: 0.85rem;
             color: #2c3e50;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
 
         .step-tool-info-label {
             font-weight: 600;
-            font-size: 1rem;
-            margin-bottom: 8px;
+            font-size: 0.85rem;
+            margin-bottom: 6px;
             color: #1a1a1a;
         }
 
@@ -787,11 +793,11 @@ export async function generateHTML(
             display: inline-block;
             background: #e5e7eb;
             color: #4b5563;
-            padding: 4px 12px;
-            border-radius: 6px;
-            font-size: 0.85rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
             font-weight: 500;
-            margin-top: 6px;
+            margin-top: 4px;
         }
 
         .step-details-grid {
@@ -839,14 +845,14 @@ export async function generateHTML(
         .step-tool-ref {
             color: rgb(249, 55, 5);
             font-weight: 600;
-            font-size: 0.95rem;
-            margin-top: 6px;
+            font-size: 0.8rem;
+            margin-top: 2px;
         }
 
         .step-tool-location {
             color: #666;
-            font-size: 0.9rem;
-            margin-top: 4px;
+            font-size: 0.75rem;
+            margin-top: 2px;
         }
 
         .step-tool-details {
@@ -1006,7 +1012,6 @@ export async function generateHTML(
         /* Carrousels */
         .carousel-container {
             position: relative;
-            margin-top: 24px;
             background: white;
             border-radius: 8px;
             overflow: hidden;
@@ -1459,21 +1464,28 @@ export async function generateHTML(
             const state = carouselStates.get(carouselId);
             const itemsContainer = document.getElementById('items-' + carouselId);
             const items = itemsContainer.querySelectorAll('.carousel-item');
-            const indicators = document.querySelectorAll('#carousel-' + carouselId + ' .carousel-indicator');
+            const thumbnailsContainer = document.getElementById('thumbnails-' + carouselId);
+            const thumbnails = thumbnailsContainer ? thumbnailsContainer.querySelectorAll('.carousel-thumbnail') : [];
             const counter = document.getElementById('counter-' + carouselId);
             const descElement = document.getElementById('desc-' + carouselId);
 
             // Cacher l'élément actuel
             items[state.currentIndex].style.display = 'none';
-            indicators[state.currentIndex].classList.remove('active');
+            if (thumbnails[state.currentIndex]) {
+                thumbnails[state.currentIndex].classList.remove('active');
+                thumbnails[state.currentIndex].style.borderColor = '#e0e0e0';
+            }
 
             // Calculer le nouvel index
             state.currentIndex = (state.currentIndex + direction + items.length) % items.length;
 
             // Afficher le nouvel élément
             items[state.currentIndex].style.display = 'flex';
-            indicators[state.currentIndex].classList.add('active');
-            counter.textContent = state.currentIndex + 1;
+            if (thumbnails[state.currentIndex]) {
+                thumbnails[state.currentIndex].classList.add('active');
+                thumbnails[state.currentIndex].style.borderColor = 'var(--primary-color)';
+            }
+            if (counter) counter.textContent = state.currentIndex + 1;
 
             // Mettre à jour la description
             if (descElement) {
@@ -1487,21 +1499,28 @@ export async function generateHTML(
             const state = carouselStates.get(carouselId);
             const itemsContainer = document.getElementById('items-' + carouselId);
             const items = itemsContainer.querySelectorAll('.carousel-item');
-            const indicators = document.querySelectorAll('#carousel-' + carouselId + ' .carousel-indicator');
+            const thumbnailsContainer = document.getElementById('thumbnails-' + carouselId);
+            const thumbnails = thumbnailsContainer ? thumbnailsContainer.querySelectorAll('.carousel-thumbnail') : [];
             const counter = document.getElementById('counter-' + carouselId);
             const descElement = document.getElementById('desc-' + carouselId);
 
             // Cacher l'élément actuel
             items[state.currentIndex].style.display = 'none';
-            indicators[state.currentIndex].classList.remove('active');
+            if (thumbnails[state.currentIndex]) {
+                thumbnails[state.currentIndex].classList.remove('active');
+                thumbnails[state.currentIndex].style.borderColor = '#e0e0e0';
+            }
 
             // Aller à l'index demandé
             state.currentIndex = index;
 
             // Afficher le nouvel élément
             items[state.currentIndex].style.display = 'flex';
-            indicators[state.currentIndex].classList.add('active');
-            counter.textContent = state.currentIndex + 1;
+            if (thumbnails[state.currentIndex]) {
+                thumbnails[state.currentIndex].classList.add('active');
+                thumbnails[state.currentIndex].style.borderColor = 'var(--primary-color)';
+            }
+            if (counter) counter.textContent = state.currentIndex + 1;
 
             // Mettre à jour la description
             if (descElement) {
@@ -1584,6 +1603,203 @@ export async function generateHTML(
         <span class="image-modal-close" onclick="closeImageModal()">&times;</span>
         <img id="modal-image" alt="">
     </div>
+
+    <!-- Modal pour le lecteur vidéo -->
+    <div id="video-modal" class="video-modal" onclick="closeVideoPlayer(event)">
+        <div class="video-modal-content" onclick="event.stopPropagation()">
+            <div class="video-modal-header">
+                <span id="video-modal-title" class="video-modal-title"></span>
+                <button class="video-modal-close" onclick="closeVideoPlayer(event)">&times;</button>
+            </div>
+            <div class="video-modal-body">
+                <video id="video-player" controls style="width: 100%; max-height: 75vh; background: #000;">
+                    Votre navigateur ne supporte pas la lecture vidéo.
+                </video>
+                <div id="video-error" style="display: none;"></div>
+            </div>
+            <div id="video-path-container" class="video-path-container">
+                <span id="video-path-text" class="video-path-text"></span>
+                <button onclick="copyVideoPath()" class="video-copy-btn" title="Copier le chemin">📋</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .video-modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+        }
+        .video-modal.active {
+            display: flex;
+        }
+        .video-modal-content {
+            background: #1a1a1a;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 90%;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+        .video-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            background: #252525;
+            border-bottom: 1px solid #333;
+        }
+        .video-modal-title {
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .video-modal-close {
+            background: transparent;
+            border: none;
+            color: #999;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 0 8px;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+        .video-modal-close:hover {
+            color: white;
+        }
+        .video-modal-body {
+            padding: 0;
+            background: #000;
+        }
+        .video-path-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: #252525;
+            border-top: 1px solid #333;
+        }
+        .video-path-text {
+            flex: 1;
+            font-size: 0.8rem;
+            color: #888;
+            word-break: break-all;
+            font-family: monospace;
+        }
+        .video-copy-btn {
+            background: #333;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        .video-copy-btn:hover {
+            background: #444;
+        }
+    </style>
+
+    <script>
+        var currentVideoPath = '';
+
+        function openVideoPlayer(videoPath, videoTitle) {
+            var modal = document.getElementById('video-modal');
+            var player = document.getElementById('video-player');
+            var title = document.getElementById('video-modal-title');
+            var errorDiv = document.getElementById('video-error');
+            var pathText = document.getElementById('video-path-text');
+
+            currentVideoPath = videoPath;
+
+            // Reset
+            if (errorDiv) {
+                errorDiv.style.display = 'none';
+                errorDiv.innerHTML = '';
+            }
+            player.style.display = 'block';
+
+            title.textContent = videoTitle || 'Vidéo';
+            pathText.textContent = videoPath;
+            player.src = videoPath;
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+
+            // Tenter la lecture
+            player.load();
+            player.play().catch(function(e) {
+                console.log('Lecture automatique bloquée:', e);
+            });
+        }
+
+        function closeVideoPlayer(event) {
+            if (event && event.target.classList.contains('video-modal-close')) {
+                // Clic sur le bouton fermer
+            } else if (event && event.target.id !== 'video-modal') {
+                return;
+            }
+
+            var modal = document.getElementById('video-modal');
+            var player = document.getElementById('video-player');
+
+            player.pause();
+            player.src = '';
+            modal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function copyVideoPath() {
+            navigator.clipboard.writeText(currentVideoPath).then(function() {
+                var btn = document.querySelector('.video-copy-btn');
+                var original = btn.textContent;
+                btn.textContent = '✓';
+                setTimeout(function() { btn.textContent = original; }, 1500);
+            });
+        }
+
+        // Gestion des erreurs vidéo
+        document.addEventListener('DOMContentLoaded', function() {
+            var player = document.getElementById('video-player');
+            if (player) {
+                player.addEventListener('error', function(e) {
+                    var errorDiv = document.getElementById('video-error');
+                    if (errorDiv && currentVideoPath) {
+                        player.style.display = 'none';
+                        errorDiv.innerHTML =
+                            '<div style="text-align: center; padding: 40px; color: #fff;">' +
+                            '<div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>' +
+                            '<div style="font-size: 1.1rem; margin-bottom: 12px;">Impossible de lire la vidéo</div>' +
+                            '<div style="font-size: 0.9rem; color: #aaa; margin-bottom: 20px;">Le navigateur ne peut pas accéder au fichier.</div>' +
+                            '<div style="font-size: 0.85rem; color: #888; margin-bottom: 20px;">💡 Copiez le chemin ci-dessous et collez-le dans l\\'explorateur Windows pour ouvrir la vidéo.</div>' +
+                            '</div>';
+                        errorDiv.style.display = 'block';
+                    }
+                });
+            }
+        });
+
+        // Fermer avec Échap
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                var modal = document.getElementById('video-modal');
+                if (modal && modal.classList.contains('active')) {
+                    var player = document.getElementById('video-player');
+                    player.pause();
+                    player.src = '';
+                    modal.classList.remove('active');
+                    document.body.style.overflow = 'auto';
+                }
+            }
+        });
+    </script>
 </body>
 </html>`;
 
@@ -1704,8 +1920,8 @@ function generateDefects(procedure: Procedure, renderedImageUrls: Map<string, st
  */
 function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, string>): string {
   const phasesHTML = phases.map((phase, phaseIndex) => {
-    const difficultyColor = phase.difficulty === 'trainee' ? '#3b82f6' : phase.difficulty === 'easy' ? '#10b981' : phase.difficulty === 'medium' ? '#eab308' : phase.difficulty === 'hard' ? '#ef4444' : '#999';
-    const difficultyLabel = phase.difficulty === 'trainee' ? 'Stagiaire' : phase.difficulty === 'easy' ? 'Facile' : phase.difficulty === 'medium' ? 'Moyen' : phase.difficulty === 'hard' ? 'Difficile' : phase.difficulty;
+    const difficultyColor = phase.difficulty === 'trainee' ? '#3b82f6' : phase.difficulty === 'easy' ? '#10b981' : phase.difficulty === 'medium' ? '#eab308' : phase.difficulty === 'hard' ? '#ef4444' : phase.difficulty === 'control' ? '#f97316' : '#999';
+    const difficultyLabel = phase.difficulty === 'trainee' ? 'Apprenti' : phase.difficulty === 'easy' ? 'Facile' : phase.difficulty === 'medium' ? 'Moyen' : phase.difficulty === 'hard' ? 'Difficile' : phase.difficulty === 'control' ? 'Contrôle' : phase.difficulty;
     const hoverColor = difficultyColor + '15'; // Couleur de difficulté avec opacité faible (~8%)
     return `
     <div class="phase" id="phase-${phaseIndex + 1}">
@@ -1718,7 +1934,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                 ${phase.estimatedTime ? `<span class="phase-time-badge">${phase.estimatedTime} min/pièce</span>` : ''}
             </div>
         </div>
-        <div class="phase-content collapsed" id="phase-${phaseIndex + 1}-content">
+        <div class="phase-content" id="phase-${phaseIndex + 1}-content">
 
         ${phase.steps && phase.steps.length > 0 ? `
         <div class="steps">
@@ -1797,8 +2013,8 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                                         ${tool.imageUrl ? `<img src="${tool.imageUrl}" alt="${escapeHtml(tool.name)}" class="step-tool-image" loading="lazy" onclick="event.stopPropagation(); openImageModal('${tool.imageUrl.replace(/'/g, "\\'")}', '${escapeHtml(tool.name)}');">` : ''}
                                         <div class="step-tool-info">
                                             <div class="step-tool-name" title="${escapeHtml(tool.name)}">${escapeHtml(truncatedName)}</div>
-                                            ${tool.reference ? `<div class="step-tool-ref" style="margin-top: 2px; color: ${refColor};">${escapeHtml(tool.reference)}</div>` : ''}
-                                            ${tool.location ? `<div class="step-tool-location-badge" style="margin-top: 6px;">${escapeHtml(tool.location)}</div>` : ''}
+                                            ${tool.reference ? `<div class="step-tool-ref" style="color: ${refColor};">${escapeHtml(tool.reference)}</div>` : ''}
+                                            ${tool.location ? `<div class="step-tool-location" style="color: #666; font-size: 0.8rem; margin-top: 2px;">${escapeHtml(tool.location)}</div>` : ''}
                                         </div>
                                     </div>
                                     `;
@@ -1816,17 +2032,23 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                 ${(step.images && step.images.length > 0) || (step.videos && step.videos.length > 0) ? `
                 <div style="margin-top: 20px; display: flex; gap: 20px; align-items: flex-start;">
                     ${step.images && step.images.length > 0 ? `
-                    <div style="flex: ${step.videos && step.videos.length > 0 ? '4' : '1'};">
-                        <div style="font-size: 1.1rem; font-weight: 600; color: #444; margin-bottom: 12px;">Photo</div>
+                    <div style="flex: 1;">
                         ${generateImageCarousel(step.images, renderedImageUrls, `phase-${phaseIndex + 1}-step-${stepIndex + 1}`)}
                     </div>
                     ` : ''}
 
                     ${step.videos && step.videos.length > 0 ? `
-                    <div style="flex: ${step.images && step.images.length > 0 ? '1' : '1'};">
+                    <div style="width: 300px; flex-shrink: 0;">
                         ${generateVideoCarousel(step.videos, `phase-${phaseIndex + 1}-step-${stepIndex + 1}`)}
+                        ${step.documents && step.documents.length > 0 ? generateDocumentSection(step.documents) : ''}
                     </div>
                     ` : ''}
+                </div>
+                ` : ''}
+
+                ${step.documents && step.documents.length > 0 && !(step.videos && step.videos.length > 0) ? `
+                <div style="margin-top: 20px;">
+                    ${generateDocumentSection(step.documents)}
                 </div>
                 ` : ''}
                 </div>
@@ -1862,17 +2084,19 @@ function sanitizeFilename(filename: string): string {
 }
 
 /**
- * Génère un carrousel d'images
+ * Génère un carrousel d'images avec miniatures à gauche
  */
 function generateImageCarousel(images: AnnotatedImage[], renderedImageUrls: Map<string, string>, carouselId: string): string {
   if (images.length === 0) return '';
 
+  // Générer les URLs des images
+  const imageUrls = images.map((img) => {
+    return renderedImageUrls.get(img.imageId) || img.image?.url || (img.image?.blob ? URL.createObjectURL(img.image.blob) : '');
+  }).filter(Boolean);
+
   const carouselItems = images.map((img, index) => {
-    const imageUrl = renderedImageUrls.get(img.imageId) || img.image?.url || (img.image?.blob ? URL.createObjectURL(img.image.blob) : '');
-    if (!imageUrl) {
-      console.warn(`No image URL found for imageId: ${img.imageId}`);
-      return '';
-    }
+    const imageUrl = imageUrls[index];
+    if (!imageUrl) return '';
 
     console.log(`Carousel image ${index}: ${imageUrl.substring(0, 50)}...`);
 
@@ -1884,78 +2108,127 @@ function generateImageCarousel(images: AnnotatedImage[], renderedImageUrls: Map<
   }).filter(Boolean).join('');
 
   if (images.length === 1) {
+    const isDefectSingle = carouselId.startsWith('defect-');
     return `
-      <div class="carousel-container">
-        ${carouselItems}
+      <div>
+        ${isDefectSingle ? '' : '<div style="font-size: 1.1rem; font-weight: 600; color: #444; margin-bottom: 12px;">Photo</div>'}
+        <div class="carousel-container">
+          ${carouselItems}
+        </div>
       </div>
     `;
   }
 
-  const indicators = images.map((_, index) =>
-    `<span class="carousel-indicator ${index === 0 ? 'active' : ''}" onclick="goToSlide('${carouselId}', ${index})"></span>`
-  ).join('');
+  // Générer les miniatures
+  const thumbnails = images.map((img, index) => {
+    const imageUrl = imageUrls[index];
+    if (!imageUrl) return '';
+    return `
+      <div class="carousel-thumbnail ${index === 0 ? 'active' : ''}" onclick="goToSlide('${carouselId}', ${index})" style="
+        width: 60px;
+        height: 60px;
+        border-radius: 6px;
+        overflow: hidden;
+        cursor: pointer;
+        border: 2px solid ${index === 0 ? 'var(--primary-color)' : '#e0e0e0'};
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+      " data-index="${index}">
+        <img src="${imageUrl}" alt="Miniature ${index + 1}" style="width: 100%; height: 100%; object-fit: cover;">
+      </div>
+    `;
+  }).join('');
+
+  // Ne pas afficher le titre "Photo" pour la défauthèque
+  const isDefect = carouselId.startsWith('defect-');
+  const photoTitle = isDefect ? '' : '<div style="font-size: 1.1rem; font-weight: 600; color: #444; margin-bottom: 12px;">Photo</div>';
 
   return `
-    <div class="carousel-container" id="carousel-${carouselId}">
-      <div class="carousel-wrapper">
-        <div class="carousel-items" id="items-${carouselId}">
-          ${carouselItems}
+    <div>
+      ${photoTitle}
+      <div class="carousel-with-thumbnails" style="display: flex; gap: 16px; align-items: flex-start;">
+        <div class="carousel-thumbnails" id="thumbnails-${carouselId}" style="display: flex; flex-direction: column; gap: 8px; max-height: 500px; overflow-y: auto;">
+          ${thumbnails}
         </div>
-      </div>
-      <div class="carousel-controls">
-        <button class="carousel-button prev" onclick="changeSlide('${carouselId}', -1)">‹</button>
-        <button class="carousel-button next" onclick="changeSlide('${carouselId}', 1)">›</button>
-      </div>
-      <div class="carousel-indicators">
-        ${indicators}
+        <div style="flex: 1;">
+          <div class="carousel-container" id="carousel-${carouselId}">
+            <div class="carousel-wrapper">
+              <div class="carousel-items" id="items-${carouselId}">
+                ${carouselItems}
+              </div>
+            </div>
+            <div class="carousel-controls">
+              <button class="carousel-button prev" onclick="changeSlide('${carouselId}', -1)">‹</button>
+              <button class="carousel-button next" onclick="changeSlide('${carouselId}', 1)">›</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   `;
 }
 
 /**
- * Génère un carrousel de vidéos
+ * Convertit un chemin Windows/UNC en URL file:/// compatible navigateur
  */
-function generateVideoCarousel(videos: any[], _carouselId: string): string {
+function convertToFileUrl(path: string): string {
+  if (!path) return path;
+
+  // Si c'est déjà une URL (http, https, file), ne pas modifier
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('file://')) {
+    return path;
+  }
+
+  // Chemin UNC Windows (\\NAS\folder\file.mp4)
+  if (path.startsWith('\\\\')) {
+    // Convertir \\NAS\folder\file.mp4 en file://///NAS/folder/file.mp4
+    const converted = 'file:///' + path.replace(/\\/g, '/');
+    return converted;
+  }
+
+  // Chemin Windows absolu (C:\folder\file.mp4)
+  if (/^[A-Za-z]:/.test(path)) {
+    // Convertir C:\folder\file.mp4 en file:///C:/folder/file.mp4
+    const converted = 'file:///' + path.replace(/\\/g, '/');
+    return converted;
+  }
+
+  // Chemin relatif ou autre, retourner tel quel
+  return path;
+}
+
+/**
+ * Génère un carrousel de vidéos - ouvre directement avec le lecteur système
+ */
+function generateVideoCarousel(videos: any[], carouselId: string): string {
   if (videos.length === 0) return '';
 
-  const videoButtons = videos.map((video) => {
-    const videoTitle = video.name || video.title || 'Vidéo YouTube';
+  const videoButtons = videos.map((video, index) => {
+    const videoTitle = video.name || video.title || 'Vidéo';
+    const videoUrl = convertToFileUrl(video.url);
     return `
-      <a href="${escapeHtml(video.url)}" target="_blank" rel="noopener noreferrer" class="video-button" style="
+      <button type="button" onclick="openVideoPlayer('${escapeHtml(videoUrl).replace(/'/g, "\\'")}', '${escapeHtml(videoTitle).replace(/'/g, "\\'")}')" class="video-button" style="
         display: inline-flex;
         align-items: center;
         gap: 10px;
-        padding: 8px 12px;
-        background: transparent;
+        padding: 10px 14px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
         color: #555;
-        text-decoration: none;
-        border-radius: 6px;
         border: 1px solid #d0d0d0;
+        border-radius: 8px;
+        cursor: pointer;
         transition: all 0.2s ease;
         margin-right: 12px;
         margin-bottom: 12px;
-      " onmouseover="this.style.borderColor='#999'; this.style.background='#fafafa';" onmouseout="this.style.borderColor='#d0d0d0'; this.style.background='transparent';">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
-          <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
-          <line x1="7" y1="2" x2="7" y2="22"></line>
-          <line x1="17" y1="2" x2="17" y2="22"></line>
-          <line x1="2" y1="12" x2="22" y2="12"></line>
-          <line x1="2" y1="7" x2="7" y2="7"></line>
-          <line x1="2" y1="17" x2="7" y2="17"></line>
-          <line x1="17" y1="17" x2="22" y2="17"></line>
-          <line x1="17" y1="7" x2="22" y2="7"></line>
+        font-family: inherit;
+      " onmouseover="this.style.borderColor='var(--primary-color)'; this.style.background='#fff'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';" onmouseout="this.style.borderColor='#d0d0d0'; this.style.background='linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)'; this.style.boxShadow='none';">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
         </svg>
         <div style="text-align: left;">
-          <div style="font-size: 0.9rem; font-weight: 500; color: #555;">${escapeHtml(videoTitle)}</div>
-          ${video.description ? `<div style="font-size: 0.8rem; color: #999; margin-top: 2px;">${escapeHtml(video.description)}</div>` : ''}
+          <div style="font-size: 0.95rem; font-weight: 600; color: #333;">${escapeHtml(videoTitle)}</div>
         </div>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
-          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-          <polyline points="15 3 21 3 21 9"></polyline>
-          <line x1="10" y1="14" x2="21" y2="3"></line>
-        </svg>
-      </a>
+      </button>
     `;
   }).join('');
 
@@ -1964,6 +2237,56 @@ function generateVideoCarousel(videos: any[], _carouselId: string): string {
       <div class="video-section-title" style="font-size: 1.1rem; font-weight: 600; color: #444; margin-bottom: 12px;">Vidéo</div>
       <div style="display: flex; flex-wrap: wrap; align-items: flex-start;">
         ${videoButtons}
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Génère la section documents avec boutons pour ouvrir les PDF
+ */
+function generateDocumentSection(documents: any[]): string {
+  if (!documents || documents.length === 0) return '';
+
+  const documentButtons = documents.map((doc) => {
+    const docTitle = doc.name || 'Document';
+    const docUrl = convertToFileUrl(doc.url);
+    return `
+      <a href="${escapeHtml(docUrl)}" target="_blank" class="document-button" style="
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+        color: #555;
+        border: 1px solid #fca5a5;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-right: 12px;
+        margin-bottom: 12px;
+        font-family: inherit;
+        text-decoration: none;
+      " onmouseover="this.style.borderColor='#ef4444'; this.style.background='#fff'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';" onmouseout="this.style.borderColor='#fca5a5'; this.style.background='linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)'; this.style.boxShadow='none';">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+        <div style="text-align: left;">
+          <div style="font-size: 0.95rem; font-weight: 600; color: #333;">${escapeHtml(docTitle)}</div>
+        </div>
+      </a>
+    `;
+  }).join('');
+
+  return `
+    <div class="document-section" style="margin-top: 20px;">
+      <div class="document-section-title" style="font-size: 1.1rem; font-weight: 600; color: #444; margin-bottom: 12px;">Document</div>
+      <div style="display: flex; flex-wrap: wrap; align-items: flex-start;">
+        ${documentButtons}
       </div>
     </div>
   `;

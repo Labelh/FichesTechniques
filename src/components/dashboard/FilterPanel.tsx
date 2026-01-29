@@ -8,10 +8,11 @@ export default function FilterPanel() {
   const categories = useCategories();
 
   const difficulties = [
-    { value: 'trainee', label: 'Stagiaire', color: 'bg-blue-500' },
+    { value: 'trainee', label: 'Apprenti', color: 'bg-blue-500' },
     { value: 'easy', label: 'Facile', color: 'bg-green-500' },
     { value: 'medium', label: 'Moyen', color: 'bg-yellow-500' },
     { value: 'hard', label: 'Difficile', color: 'bg-red-500' },
+    { value: 'control', label: 'Contrôle', color: 'bg-orange-500' },
   ];
 
   const statuses = [

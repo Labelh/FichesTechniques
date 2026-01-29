@@ -1,16 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
-import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, Save, Pencil, ArrowUp, ArrowDown, Video as VideoIcon, Play, Bold, Italic, Palette, List, ListOrdered, Smile } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, Save, Pencil, ArrowUp, ArrowDown, Video as VideoIcon, Bold, Italic, Palette, List, ListOrdered, Smile, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { updatePhase, movePhaseUp, movePhaseDown } from '@/services/procedureService';
 import { createPhaseTemplate } from '@/services/templateService';
 import { uploadImageToHost } from '@/services/imageHostingService';
-import { fetchConsumables } from '@/services/consumablesService';
 import { useTools } from '@/hooks/useTools';
 import ImageAnnotator from '@/components/phase/ImageAnnotator';
 import ToolSelector from '@/components/tools/ToolSelector';
-import type { Phase, DifficultyLevel, SubStep, AnnotatedImage, Tool, Consumable, Annotation } from '@/types';
+import type { Phase, DifficultyLevel, SubStep, AnnotatedImage, Tool, Annotation } from '@/types';
 import { toast } from 'sonner';
 
 interface PhaseItemProps {
@@ -28,7 +27,6 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
   const [difficulty, setDifficulty] = useState<DifficultyLevel>(phase.difficulty);
   const [estimatedTime, setEstimatedTime] = useState(phase.estimatedTime);
   const [steps, setSteps] = useState<SubStep[]>(phase.steps || []);
-  const [consumables, setConsumables] = useState<Consumable[]>([]);
   const isInitialMount = useRef(true);
 
   const availableTools = useTools();
@@ -71,19 +69,6 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
     // Réinitialiser le flag pour éviter que la synchro déclenche l'auto-save
     isInitialMount.current = true;
   }, [phase.id, phase.title, phase.phaseNumber, phase.difficulty, phase.estimatedTime, phase.steps, index, availableTools]);
-
-  // Charger les consommables
-  useEffect(() => {
-    const loadConsumables = async () => {
-      try {
-        const data = await fetchConsumables();
-        setConsumables(data);
-      } catch (error) {
-        console.error('Error loading consumables:', error);
-      }
-    };
-    loadConsumables();
-  }, []);
 
   // Raccourci Ctrl+S pour sauvegarde rapide
   useEffect(() => {
@@ -202,6 +187,22 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
     setSteps(steps.map(s =>
       s.id === stepId
         ? { ...s, videos: (s.videos || []).filter(vid => vid.id !== videoId) }
+        : s
+    ));
+  };
+
+  const addStepDocument = (stepId: string, newDocuments: any[]) => {
+    setSteps(steps.map(s =>
+      s.id === stepId
+        ? { ...s, documents: [...(s.documents || []), ...newDocuments] }
+        : s
+    ));
+  };
+
+  const removeStepDocument = (stepId: string, documentId: string) => {
+    setSteps(steps.map(s =>
+      s.id === stepId
+        ? { ...s, documents: (s.documents || []).filter(doc => doc.id !== documentId) }
         : s
     ));
   };
@@ -429,16 +430,18 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
       case 'easy': return 'bg-green-500';
       case 'medium': return 'bg-yellow-500';
       case 'hard': return 'bg-red-500';
+      case 'control': return 'bg-orange-500';
       default: return 'bg-background-elevated';
     }
   };
 
   const getDifficultyLabel = (diff: DifficultyLevel) => {
     switch (diff) {
-      case 'trainee': return 'Stagiaire';
+      case 'trainee': return 'Apprenti';
       case 'easy': return 'Facile';
       case 'medium': return 'Moyen';
       case 'hard': return 'Difficile';
+      case 'control': return 'Contrôle';
       default: return diff;
     }
   };
@@ -532,10 +535,11 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
                   onChange={(e) => setDifficulty(e.target.value as DifficultyLevel)}
                   className="w-full rounded-md border border-[#323232] bg-transparent px-3 py-2 text-sm text-white"
                 >
-                  <option value="trainee">Stagiaire</option>
+                  <option value="trainee">Apprenti</option>
                   <option value="easy">Facile</option>
                   <option value="medium">Moyen</option>
                   <option value="hard">Difficile</option>
+                  <option value="control">Contrôle</option>
                 </select>
               </div>
 
@@ -589,13 +593,14 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
                       index={idx}
                       totalSteps={steps.length}
                       availableTools={availableTools}
-                      availableConsumables={consumables}
                       onUpdate={(updates) => updateStep(step.id, updates)}
                       onRemove={() => removeStep(step.id)}
                       onAddImage={(images) => addStepImage(step.id, images)}
                       onRemoveImage={(imageId) => removeStepImage(step.id, imageId)}
                       onAddVideo={(videos) => addStepVideo(step.id, videos)}
                       onRemoveVideo={(videoId) => removeStepVideo(step.id, videoId)}
+                      onAddDocument={(documents) => addStepDocument(step.id, documents)}
+                      onRemoveDocument={(documentId) => removeStepDocument(step.id, documentId)}
                       onAddTool={(toolId, toolName, toolLocation, toolReference, toolColor, toolImageUrl) => addStepTool(step.id, toolId, toolName, toolLocation, toolReference, toolColor, toolImageUrl)}
                       onRemoveTool={(toolId) => removeStepTool(step.id, toolId)}
                       onMoveUp={() => moveStepUp(step.id)}
@@ -626,13 +631,14 @@ interface SubStepItemProps {
   index: number;
   totalSteps: number;
   availableTools?: Tool[];
-  availableConsumables?: Consumable[];
   onUpdate: (updates: Partial<SubStep>) => void;
   onRemove: () => void;
   onAddImage: (images: AnnotatedImage[]) => void;
   onRemoveImage: (imageId: string) => void;
   onAddVideo: (videos: any[]) => void;
   onRemoveVideo: (videoId: string) => void;
+  onAddDocument: (documents: any[]) => void;
+  onRemoveDocument: (documentId: string) => void;
   onAddTool: (toolId: string, toolName: string, toolLocation?: string | null, toolReference?: string | null, toolColor?: string | null, toolImageUrl?: string | null) => void;
   onRemoveTool: (toolId: string) => void;
   onMoveUp: () => void;
@@ -645,13 +651,14 @@ function SubStepItem({
   index,
   totalSteps,
   availableTools,
-  availableConsumables,
   onUpdate,
   onRemove,
   onAddImage,
   onRemoveImage,
   onAddVideo,
   onRemoveVideo,
+  onAddDocument,
+  onRemoveDocument,
   onAddTool,
   onRemoveTool,
   onMoveUp,
@@ -662,11 +669,19 @@ function SubStepItem({
   const [imageToAnnotate, setImageToAnnotate] = useState<AnnotatedImage | null>(null);
   const [showToolSelector, setShowToolSelector] = useState(false);
   const [showVideoInput, setShowVideoInput] = useState(false);
+  const [showDocumentInput, setShowDocumentInput] = useState(false);
+  const [documentUrl, setDocumentUrl] = useState('');
+  const [documentTitle, setDocumentTitle] = useState('');
+  const documentFileInputRef = useRef<HTMLInputElement>(null);
   const [videoUrl, setVideoUrl] = useState('');
   const [videoTitle, setVideoTitle] = useState('');
   const descriptionRef = useRef<HTMLDivElement>(null);
   const [showColorPalette, setShowColorPalette] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+  // État pour le modal d'insertion des outils dans la description
+  const [showToolInsertModal, setShowToolInsertModal] = useState(false);
+  const videoFileInputRef = useRef<HTMLInputElement>(null);
 
   const textColors = [
     { name: 'Orange-rouge', value: '#ff5722' },
@@ -689,6 +704,56 @@ function SubStepItem({
     '🔵', '🟣', '⚫', '⚪', '➡️', '⬅️', '⬆️', '⬇️',
   ];
 
+  // Fonction pour insérer un outil dans la description
+  const insertToolInDescription = (tool: { name: string; reference?: string | null; color?: string | null }) => {
+    if (!descriptionRef.current) return;
+
+    // Formater le texte de l'outil
+    const toolText = tool.reference
+      ? `${tool.name} (${tool.reference})`
+      : tool.name;
+    const toolColor = tool.color || '#10b981';
+
+    // Créer le span avec la couleur
+    const span = document.createElement('span');
+    span.style.color = toolColor;
+    span.style.fontWeight = 'bold';
+    span.textContent = toolText;
+
+    // Créer un espace après
+    const space = document.createTextNode(' ');
+
+    // Focus sur l'éditeur
+    descriptionRef.current.focus();
+
+    // Obtenir la sélection
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(space);
+      range.insertNode(span);
+
+      // Placer le curseur après l'espace
+      range.setStartAfter(space);
+      range.setEndAfter(space);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    } else {
+      // Si pas de sélection, ajouter à la fin
+      descriptionRef.current.appendChild(span);
+      descriptionRef.current.appendChild(space);
+    }
+
+    // Mettre à jour le contenu
+    const html = descriptionRef.current.innerHTML;
+    setLocalDescription(html);
+    onUpdate({ description: html });
+
+    // Fermer le modal
+    setShowToolInsertModal(false);
+  };
+
   // State local pour conserver le innerHTML entre les collapse/expand
   const [localDescription, setLocalDescription] = useState(step.description || '');
 
@@ -705,16 +770,20 @@ function SubStepItem({
     }
   }, [step.id, isExpanded]); // Quand on change de step OU qu'on expand
 
-  // Fermer la palette de couleurs quand on clique ailleurs
+  // Fermer les menus déroulants quand on clique ailleurs
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (showColorPalette && !(e.target as HTMLElement).closest('.relative')) {
+      const target = e.target as HTMLElement;
+      if (showColorPalette && !target.closest('.relative')) {
         setShowColorPalette(false);
+      }
+      if (showEmojiPicker && !target.closest('.relative')) {
+        setShowEmojiPicker(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showColorPalette]);
+  }, [showColorPalette, showEmojiPicker]);
 
   const handleImageUpload = async (files: File[]) => {
     const validImages: AnnotatedImage[] = [];
@@ -774,14 +843,32 @@ function SubStepItem({
     setImageToAnnotate(null);
   };
 
+  // Clé localStorage pour le chemin de base NAS
+  const VIDEO_BASE_PATH_KEY = 'fichestechniques_video_base_path';
+
+  const getStoredBasePath = (): string => {
+    return localStorage.getItem(VIDEO_BASE_PATH_KEY) || '';
+  };
+
+  const storeBasePath = (fullPath: string) => {
+    // Extraire le dossier parent du chemin complet
+    const lastSeparator = Math.max(fullPath.lastIndexOf('\\'), fullPath.lastIndexOf('/'));
+    if (lastSeparator > 0) {
+      const basePath = fullPath.substring(0, lastSeparator + 1);
+      localStorage.setItem(VIDEO_BASE_PATH_KEY, basePath);
+    }
+  };
+
   const handleAddVideo = () => {
     if (!videoUrl.trim()) return;
 
+    // Stocker le chemin de base pour les prochaines vidéos
+    storeBasePath(videoUrl.trim());
+
     const newVideo = {
       id: crypto.randomUUID(),
-      name: videoTitle.trim() || extractVideoTitle(videoUrl),
-      url: videoUrl,
-      thumbnail: extractVideoThumbnail(videoUrl),
+      name: videoTitle.trim() || 'Vidéo',
+      url: videoUrl.trim(),
       size: 0,
       mimeType: 'video/mp4',
       createdAt: new Date(),
@@ -794,42 +881,130 @@ function SubStepItem({
     setShowVideoInput(false);
   };
 
-  const extractVideoTitle = (url: string): string => {
-    try {
-      const urlObj = new URL(url);
-      if (urlObj.hostname.includes('youtube.com') || urlObj.hostname.includes('youtu.be')) {
-        return 'Vidéo YouTube';
-      } else if (urlObj.hostname.includes('vimeo.com')) {
-        return 'Vidéo Vimeo';
+  const handleVideoFileSelect = async () => {
+    const basePath = getStoredBasePath();
+
+    // Essayer d'utiliser l'API File System Access pour obtenir le chemin complet
+    if ('showOpenFilePicker' in window) {
+      try {
+        const [fileHandle] = await (window as any).showOpenFilePicker({
+          types: [{
+            description: 'Fichiers vidéo',
+            accept: { 'video/*': ['.mp4', '.avi', '.mkv', '.mov', '.wmv', '.webm'] }
+          }],
+          multiple: false
+        });
+        const file = await fileHandle.getFile();
+        // Combiner le chemin de base mémorisé avec le nom du fichier
+        const fullPath = basePath ? basePath + file.name : file.name;
+        setVideoUrl(fullPath);
+        if (!videoTitle.trim()) {
+          // Extraire le nom sans extension pour le titre
+          const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
+          setVideoTitle(nameWithoutExt);
+        }
+      } catch (err) {
+        // L'utilisateur a annulé ou erreur
+        console.log('Sélection de fichier annulée');
       }
-      return 'Vidéo';
-    } catch {
-      return 'Vidéo';
+    } else {
+      // Fallback sur input file classique
+      videoFileInputRef.current?.click();
     }
   };
 
-  const extractVideoThumbnail = (url: string): string | undefined => {
-    try {
-      const urlObj = new URL(url);
-
-      // YouTube
-      if (urlObj.hostname.includes('youtube.com') || urlObj.hostname.includes('youtu.be')) {
-        let videoId = '';
-        if (urlObj.hostname.includes('youtu.be')) {
-          videoId = urlObj.pathname.slice(1);
-        } else {
-          videoId = urlObj.searchParams.get('v') || '';
-        }
-        if (videoId) {
-          return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
-        }
+  const handleVideoFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const basePath = getStoredBasePath();
+      // Combiner le chemin de base mémorisé avec le nom du fichier
+      const fullPath = basePath ? basePath + file.name : file.name;
+      setVideoUrl(fullPath);
+      if (!videoTitle.trim()) {
+        const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
+        setVideoTitle(nameWithoutExt);
       }
+    }
+    // Reset l'input pour permettre de resélectionner le même fichier
+    if (videoFileInputRef.current) {
+      videoFileInputRef.current.value = '';
+    }
+  };
 
-      // Vimeo (nécessiterait une API call, on laisse undefined pour l'instant)
+  // Clé localStorage pour le chemin de base des documents
+  const DOCUMENT_BASE_PATH_KEY = 'fichestechniques_document_base_path';
 
-      return undefined;
-    } catch {
-      return undefined;
+  const getStoredDocumentBasePath = (): string => {
+    return localStorage.getItem(DOCUMENT_BASE_PATH_KEY) || '';
+  };
+
+  const storeDocumentBasePath = (fullPath: string) => {
+    const lastSeparator = Math.max(fullPath.lastIndexOf('\\'), fullPath.lastIndexOf('/'));
+    if (lastSeparator > 0) {
+      const basePath = fullPath.substring(0, lastSeparator + 1);
+      localStorage.setItem(DOCUMENT_BASE_PATH_KEY, basePath);
+    }
+  };
+
+  const handleAddDocument = () => {
+    if (!documentUrl.trim()) return;
+
+    storeDocumentBasePath(documentUrl.trim());
+
+    const newDocument = {
+      id: crypto.randomUUID(),
+      name: documentTitle.trim() || 'Document',
+      url: documentUrl.trim(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    onAddDocument([newDocument]);
+    setDocumentUrl('');
+    setDocumentTitle('');
+    setShowDocumentInput(false);
+  };
+
+  const handleDocumentFileSelect = async () => {
+    const basePath = getStoredDocumentBasePath();
+
+    if ('showOpenFilePicker' in window) {
+      try {
+        const [fileHandle] = await (window as any).showOpenFilePicker({
+          types: [{
+            description: 'Documents PDF',
+            accept: { 'application/pdf': ['.pdf'] }
+          }],
+          multiple: false
+        });
+        const file = await fileHandle.getFile();
+        const fullPath = basePath ? basePath + file.name : file.name;
+        setDocumentUrl(fullPath);
+        if (!documentTitle.trim()) {
+          const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
+          setDocumentTitle(nameWithoutExt);
+        }
+      } catch (err) {
+        console.log('Sélection de fichier annulée');
+      }
+    } else {
+      documentFileInputRef.current?.click();
+    }
+  };
+
+  const handleDocumentFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const basePath = getStoredDocumentBasePath();
+      const fullPath = basePath ? basePath + file.name : file.name;
+      setDocumentUrl(fullPath);
+      if (!documentTitle.trim()) {
+        const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
+        setDocumentTitle(nameWithoutExt);
+      }
+    }
+    if (documentFileInputRef.current) {
+      documentFileInputRef.current.value = '';
     }
   };
 
@@ -1073,6 +1248,26 @@ function SubStepItem({
                     </div>
                   )}
                 </div>
+
+                {/* Séparateur */}
+                <div className="w-px h-6 bg-[#323232] mx-1" />
+
+                {/* Bouton pour insérer un outil */}
+                <button
+                  type="button"
+                  onClick={() => setShowToolInsertModal(true)}
+                  className={`p-1.5 hover:bg-[#323232] rounded transition flex items-center gap-1 ${
+                    (step.tools?.length || 0) > 0
+                      ? 'text-primary hover:text-primary'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                  title="Insérer un outil requis"
+                >
+                  <Wrench className="h-4 w-4" />
+                  {(step.tools?.length || 0) > 0 && (
+                    <span className="text-xs">{step.tools?.length}</span>
+                  )}
+                </button>
               </div>
               {/* Zone de texte éditable */}
               <div
@@ -1081,8 +1276,8 @@ function SubStepItem({
                 onInput={(e) => {
                   const target = e.target as HTMLDivElement;
                   const html = target.innerHTML;
-                  setLocalDescription(html); // Sauvegarder localement
-                  onUpdate({ description: html }); // Et mettre à jour le parent
+                  setLocalDescription(html);
+                  onUpdate({ description: html });
                 }}
                 className="min-h-[150px] max-h-[400px] w-full px-3 py-2 text-sm text-white focus:outline-none bg-transparent border-0 overflow-y-auto [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6"
                 style={{ wordBreak: 'break-word' }}
@@ -1164,42 +1359,19 @@ function SubStepItem({
             </label>
             <div className="flex flex-wrap gap-3 mb-2">
               {(step.videos || []).map((video) => (
-                <div key={video.id} className="relative group">
-                  {video.thumbnail ? (
-                    <div className="relative h-16 w-24 rounded border border-[#323232] overflow-hidden">
-                      <img
-                        src={video.thumbnail}
-                        alt={video.name}
-                        className="h-full w-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                        <Play className="h-5 w-5 text-white" />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="h-16 w-24 bg-background-elevated rounded border border-[#323232] flex items-center justify-center">
-                      <VideoIcon className="h-6 w-6 text-text-muted" />
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
-                    <a
-                      href={video.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="bg-primary text-white rounded p-1 hover:bg-primary/80"
-                      title="Ouvrir la vidéo"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Play className="h-3 w-3" />
-                    </a>
-                    <button
-                      onClick={() => onRemoveVideo(video.id)}
-                      className="bg-red-500 text-white rounded p-1 hover:bg-red-600"
-                      title="Supprimer la vidéo"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
+                <div key={video.id} className="relative group flex items-center gap-2 p-2 bg-background-elevated rounded border border-[#323232]">
+                  <VideoIcon className="h-5 w-5 text-text-muted flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-white truncate">{video.name}</div>
+                    <div className="text-xs text-gray-500 truncate" title={video.url}>{video.url}</div>
                   </div>
+                  <button
+                    onClick={() => onRemoveVideo(video.id)}
+                    className="bg-red-500 text-white rounded p-1 hover:bg-red-600 flex-shrink-0"
+                    title="Supprimer la vidéo"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
                 </div>
               ))}
             </div>
@@ -1209,24 +1381,44 @@ function SubStepItem({
                   type="text"
                   value={videoTitle}
                   onChange={(e) => setVideoTitle(e.target.value)}
-                  placeholder="Titre de la vidéo (optionnel)"
+                  placeholder="Titre de la vidéo"
                   className="text-xs"
                 />
-                <Input
-                  type="text"
-                  value={videoUrl}
-                  onChange={(e) => setVideoUrl(e.target.value)}
-                  placeholder="URL de la vidéo (YouTube, Vimeo, etc.)"
-                  className="text-xs"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleAddVideo();
-                    } else if (e.key === 'Escape') {
-                      setShowVideoInput(false);
-                      setVideoUrl('');
-                      setVideoTitle('');
-                    }
-                  }}
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleVideoFileSelect}
+                    className="flex-shrink-0"
+                    title="Sélectionner un fichier vidéo"
+                  >
+                    <VideoIcon className="h-4 w-4" />
+                  </Button>
+                  <Input
+                    type="text"
+                    value={videoUrl}
+                    onChange={(e) => setVideoUrl(e.target.value)}
+                    placeholder="Chemin d'accès NAS (ex: \\NAS\Videos\procedure.mp4)"
+                    className="text-xs flex-1"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleAddVideo();
+                      } else if (e.key === 'Escape') {
+                        setShowVideoInput(false);
+                        setVideoUrl('');
+                        setVideoTitle('');
+                      }
+                    }}
+                  />
+                </div>
+                {/* Input file caché pour le fallback */}
+                <input
+                  ref={videoFileInputRef}
+                  type="file"
+                  accept="video/*"
+                  onChange={handleVideoFileInputChange}
+                  className="hidden"
                 />
                 <div className="flex gap-2">
                   <Button
@@ -1260,6 +1452,110 @@ function SubStepItem({
               >
                 <Plus className="h-3 w-3 mr-1" />
                 Ajouter une vidéo
+              </Button>
+            )}
+          </div>
+
+          {/* Documents */}
+          <div>
+            <label className="block text-xs font-medium text-gray-400 mb-2">
+              <FileText className="h-3 w-3 inline mr-1" />
+              Documents ({step.documents?.length || 0})
+            </label>
+            <div className="flex flex-wrap gap-3 mb-2">
+              {(step.documents || []).map((doc) => (
+                <div key={doc.id} className="relative group flex items-center gap-2 p-2 bg-background-elevated rounded border border-[#323232]">
+                  <FileText className="h-5 w-5 text-red-500 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-white truncate">{doc.name}</div>
+                    <div className="text-xs text-gray-500 truncate" title={doc.url}>{doc.url}</div>
+                  </div>
+                  <button
+                    onClick={() => onRemoveDocument(doc.id)}
+                    className="bg-red-500 text-white rounded p-1 hover:bg-red-600 flex-shrink-0"
+                    title="Supprimer le document"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+            {showDocumentInput ? (
+              <div className="space-y-2">
+                <Input
+                  type="text"
+                  value={documentTitle}
+                  onChange={(e) => setDocumentTitle(e.target.value)}
+                  placeholder="Titre du document"
+                  className="text-xs"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleDocumentFileSelect}
+                    className="flex-shrink-0"
+                    title="Sélectionner un fichier PDF"
+                  >
+                    <FileText className="h-4 w-4" />
+                  </Button>
+                  <Input
+                    type="text"
+                    value={documentUrl}
+                    onChange={(e) => setDocumentUrl(e.target.value)}
+                    placeholder="Chemin d'accès (ex: \\NAS\Documents\fichier.pdf)"
+                    className="text-xs flex-1"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleAddDocument();
+                      } else if (e.key === 'Escape') {
+                        setShowDocumentInput(false);
+                        setDocumentUrl('');
+                        setDocumentTitle('');
+                      }
+                    }}
+                  />
+                </div>
+                <input
+                  ref={documentFileInputRef}
+                  type="file"
+                  accept=".pdf"
+                  onChange={handleDocumentFileInputChange}
+                  className="hidden"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleAddDocument}
+                    className="text-xs"
+                  >
+                    Ajouter
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      setShowDocumentInput(false);
+                      setDocumentUrl('');
+                      setDocumentTitle('');
+                    }}
+                    className="text-xs"
+                  >
+                    Annuler
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowDocumentInput(true)}
+                className="w-full justify-start text-xs"
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Ajouter un document
               </Button>
             )}
           </div>
@@ -1417,13 +1713,80 @@ function SubStepItem({
       {showToolSelector && (
         <ToolSelector
           availableTools={availableTools || []}
-          availableConsumables={availableConsumables || []}
+          availableConsumables={[]}
           onSelect={(toolId, toolName, toolLocation, toolReference, _type, color, imageUrl) => {
             onAddTool(toolId, toolName, toolLocation, toolReference, color, imageUrl);
             setShowToolSelector(false);
           }}
           onClose={() => setShowToolSelector(false)}
         />
+      )}
+
+      {/* Modal pour insérer un outil dans la description */}
+      {showToolInsertModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a1a1a] rounded-xl border border-[#323232] max-w-md w-full max-h-[80vh] flex flex-col">
+            {/* Header */}
+            <div className="p-4 border-b border-[#323232] flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-white">Insérer un outil</h3>
+                <p className="text-xs text-gray-400 mt-1">Sélectionnez un outil à insérer dans la description</p>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setShowToolInsertModal(false)}>
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {(step.tools?.length || 0) > 0 ? (
+                <div className="space-y-2">
+                  {step.tools?.map((tool) => (
+                    <button
+                      key={tool.id}
+                      type="button"
+                      className="w-full text-left p-3 rounded-lg border border-[#323232] hover:border-primary hover:bg-primary/10 transition-all flex items-center gap-3"
+                      onClick={() => insertToolInDescription(tool)}
+                    >
+                      <div
+                        className="w-4 h-4 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: tool.color || '#10b981' }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-white">{tool.name}</div>
+                        {tool.reference && (
+                          <div className="text-xs text-gray-400">{tool.reference}</div>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Cliquer pour insérer
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Wrench className="h-12 w-12 mx-auto text-gray-600 mb-3" />
+                  <p className="text-gray-400 mb-2">Aucun outil requis pour cette étape</p>
+                  <p className="text-xs text-gray-500">
+                    Ajoutez d'abord des outils dans la section "Outils requis" ci-dessous
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-[#323232]">
+              <Button
+                variant="secondary"
+                onClick={() => setShowToolInsertModal(false)}
+                className="w-full"
+              >
+                Fermer
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

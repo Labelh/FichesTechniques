@@ -3,10 +3,11 @@
 // ==========================================
 
 export enum DifficultyLevel {
-  TRAINEE = 'trainee',
+  TRAINEE = 'trainee',  // Affiché comme "Apprenti"
   EASY = 'easy',
   MEDIUM = 'medium',
   HARD = 'hard',
+  CONTROL = 'control',  // Orange
 }
 
 export enum ProcedureStatus {
@@ -152,6 +153,10 @@ export interface Consumable {
   photo_url?: string;
   created_at?: string;
   updated_at?: string;
+  // Champs de localisation
+  storage_zone_id?: string;
+  shelf?: string;
+  position?: string;
 }
 
 export interface SafetyNote {
@@ -187,6 +192,14 @@ export interface StepTool {
   imageUrl?: string | null;
 }
 
+export interface StepDocument {
+  id: string;
+  name: string;
+  url: string;  // Chemin du fichier PDF
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface SubStep {
   id: string;
   order: number;
@@ -194,6 +207,7 @@ export interface SubStep {
   description: string;
   images?: AnnotatedImage[];
   videos?: Video[];
+  documents?: StepDocument[];  // Documents PDF
   estimatedTime?: number; // en minutes
 
   // Outils multiples (nouveau format)

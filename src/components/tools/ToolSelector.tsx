@@ -2,7 +2,24 @@ import { useState, useMemo, useEffect } from 'react';
 import { Search, X, Wrench, Package, MapPin, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { supabase } from '@/lib/supabase';
 import type { Tool, Consumable } from '@/types';
+
+const STORAGE_BUCKET = 'product-photos';
+
+function isStoragePath(value: string | null | undefined): boolean {
+  if (!value) return false;
+  return value.startsWith('products/') && !value.startsWith('http') && !value.startsWith('data:');
+}
+
+function getProductPhotoUrl(filePath: string | null | undefined): string | null {
+  if (!filePath) return null;
+  if (filePath.startsWith('http') || filePath.startsWith('data:')) {
+    return filePath;
+  }
+  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(filePath);
+  return data?.publicUrl || null;
+}
 
 interface ToolSelectorProps {
   availableTools: Tool[];
@@ -89,9 +106,34 @@ export default function ToolSelector({ availableTools, availableConsumables, onS
 
   const getItemImage = (item: ToolOrConsumable) => {
     if (item.type === 'tool') {
+      // Pour les outils (déjà traités dans useTools)
       return item.image?.url;
     } else {
-      return (item as any).image_url || (item as any).photo_url;
+      // Pour les consommables
+      const consumable = item as any;
+
+      // Vérifier le champ photo
+      if (consumable.photo) {
+        if (isStoragePath(consumable.photo)) {
+          return getProductPhotoUrl(consumable.photo);
+        }
+        return consumable.photo;
+      }
+
+      // Fallback sur photo_url ou image_url
+      if (consumable.photo_url) {
+        return isStoragePath(consumable.photo_url)
+          ? getProductPhotoUrl(consumable.photo_url)
+          : consumable.photo_url;
+      }
+
+      if (consumable.image_url) {
+        return isStoragePath(consumable.image_url)
+          ? getProductPhotoUrl(consumable.image_url)
+          : consumable.image_url;
+      }
+
+      return undefined;
     }
   };
 
