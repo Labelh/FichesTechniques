@@ -1,15 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
-import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, Save, Pencil, ArrowUp, ArrowDown, Video as VideoIcon, Bold, Italic, Palette, List, ListOrdered, Smile, FileText } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, Save, Pencil, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Video as VideoIcon, Bold, Italic, Palette, List, ListOrdered, Smile, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { updatePhase, movePhaseUp, movePhaseDown } from '@/services/procedureService';
-import { createPhaseTemplate } from '@/services/templateService';
+import { createPhaseTemplate, createSubStepTemplateFromStep, getAllSubStepTemplates, deleteSubStepTemplate, incrementSubStepTemplateUsage } from '@/services/templateService';
 import { uploadImageToHost } from '@/services/imageHostingService';
 import { useTools } from '@/hooks/useTools';
 import ImageAnnotator from '@/components/phase/ImageAnnotator';
 import ToolSelector from '@/components/tools/ToolSelector';
-import type { Phase, DifficultyLevel, SubStep, AnnotatedImage, Tool, Annotation } from '@/types';
+import type { Phase, DifficultyLevel, SubStep, AnnotatedImage, Tool, Annotation, SubStepTemplate } from '@/types';
 import { toast } from 'sonner';
 
 interface PhaseItemProps {
@@ -30,6 +30,16 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
   const isInitialMount = useRef(true);
 
   const availableTools = useTools();
+  const [showSubStepTemplateModal, setShowSubStepTemplateModal] = useState(false);
+  const [subStepTemplates, setSubStepTemplates] = useState<SubStepTemplate[]>([]);
+  const [subStepTemplateCategory, setSubStepTemplateCategory] = useState<string>('Tous');
+
+  // Charger les templates de sous-étapes quand le modal s'ouvre
+  useEffect(() => {
+    if (showSubStepTemplateModal) {
+      getAllSubStepTemplates().then(setSubStepTemplates).catch(console.error);
+    }
+  }, [showSubStepTemplateModal]);
 
   // Synchroniser le state local avec les props quand la phase change dans Firebase
   useEffect(() => {
@@ -131,6 +141,27 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
     } catch (error) {
       console.error('Error creating template:', error);
     }
+  };
+
+  const addStepFromTemplate = async (template: SubStepTemplate) => {
+    const newStep: SubStep = {
+      id: crypto.randomUUID(),
+      order: steps.length,
+      title: template.subStep.title || '',
+      description: template.subStep.description || '',
+      estimatedTime: template.subStep.estimatedTime || 0,
+      images: [],
+      videos: [],
+      documents: [],
+      tips: template.subStep.tips || [],
+      safetyNotes: template.subStep.safetyNotes || [],
+      tools: template.subStep.tools || [],
+    };
+    setSteps([...steps, newStep]);
+    setShowSubStepTemplateModal(false);
+    toast.success(`Sous-étape créée depuis le template "${template.name}"`);
+    // Incrémenter le compteur d'utilisation
+    incrementSubStepTemplateUsage(template.id, template.usageCount).catch(console.error);
   };
 
   const addStep = () => {
@@ -574,10 +605,16 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
                 <h3 className="text-lg font-semibold text-white">
                   Sous-étapes ({steps.length})
                 </h3>
-                <Button onClick={addStep} size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Ajouter une sous-étape
-                </Button>
+                <div className="flex gap-2">
+                  <Button onClick={addStep} size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Ajouter une sous-étape
+                  </Button>
+                  <Button onClick={() => setShowSubStepTemplateModal(true)} size="sm" variant="secondary">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Depuis un template
+                  </Button>
+                </div>
               </div>
 
               {steps.length === 0 ? (
@@ -606,6 +643,18 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
                       onMoveUp={() => moveStepUp(step.id)}
                       onMoveDown={() => moveStepDown(step.id)}
                       onSaveAnnotations={(imageId, annotations, description) => handleSaveStepAnnotations(step.id, imageId, annotations, description)}
+                      onSaveAsTemplate={async () => {
+                        const templateName = prompt('Nom du template de sous-étape:', step.title || 'Mon template');
+                        if (!templateName) return;
+                        const category = prompt('Catégorie:', 'Général') || 'Général';
+                        try {
+                          await createSubStepTemplateFromStep(step, templateName, category);
+                          toast.success('Template de sous-étape sauvegardé !');
+                        } catch (error) {
+                          console.error('Error creating substep template:', error);
+                          toast.error('Erreur lors de la sauvegarde du template');
+                        }
+                      }}
                     />
                   ))}
                 </div>
@@ -616,6 +665,115 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
             <div className="flex justify-end items-center pt-4 border-t border-[#323232]">
               <Button variant="ghost" size="icon" onClick={handleSaveAsTemplate} title="Sauvegarder comme template">
                 <Save className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de sélection de template de sous-étape */}
+      {showSubStepTemplateModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a1a1a] rounded-xl border border-[#323232] max-w-lg w-full max-h-[80vh] flex flex-col">
+            {/* Header */}
+            <div className="p-4 border-b border-[#323232] flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-white">Templates de sous-étapes</h3>
+                <p className="text-xs text-gray-400 mt-1">Sélectionnez un template pour créer une sous-étape</p>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setShowSubStepTemplateModal(false)}>
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {/* Tabs par catégorie */}
+            {(() => {
+              const categories = ['Tous', ...Array.from(new Set(subStepTemplates.map(t => t.category)))];
+              const filtered = subStepTemplateCategory === 'Tous'
+                ? subStepTemplates
+                : subStepTemplates.filter(t => t.category === subStepTemplateCategory);
+
+              return (
+                <>
+                  <div className="flex gap-1 p-3 border-b border-[#323232] overflow-x-auto">
+                    {categories.map(cat => (
+                      <button
+                        key={cat}
+                        onClick={() => setSubStepTemplateCategory(cat)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition ${
+                          subStepTemplateCategory === cat
+                            ? 'bg-primary text-white'
+                            : 'bg-[#2a2a2a] text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Liste des templates */}
+                  <div className="flex-1 overflow-y-auto p-4">
+                    {filtered.length === 0 ? (
+                      <div className="text-center py-8">
+                        <FileText className="h-12 w-12 mx-auto text-gray-600 mb-3" />
+                        <p className="text-gray-400">Aucun template disponible</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Sauvegardez des sous-étapes comme templates pour les réutiliser
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {filtered.map(template => (
+                          <div
+                            key={template.id}
+                            className="flex items-center gap-3 p-3 rounded-lg border border-[#323232] hover:border-primary hover:bg-primary/5 transition-all cursor-pointer group"
+                            onClick={() => addStepFromTemplate(template)}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium text-white">{template.name}</div>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-[#2a2a2a] text-gray-400">
+                                  {template.category}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  {template.usageCount} utilisation{template.usageCount !== 1 ? 's' : ''}
+                                </span>
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm('Supprimer ce template ?')) {
+                                  deleteSubStepTemplate(template.id).then(() => {
+                                    setSubStepTemplates(prev => prev.filter(t => t.id !== template.id));
+                                    toast.success('Template supprimé');
+                                  }).catch(() => toast.error('Erreur lors de la suppression'));
+                                }
+                              }}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity"
+                              title="Supprimer ce template"
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
+
+            {/* Footer */}
+            <div className="p-4 border-t border-[#323232]">
+              <Button
+                variant="secondary"
+                onClick={() => setShowSubStepTemplateModal(false)}
+                className="w-full"
+              >
+                Fermer
               </Button>
             </div>
           </div>
@@ -644,6 +802,7 @@ interface SubStepItemProps {
   onMoveUp: () => void;
   onMoveDown: () => void;
   onSaveAnnotations: (imageId: string, annotations: Annotation[], description: string) => Promise<void>;
+  onSaveAsTemplate: () => void;
 }
 
 function SubStepItem({
@@ -664,6 +823,7 @@ function SubStepItem({
   onMoveUp,
   onMoveDown,
   onSaveAnnotations,
+  onSaveAsTemplate,
 }: SubStepItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [imageToAnnotate, setImageToAnnotate] = useState<AnnotatedImage | null>(null);
@@ -720,8 +880,11 @@ function SubStepItem({
     span.style.fontWeight = 'bold';
     span.textContent = toolText;
 
-    // Créer un espace après
-    const space = document.createTextNode(' ');
+    // Créer un span avec style reset pour que le texte tapé ensuite soit blanc/normal
+    const resetSpan = document.createElement('span');
+    resetSpan.style.color = '#ffffff';
+    resetSpan.style.fontWeight = 'normal';
+    resetSpan.innerHTML = '&nbsp;';
 
     // Focus sur l'éditeur
     descriptionRef.current.focus();
@@ -731,18 +894,28 @@ function SubStepItem({
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
       range.deleteContents();
-      range.insertNode(space);
+      range.insertNode(resetSpan);
       range.insertNode(span);
 
-      // Placer le curseur après l'espace
-      range.setStartAfter(space);
-      range.setEndAfter(space);
+      // Placer le curseur DANS le resetSpan (après le &nbsp;) pour hériter du style reset
+      range.setStart(resetSpan, 1);
+      range.setEnd(resetSpan, 1);
       selection.removeAllRanges();
       selection.addRange(range);
     } else {
       // Si pas de sélection, ajouter à la fin
       descriptionRef.current.appendChild(span);
-      descriptionRef.current.appendChild(space);
+      descriptionRef.current.appendChild(resetSpan);
+
+      // Placer le curseur dans le resetSpan
+      const range = document.createRange();
+      range.setStart(resetSpan, 1);
+      range.setEnd(resetSpan, 1);
+      const sel = window.getSelection();
+      if (sel) {
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
     }
 
     // Mettre à jour le contenu
@@ -1082,6 +1255,17 @@ function SubStepItem({
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
+              onSaveAsTemplate();
+            }}
+            title="Sauvegarder comme template"
+          >
+            <Save className="h-3 w-3 text-gray-400" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
               onRemove();
             }}
           >
@@ -1292,15 +1476,27 @@ function SubStepItem({
               Images ({step.images?.length || 0})
             </label>
             <div className="flex flex-wrap gap-3 mb-2">
-              {(step.images || []).map((img) => (
+              {(step.images || []).map((img, imgIndex) => (
                 <div key={img.imageId} className="flex flex-col gap-1">
                   <div className="relative group">
                     <img
                       src={img.image.url || URL.createObjectURL(img.image.blob)}
                       alt={img.description || 'Image'}
-                      className="h-16 w-16 object-cover rounded border border-[#323232]"
+                      className="h-24 w-24 object-cover rounded border border-[#323232]"
                     />
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                      <button
+                        disabled={imgIndex === 0}
+                        onClick={() => {
+                          const newImages = [...(step.images || [])];
+                          [newImages[imgIndex - 1], newImages[imgIndex]] = [newImages[imgIndex], newImages[imgIndex - 1]];
+                          onUpdate({ images: newImages });
+                        }}
+                        className="bg-gray-600 text-white rounded p-1 hover:bg-gray-500 disabled:opacity-30 disabled:cursor-not-allowed"
+                        title="Déplacer à gauche"
+                      >
+                        <ArrowLeft className="h-3 w-3" />
+                      </button>
                       <button
                         onClick={() => setImageToAnnotate(img)}
                         className="bg-primary text-white rounded p-1 hover:bg-primary/80"
@@ -1315,15 +1511,20 @@ function SubStepItem({
                       >
                         <X className="h-3 w-3" />
                       </button>
+                      <button
+                        disabled={imgIndex === (step.images || []).length - 1}
+                        onClick={() => {
+                          const newImages = [...(step.images || [])];
+                          [newImages[imgIndex], newImages[imgIndex + 1]] = [newImages[imgIndex + 1], newImages[imgIndex]];
+                          onUpdate({ images: newImages });
+                        }}
+                        className="bg-gray-600 text-white rounded p-1 hover:bg-gray-500 disabled:opacity-30 disabled:cursor-not-allowed"
+                        title="Déplacer à droite"
+                      >
+                        <ArrowRight className="h-3 w-3" />
+                      </button>
                     </div>
                   </div>
-                  {img.annotations && img.annotations.length > 0 && (
-                    <div className="flex justify-center">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary border border-primary/30">
-                        {img.annotations.length} annotation{img.annotations.length > 1 ? 's' : ''}
-                      </span>
-                    </div>
-                  )}
                 </div>
               ))}
             </div>

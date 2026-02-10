@@ -327,6 +327,13 @@ export interface ProcedureTemplate extends BaseEntity {
   lastUsed?: Date;
 }
 
+export interface SubStepTemplate extends BaseEntity {
+  name: string;
+  category: string;
+  subStep: Partial<SubStep>;
+  usageCount: number;
+}
+
 export interface Category extends BaseEntity {
   name: string;
   description?: string;

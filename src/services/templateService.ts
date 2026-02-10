@@ -3,9 +3,13 @@ import {
   getAllTemplates,
   updateTemplate as updateTemplateFirestore,
   deleteTemplate as deleteTemplateFirestore,
+  createSubStepTemplate as createSubStepTemplateFirestore,
+  getAllSubStepTemplates as getAllSubStepTemplatesFirestore,
+  deleteSubStepTemplate as deleteSubStepTemplateFirestore,
+  updateSubStepTemplate as updateSubStepTemplateFirestore,
 } from '@/lib/firestore';
 import { addPhase } from '@/services/procedureService';
-import type { ProcedureTemplate, Phase } from '@/types';
+import type { ProcedureTemplate, Phase, SubStep, SubStepTemplate } from '@/types';
 
 /**
  * Crée un template de phase à partir d'une phase existante
@@ -117,4 +121,59 @@ export async function updatePhaseTemplate(
   updates: Partial<ProcedureTemplate>
 ): Promise<void> {
   await updateTemplateFirestore(templateId, updates);
+}
+
+// ==========================================
+// SUBSTEP TEMPLATES
+// ==========================================
+
+/**
+ * Crée un template de sous-étape à partir d'une sous-étape existante
+ * Sauvegarde titre, description, tips, safetyNotes, tools, estimatedTime (sans images/vidéos/documents)
+ */
+export async function createSubStepTemplateFromStep(
+  step: SubStep,
+  name: string,
+  category: string = 'Général'
+): Promise<string> {
+  const subStepData: Partial<SubStep> = {
+    title: step.title,
+    description: step.description,
+    tips: step.tips || [],
+    safetyNotes: step.safetyNotes || [],
+    tools: step.tools || [],
+    estimatedTime: step.estimatedTime || 0,
+  };
+
+  const templateId = await createSubStepTemplateFirestore({
+    name,
+    category,
+    subStep: subStepData,
+    usageCount: 0,
+  });
+
+  return templateId;
+}
+
+/**
+ * Récupère tous les templates de sous-étapes
+ */
+export async function getAllSubStepTemplates(): Promise<SubStepTemplate[]> {
+  return await getAllSubStepTemplatesFirestore();
+}
+
+/**
+ * Supprime un template de sous-étape
+ */
+export async function deleteSubStepTemplate(templateId: string): Promise<void> {
+  await deleteSubStepTemplateFirestore(templateId);
+}
+
+/**
+ * Incrémente le compteur d'utilisation d'un template de sous-étape
+ */
+export async function incrementSubStepTemplateUsage(templateId: string, currentCount: number): Promise<void> {
+  await updateSubStepTemplateFirestore(templateId, {
+    usageCount: currentCount + 1,
+  });
 }
