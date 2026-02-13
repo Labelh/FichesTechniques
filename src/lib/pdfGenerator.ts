@@ -1,6 +1,32 @@
 import jsPDF from 'jspdf';
 import { Procedure, Phase } from '../types';
 
+/**
+ * Nettoie le HTML d'une description pour en extraire le texte brut
+ */
+function stripHtml(html: string): string {
+  if (!html) return '';
+  // Remplacer les <br> et </div><div> par des sauts de ligne
+  let text = html.replace(/<br\s*\/?>/gi, '\n');
+  text = text.replace(/<\/div>\s*<div>/gi, '\n');
+  // Remplacer les éléments de liste par des tirets
+  text = text.replace(/<li[^>]*>/gi, '- ');
+  text = text.replace(/<\/li>/gi, '\n');
+  // Supprimer toutes les balises HTML restantes
+  text = text.replace(/<[^>]+>/g, '');
+  // Décoder les entités HTML courantes
+  text = text.replace(/&nbsp;/g, ' ');
+  text = text.replace(/&amp;/g, '&');
+  text = text.replace(/&lt;/g, '<');
+  text = text.replace(/&gt;/g, '>');
+  text = text.replace(/&quot;/g, '"');
+  text = text.replace(/&#039;/g, "'");
+  // Nettoyer les espaces multiples et lignes vides
+  text = text.replace(/[ \t]+/g, ' ');
+  text = text.replace(/\n{3,}/g, '\n\n');
+  return text.trim();
+}
+
 // Design professionnel avec touches de couleurs
 const COLORS = {
   primary: '#2c3e50',      // Bleu foncé
@@ -571,8 +597,9 @@ export class PDFGenerator {
           this.pdf.setTextColor(COLORS.text);
           this.pdf.setFontSize(9);
 
+          const cleanDescription = stripHtml(step.description);
           const stepLines = this.pdf.splitTextToSize(
-            step.description,
+            cleanDescription,
             this.pageWidth - 2 * this.margin - 12
           );
 

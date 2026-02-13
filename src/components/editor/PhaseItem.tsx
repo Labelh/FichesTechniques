@@ -12,6 +12,9 @@ import ToolSelector from '@/components/tools/ToolSelector';
 import type { Phase, DifficultyLevel, SubStep, AnnotatedImage, Tool, Annotation, SubStepTemplate } from '@/types';
 import { toast } from 'sonner';
 
+const NAS_VIDEO_BASE_KEY = 'fichestechniques_video_base_path';
+const NAS_DOCUMENT_BASE_KEY = 'fichestechniques_document_base_path';
+
 interface PhaseItemProps {
   phase: Phase;
   index: number;
@@ -880,9 +883,9 @@ function SubStepItem({
     span.style.fontWeight = 'bold';
     span.textContent = toolText;
 
-    // Créer un span avec style reset pour que le texte tapé ensuite soit blanc/normal
+    // Créer un span avec style reset pour que le texte tapé ensuite soit normal
     const resetSpan = document.createElement('span');
-    resetSpan.style.color = '#ffffff';
+    resetSpan.style.color = 'inherit';
     resetSpan.style.fontWeight = 'normal';
     resetSpan.innerHTML = '&nbsp;';
 
@@ -1016,32 +1019,22 @@ function SubStepItem({
     setImageToAnnotate(null);
   };
 
-  // Clé localStorage pour le chemin de base NAS
-  const VIDEO_BASE_PATH_KEY = 'fichestechniques_video_base_path';
-
-  const getStoredBasePath = (): string => {
-    return localStorage.getItem(VIDEO_BASE_PATH_KEY) || '';
-  };
-
-  const storeBasePath = (fullPath: string) => {
-    // Extraire le dossier parent du chemin complet
-    const lastSeparator = Math.max(fullPath.lastIndexOf('\\'), fullPath.lastIndexOf('/'));
-    if (lastSeparator > 0) {
-      const basePath = fullPath.substring(0, lastSeparator + 1);
-      localStorage.setItem(VIDEO_BASE_PATH_KEY, basePath);
-    }
-  };
+  // === VIDÉOS ===
 
   const handleAddVideo = () => {
     if (!videoUrl.trim()) return;
 
-    // Stocker le chemin de base pour les prochaines vidéos
-    storeBasePath(videoUrl.trim());
+    // Mémoriser le dossier parent pour les prochaines sélections
+    const url = videoUrl.trim();
+    const lastSep = Math.max(url.lastIndexOf('\\'), url.lastIndexOf('/'));
+    if (lastSep > 0) {
+      localStorage.setItem(NAS_VIDEO_BASE_KEY, url.substring(0, lastSep + 1));
+    }
 
     const newVideo = {
       id: crypto.randomUUID(),
       name: videoTitle.trim() || 'Vidéo',
-      url: videoUrl.trim(),
+      url: url,
       size: 0,
       mimeType: 'video/mp4',
       createdAt: new Date(),
@@ -1055,79 +1048,71 @@ function SubStepItem({
   };
 
   const handleVideoFileSelect = async () => {
-    const basePath = getStoredBasePath();
-
-    // Essayer d'utiliser l'API File System Access pour obtenir le chemin complet
-    if ('showOpenFilePicker' in window) {
-      try {
-        const [fileHandle] = await (window as any).showOpenFilePicker({
-          types: [{
-            description: 'Fichiers vidéo',
-            accept: { 'video/*': ['.mp4', '.avi', '.mkv', '.mov', '.wmv', '.webm'] }
-          }],
-          multiple: false
-        });
-        const file = await fileHandle.getFile();
-        // Combiner le chemin de base mémorisé avec le nom du fichier
-        const fullPath = basePath ? basePath + file.name : file.name;
-        setVideoUrl(fullPath);
-        if (!videoTitle.trim()) {
-          // Extraire le nom sans extension pour le titre
-          const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
-          setVideoTitle(nameWithoutExt);
-        }
-      } catch (err) {
-        // L'utilisateur a annulé ou erreur
-        console.log('Sélection de fichier annulée');
-      }
-    } else {
-      // Fallback sur input file classique
-      videoFileInputRef.current?.click();
-    }
+    // Utiliser l'input file classique qui donne le chemin complet via webkitRelativePath ou value
+    videoFileInputRef.current?.click();
   };
 
   const handleVideoFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const basePath = getStoredBasePath();
-      // Combiner le chemin de base mémorisé avec le nom du fichier
-      const fullPath = basePath ? basePath + file.name : file.name;
+      // Récupérer le chemin complet depuis l'input file
+      const rawValue = e.target.value || '';
+      const basePath = localStorage.getItem(NAS_VIDEO_BASE_KEY) || '';
+
+      let fullPath: string;
+      if (rawValue && !rawValue.includes('fakepath')) {
+        // Le navigateur a fourni le vrai chemin
+        fullPath = rawValue;
+      } else if (basePath) {
+        // Utiliser le chemin de base mémorisé + nom du fichier
+        fullPath = basePath + file.name;
+      } else {
+        // Pas de chemin de base : demander à l'utilisateur
+        const folderPath = prompt(
+          'Le navigateur ne fournit pas le chemin complet du fichier.\n\n' +
+          'Entrez le chemin du dossier contenant la vidéo :\n' +
+          '(ex: Y:\\AJUST \'82\\SYSTEME QUALITE\\...\\Vidéo\\)'
+        );
+        if (folderPath) {
+          // S'assurer que le chemin finit par un séparateur
+          const sep = folderPath.endsWith('\\') || folderPath.endsWith('/') ? '' : '\\';
+          const cleanPath = folderPath + sep;
+          localStorage.setItem(NAS_VIDEO_BASE_KEY, cleanPath);
+          fullPath = cleanPath + file.name;
+        } else {
+          // L'utilisateur a annulé
+          if (videoFileInputRef.current) videoFileInputRef.current.value = '';
+          return;
+        }
+      }
+
       setVideoUrl(fullPath);
       if (!videoTitle.trim()) {
         const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
         setVideoTitle(nameWithoutExt);
       }
     }
-    // Reset l'input pour permettre de resélectionner le même fichier
     if (videoFileInputRef.current) {
       videoFileInputRef.current.value = '';
     }
   };
 
-  // Clé localStorage pour le chemin de base des documents
-  const DOCUMENT_BASE_PATH_KEY = 'fichestechniques_document_base_path';
-
-  const getStoredDocumentBasePath = (): string => {
-    return localStorage.getItem(DOCUMENT_BASE_PATH_KEY) || '';
-  };
-
-  const storeDocumentBasePath = (fullPath: string) => {
-    const lastSeparator = Math.max(fullPath.lastIndexOf('\\'), fullPath.lastIndexOf('/'));
-    if (lastSeparator > 0) {
-      const basePath = fullPath.substring(0, lastSeparator + 1);
-      localStorage.setItem(DOCUMENT_BASE_PATH_KEY, basePath);
-    }
-  };
+  // === DOCUMENTS ===
 
   const handleAddDocument = () => {
     if (!documentUrl.trim()) return;
 
-    storeDocumentBasePath(documentUrl.trim());
+    // Mémoriser le dossier parent pour les prochaines sélections
+    const url = documentUrl.trim();
+    const lastSep = Math.max(url.lastIndexOf('\\'), url.lastIndexOf('/'));
+    if (lastSep > 0) {
+      localStorage.setItem(NAS_DOCUMENT_BASE_KEY, url.substring(0, lastSep + 1));
+    }
 
     const newDocument = {
       id: crypto.randomUUID(),
       name: documentTitle.trim() || 'Document',
-      url: documentUrl.trim(),
+      url: url,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -1139,37 +1124,42 @@ function SubStepItem({
   };
 
   const handleDocumentFileSelect = async () => {
-    const basePath = getStoredDocumentBasePath();
-
-    if ('showOpenFilePicker' in window) {
-      try {
-        const [fileHandle] = await (window as any).showOpenFilePicker({
-          types: [{
-            description: 'Documents PDF',
-            accept: { 'application/pdf': ['.pdf'] }
-          }],
-          multiple: false
-        });
-        const file = await fileHandle.getFile();
-        const fullPath = basePath ? basePath + file.name : file.name;
-        setDocumentUrl(fullPath);
-        if (!documentTitle.trim()) {
-          const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
-          setDocumentTitle(nameWithoutExt);
-        }
-      } catch (err) {
-        console.log('Sélection de fichier annulée');
-      }
-    } else {
-      documentFileInputRef.current?.click();
-    }
+    // Utiliser l'input file classique
+    documentFileInputRef.current?.click();
   };
 
   const handleDocumentFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const basePath = getStoredDocumentBasePath();
-      const fullPath = basePath ? basePath + file.name : file.name;
+      // Récupérer le chemin complet depuis l'input file
+      const rawValue = e.target.value || '';
+      const basePath = localStorage.getItem(NAS_DOCUMENT_BASE_KEY) || '';
+
+      let fullPath: string;
+      if (rawValue && !rawValue.includes('fakepath')) {
+        // Le navigateur a fourni le vrai chemin
+        fullPath = rawValue;
+      } else if (basePath) {
+        // Utiliser le chemin de base mémorisé + nom du fichier
+        fullPath = basePath + file.name;
+      } else {
+        // Pas de chemin de base : demander à l'utilisateur
+        const folderPath = prompt(
+          'Le navigateur ne fournit pas le chemin complet du fichier.\n\n' +
+          'Entrez le chemin du dossier contenant le document :\n' +
+          '(ex: Y:\\AJUST \'82\\SYSTEME QUALITE\\...\\Documents\\)'
+        );
+        if (folderPath) {
+          const sep = folderPath.endsWith('\\') || folderPath.endsWith('/') ? '' : '\\';
+          const cleanPath = folderPath + sep;
+          localStorage.setItem(NAS_DOCUMENT_BASE_KEY, cleanPath);
+          fullPath = cleanPath + file.name;
+        } else {
+          if (documentFileInputRef.current) documentFileInputRef.current.value = '';
+          return;
+        }
+      }
+
       setDocumentUrl(fullPath);
       if (!documentTitle.trim()) {
         const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
@@ -1559,12 +1549,36 @@ function SubStepItem({
               Vidéos ({step.videos?.length || 0})
             </label>
             <div className="flex flex-wrap gap-3 mb-2">
-              {(step.videos || []).map((video) => (
+              {(step.videos || []).map((video) => {
+                const hasFullPath = video.url.includes('\\') || video.url.includes('/');
+                return (
                 <div key={video.id} className="relative group flex items-center gap-2 p-2 bg-background-elevated rounded border border-[#323232]">
                   <VideoIcon className="h-5 w-5 text-text-muted flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-white truncate">{video.name}</div>
-                    <div className="text-xs text-gray-500 truncate" title={video.url}>{video.url}</div>
+                    <div
+                      className={`text-xs truncate cursor-pointer hover:underline ${hasFullPath ? 'text-gray-500' : 'text-orange-400'}`}
+                      title={hasFullPath ? video.url : 'Chemin incomplet ! Cliquez pour corriger.'}
+                      onClick={() => {
+                        const newPath = prompt(
+                          'Chemin complet de la vidéo :',
+                          video.url
+                        );
+                        if (newPath && newPath !== video.url) {
+                          // Mémoriser le dossier parent
+                          const lastSep = Math.max(newPath.lastIndexOf('\\'), newPath.lastIndexOf('/'));
+                          if (lastSep > 0) {
+                            localStorage.setItem(NAS_VIDEO_BASE_KEY, newPath.substring(0, lastSep + 1));
+                          }
+                          const updatedVideos = (step.videos || []).map(v =>
+                            v.id === video.id ? { ...v, url: newPath } : v
+                          );
+                          onUpdate({ videos: updatedVideos });
+                        }
+                      }}
+                    >
+                      {hasFullPath ? video.url : `⚠ ${video.url} (chemin incomplet)`}
+                    </div>
                   </div>
                   <button
                     onClick={() => onRemoveVideo(video.id)}
@@ -1574,7 +1588,8 @@ function SubStepItem({
                     <X className="h-3 w-3" />
                   </button>
                 </div>
-              ))}
+                );
+              })}
             </div>
             {showVideoInput ? (
               <div className="space-y-2">
@@ -1664,12 +1679,35 @@ function SubStepItem({
               Documents ({step.documents?.length || 0})
             </label>
             <div className="flex flex-wrap gap-3 mb-2">
-              {(step.documents || []).map((doc) => (
+              {(step.documents || []).map((doc) => {
+                const hasFullPath = doc.url.includes('\\') || doc.url.includes('/');
+                return (
                 <div key={doc.id} className="relative group flex items-center gap-2 p-2 bg-background-elevated rounded border border-[#323232]">
                   <FileText className="h-5 w-5 text-red-500 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-white truncate">{doc.name}</div>
-                    <div className="text-xs text-gray-500 truncate" title={doc.url}>{doc.url}</div>
+                    <div
+                      className={`text-xs truncate cursor-pointer hover:underline ${hasFullPath ? 'text-gray-500' : 'text-orange-400'}`}
+                      title={hasFullPath ? doc.url : 'Chemin incomplet ! Cliquez pour corriger.'}
+                      onClick={() => {
+                        const newPath = prompt(
+                          'Chemin complet du document :',
+                          doc.url
+                        );
+                        if (newPath && newPath !== doc.url) {
+                          const lastSep = Math.max(newPath.lastIndexOf('\\'), newPath.lastIndexOf('/'));
+                          if (lastSep > 0) {
+                            localStorage.setItem(NAS_DOCUMENT_BASE_KEY, newPath.substring(0, lastSep + 1));
+                          }
+                          const updatedDocs = (step.documents || []).map(d =>
+                            d.id === doc.id ? { ...d, url: newPath } : d
+                          );
+                          onUpdate({ documents: updatedDocs });
+                        }
+                      }}
+                    >
+                      {hasFullPath ? doc.url : `⚠ ${doc.url} (chemin incomplet)`}
+                    </div>
                   </div>
                   <button
                     onClick={() => onRemoveDocument(doc.id)}
@@ -1679,7 +1717,8 @@ function SubStepItem({
                     <X className="h-3 w-3" />
                   </button>
                 </div>
-              ))}
+                );
+              })}
             </div>
             {showDocumentInput ? (
               <div className="space-y-2">

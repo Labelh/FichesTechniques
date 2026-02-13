@@ -33,6 +33,9 @@ export async function generateHTML(
   phases: Phase[],
   availableTools?: any[]
 ): Promise<void> {
+  // Réinitialiser l'index vidéo pour ce nouvel export
+  resetVideoIndex();
+
   // Collecter toutes les images annotées
   const allAnnotatedImages: AnnotatedImage[] = [];
 
@@ -681,6 +684,15 @@ export async function generateHTML(
             color: #555;
             word-wrap: break-word;
             overflow-wrap: break-word;
+        }
+
+        /* Forcer le texte blanc (mode sombre) en noir pour l'export */
+        .step-description-content span[style*="color: #ffffff"],
+        .step-description-content span[style*="color: #FFFFFF"],
+        .step-description-content span[style*="color: #fff"],
+        .step-description-content span[style*="color: white"],
+        .step-description-content span[style*="color: rgb(255, 255, 255)"] {
+            color: #1a1a1a !important;
         }
 
         .step-description-content ul,
@@ -1604,22 +1616,15 @@ export async function generateHTML(
         <img id="modal-image" alt="">
     </div>
 
+    ${generateVideoPathsScript()}
+
     <!-- Modal pour le lecteur vidéo -->
     <div id="video-modal" class="video-modal" onclick="closeVideoPlayer(event)">
         <div class="video-modal-content" onclick="event.stopPropagation()">
-            <div class="video-modal-header">
-                <span id="video-modal-title" class="video-modal-title"></span>
-                <button class="video-modal-close" onclick="closeVideoPlayer(event)">&times;</button>
-            </div>
+            <button class="video-modal-close" onclick="closeVideoPlayer(event)">&times;</button>
             <div class="video-modal-body">
-                <video id="video-player" controls style="width: 100%; max-height: 75vh; background: #000;">
-                    Votre navigateur ne supporte pas la lecture vidéo.
-                </video>
-                <div id="video-error" style="display: none;"></div>
-            </div>
-            <div id="video-path-container" class="video-path-container">
-                <span id="video-path-text" class="video-path-text"></span>
-                <button onclick="copyVideoPath()" class="video-copy-btn" title="Copier le chemin">📋</button>
+                <video id="video-player" controls style="width: 100%; max-height: 80vh; background: #000;"></video>
+                <div id="video-loading" style="display:none; text-align:center; padding:60px; color:#aaa; font-size:1.1rem;">Chargement de la vidéo...</div>
             </div>
         </div>
     </div>
@@ -1629,164 +1634,102 @@ export async function generateHTML(
             display: none;
             position: fixed;
             z-index: 10000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
             background-color: rgba(0, 0, 0, 0.9);
             justify-content: center;
             align-items: center;
         }
-        .video-modal.active {
-            display: flex;
-        }
+        .video-modal.active { display: flex; }
         .video-modal-content {
-            background: #1a1a1a;
+            background: #000;
             border-radius: 12px;
             width: 90%;
             max-width: 900px;
             max-height: 90%;
             overflow: hidden;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-        }
-        .video-modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 20px;
-            background: #252525;
-            border-bottom: 1px solid #333;
-        }
-        .video-modal-title {
-            color: white;
-            font-size: 1.1rem;
-            font-weight: 600;
+            position: relative;
         }
         .video-modal-close {
-            background: transparent;
-            border: none;
-            color: #999;
-            font-size: 28px;
-            cursor: pointer;
-            padding: 0 8px;
-            line-height: 1;
-            transition: color 0.2s;
+            position: absolute;
+            top: 10px; right: 14px;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.6);
+            border: none; color: #ccc;
+            font-size: 28px; cursor: pointer;
+            padding: 2px 10px; line-height: 1;
+            border-radius: 50%;
+            transition: color 0.2s, background 0.2s;
         }
-        .video-modal-close:hover {
-            color: white;
-        }
-        .video-modal-body {
-            padding: 0;
-            background: #000;
-        }
-        .video-path-container {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 16px;
-            background: #252525;
-            border-top: 1px solid #333;
-        }
-        .video-path-text {
-            flex: 1;
-            font-size: 0.8rem;
-            color: #888;
-            word-break: break-all;
-            font-family: monospace;
-        }
-        .video-copy-btn {
-            background: #333;
-            border: none;
-            padding: 6px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.2s;
-        }
-        .video-copy-btn:hover {
-            background: #444;
-        }
+        .video-modal-close:hover { color: white; background: rgba(0, 0, 0, 0.8); }
+        .video-modal-body { padding: 0; background: #000; }
     </style>
 
     <script>
-        var currentVideoPath = '';
+        var currentBlobUrl = null;
 
-        function openVideoPlayer(videoPath, videoTitle) {
+        function openVideoPlayer(index) {
+            var videoUrl = (typeof VIDEO_PATHS !== 'undefined') ? VIDEO_PATHS[index] : '';
+            if (!videoUrl) return;
+
+            console.log('Lecture vidéo index=' + index + ', URL=' + videoUrl);
+
             var modal = document.getElementById('video-modal');
             var player = document.getElementById('video-player');
-            var title = document.getElementById('video-modal-title');
-            var errorDiv = document.getElementById('video-error');
-            var pathText = document.getElementById('video-path-text');
+            var loading = document.getElementById('video-loading');
 
-            currentVideoPath = videoPath;
-
-            // Reset
-            if (errorDiv) {
-                errorDiv.style.display = 'none';
-                errorDiv.innerHTML = '';
-            }
-            player.style.display = 'block';
-
-            title.textContent = videoTitle || 'Vidéo';
-            pathText.textContent = videoPath;
-            player.src = videoPath;
+            // Afficher le modal avec le loader
+            player.style.display = 'none';
+            loading.style.display = 'block';
             modal.classList.add('active');
             document.body.style.overflow = 'hidden';
 
-            // Tenter la lecture
-            player.load();
-            player.play().catch(function(e) {
-                console.log('Lecture automatique bloquée:', e);
-            });
+            // Libérer le blob précédent
+            if (currentBlobUrl) {
+                URL.revokeObjectURL(currentBlobUrl);
+                currentBlobUrl = null;
+            }
+
+            // Méthode 1 : charger via fetch puis blob URL (contourne la sécurité file://)
+            fetch(videoUrl)
+                .then(function(response) {
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    return response.blob();
+                })
+                .then(function(blob) {
+                    currentBlobUrl = URL.createObjectURL(blob);
+                    player.src = currentBlobUrl;
+                    loading.style.display = 'none';
+                    player.style.display = 'block';
+                    player.load();
+                    player.play().catch(function() {});
+                })
+                .catch(function(err) {
+                    console.log('Fetch échoué (' + err.message + '), tentative src direct...');
+                    // Méthode 2 : src direct (fonctionne sur Firefox et certains navigateurs)
+                    player.src = videoUrl;
+                    loading.style.display = 'none';
+                    player.style.display = 'block';
+                    player.load();
+                    player.play().catch(function() {});
+                });
         }
 
         function closeVideoPlayer(event) {
             if (event && event.target.classList.contains('video-modal-close')) {
-                // Clic sur le bouton fermer
+                // OK
             } else if (event && event.target.id !== 'video-modal') {
                 return;
             }
-
             var modal = document.getElementById('video-modal');
             var player = document.getElementById('video-player');
-
             player.pause();
             player.src = '';
             modal.classList.remove('active');
             document.body.style.overflow = 'auto';
         }
 
-        function copyVideoPath() {
-            navigator.clipboard.writeText(currentVideoPath).then(function() {
-                var btn = document.querySelector('.video-copy-btn');
-                var original = btn.textContent;
-                btn.textContent = '✓';
-                setTimeout(function() { btn.textContent = original; }, 1500);
-            });
-        }
-
-        // Gestion des erreurs vidéo
-        document.addEventListener('DOMContentLoaded', function() {
-            var player = document.getElementById('video-player');
-            if (player) {
-                player.addEventListener('error', function(e) {
-                    var errorDiv = document.getElementById('video-error');
-                    if (errorDiv && currentVideoPath) {
-                        player.style.display = 'none';
-                        errorDiv.innerHTML =
-                            '<div style="text-align: center; padding: 40px; color: #fff;">' +
-                            '<div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>' +
-                            '<div style="font-size: 1.1rem; margin-bottom: 12px;">Impossible de lire la vidéo</div>' +
-                            '<div style="font-size: 0.9rem; color: #aaa; margin-bottom: 20px;">Le navigateur ne peut pas accéder au fichier.</div>' +
-                            '<div style="font-size: 0.85rem; color: #888; margin-bottom: 20px;">💡 Copiez le chemin ci-dessous et collez-le dans l\\'explorateur Windows pour ouvrir la vidéo.</div>' +
-                            '</div>';
-                        errorDiv.style.display = 'block';
-                    }
-                });
-            }
-        });
-
-        // Fermer avec Échap
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 var modal = document.getElementById('video-modal');
@@ -2170,6 +2113,8 @@ function generateImageCarousel(images: AnnotatedImage[], renderedImageUrls: Map<
 
 /**
  * Convertit un chemin Windows/UNC en URL file:/// compatible navigateur
+ * N'encode PAS les caractères UTF-8 (accents, etc.) pour que le chemin
+ * corresponde exactement au système de fichiers.
  */
 function convertToFileUrl(path: string): string {
   if (!path) return path;
@@ -2179,35 +2124,48 @@ function convertToFileUrl(path: string): string {
     return path;
   }
 
+  // Convertir les backslashes en forward slashes
+  const normalized = path.replace(/\\/g, '/');
+
   // Chemin UNC Windows (\\NAS\folder\file.mp4)
   if (path.startsWith('\\\\')) {
-    // Convertir \\NAS\folder\file.mp4 en file://///NAS/folder/file.mp4
-    const converted = 'file:///' + path.replace(/\\/g, '/');
-    return converted;
+    return 'file:///' + normalized;
   }
 
   // Chemin Windows absolu (C:\folder\file.mp4)
-  if (/^[A-Za-z]:/.test(path)) {
-    // Convertir C:\folder\file.mp4 en file:///C:/folder/file.mp4
-    const converted = 'file:///' + path.replace(/\\/g, '/');
-    return converted;
+  if (/^[A-Za-z]:/.test(normalized)) {
+    return 'file:///' + normalized;
   }
 
   // Chemin relatif ou autre, retourner tel quel
   return path;
 }
 
+// Compteur global pour indexer les vidéos dans le HTML
+let videoGlobalIndex = 0;
+const videoGlobalPaths: string[] = [];
+
 /**
- * Génère un carrousel de vidéos - ouvre directement avec le lecteur système
+ * Réinitialiser l'index vidéo (appelé au début de chaque export)
+ */
+function resetVideoIndex() {
+  videoGlobalIndex = 0;
+  videoGlobalPaths.length = 0;
+}
+
+/**
+ * Génère un carrousel de vidéos
  */
 function generateVideoCarousel(videos: any[], _carouselId: string): string {
   if (videos.length === 0) return '';
 
   const videoButtons = videos.map((video) => {
     const videoTitle = video.name || video.title || 'Vidéo';
-    const videoUrl = convertToFileUrl(video.url);
+    const idx = videoGlobalIndex++;
+    // Stocker le chemin file:// pour le tableau JS
+    videoGlobalPaths.push(convertToFileUrl(video.url));
     return `
-      <button type="button" onclick="openVideoPlayer('${escapeHtml(videoUrl).replace(/'/g, "\\'")}', '${escapeHtml(videoTitle).replace(/'/g, "\\'")}')" class="video-button" style="
+      <button type="button" onclick="openVideoPlayer(${idx})" class="video-button" style="
         display: inline-flex;
         align-items: center;
         gap: 10px;
@@ -2240,6 +2198,16 @@ function generateVideoCarousel(videos: any[], _carouselId: string): string {
       </div>
     </div>
   `;
+}
+
+/**
+ * Génère le script contenant le tableau des chemins vidéo
+ * À insérer dans le HTML après la génération de toutes les phases
+ */
+function generateVideoPathsScript(): string {
+  if (videoGlobalPaths.length === 0) return '';
+  // JSON.stringify échappe correctement tous les caractères spéciaux (', ", \, etc.)
+  return `<script>var VIDEO_PATHS = ${JSON.stringify(videoGlobalPaths)};</script>`;
 }
 
 /**
