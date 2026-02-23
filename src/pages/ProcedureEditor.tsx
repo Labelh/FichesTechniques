@@ -36,6 +36,7 @@ export default function ProcedureEditor() {
   const [showVersionForm, setShowVersionForm] = useState(false);
   const [newVersionType, setNewVersionType] = useState<'major' | 'minor'>('minor');
   const [newVersionDescription, setNewVersionDescription] = useState('');
+  const [status, setStatus] = useState<'en_cours' | 'completed'>('en_cours');
 
   useEffect(() => {
     if (existingProcedure) {
@@ -44,6 +45,7 @@ export default function ProcedureEditor() {
       setDefects(existingProcedure.defects || []);
       setVersionString(existingProcedure.versionString || '1.0');
       setChangelog(existingProcedure.changelog || []);
+      setStatus(existingProcedure.status === 'completed' ? 'completed' : 'en_cours');
 
       if (existingProcedure.coverImage) {
         setCoverImage(existingProcedure.coverImage);
@@ -63,7 +65,7 @@ export default function ProcedureEditor() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [reference, designation, coverImage, defects, versionString, changelog, id, existingProcedure]);
+  }, [reference, designation, coverImage, defects, versionString, changelog, status, id, existingProcedure]);
 
   const calculateNextVersion = (current: string, type: 'major' | 'minor'): string => {
     const [major, minor] = current.split('.').map(Number);
@@ -92,6 +94,7 @@ export default function ProcedureEditor() {
           defects: defects,
           versionString: versionString,
           changelog: changelog,
+          status: status as any,
         });
         toast.success('✅ Sauvegarde rapide effectuée !', {
           duration: 3000,
@@ -106,6 +109,7 @@ export default function ProcedureEditor() {
           description: '',
           coverImage: coverImage || undefined,
           defects: defects,
+          status: status as any,
           versionString: '1.0',
           changelog: [{
             id: crypto.randomUUID(),
@@ -474,7 +478,15 @@ export default function ProcedureEditor() {
         </Link>
 
         <div className="flex items-center gap-3">
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value as 'en_cours' | 'completed')}
+              className="rounded-md border border-[#323232] bg-transparent px-3 py-2 text-sm text-white"
+            >
+              <option value="en_cours">En cours</option>
+              <option value="completed">Terminée</option>
+            </select>
             {id && existingProcedure && (
               <Button variant="secondary" onClick={handleExportHTML}>
                 <Download className="h-4 w-4 mr-2" />

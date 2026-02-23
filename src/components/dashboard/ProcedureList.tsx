@@ -60,6 +60,7 @@ export default function ProcedureList({ procedures }: ProcedureListProps) {
           <tr>
             <th>Référence</th>
             <th>Désignation</th>
+            <th>Statut</th>
             <th>Temps par pièce</th>
             <th>Difficulté</th>
             <th>Modifié</th>
@@ -78,6 +79,17 @@ export default function ProcedureList({ procedures }: ProcedureListProps) {
               </td>
               <td className="font-medium text-white">
                 {procedure.designation || procedure.title}
+              </td>
+              <td>
+                {procedure.status === 'completed' ? (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-900 text-green-300">
+                    Terminée
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-900 text-blue-300">
+                    En cours
+                  </span>
+                )}
               </td>
               <td className="text-sm text-gray-400">
                 {getTotalTime(procedure)}
