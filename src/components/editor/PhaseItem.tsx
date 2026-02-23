@@ -1056,15 +1056,11 @@ function SubStepItem({
     const file = e.target.files?.[0];
     if (file) {
       // Récupérer le chemin complet depuis l'input file
-      const rawValue = e.target.value || '';
       const basePath = localStorage.getItem(NAS_VIDEO_BASE_KEY) || '';
 
       let fullPath: string;
-      if (rawValue && !rawValue.includes('fakepath')) {
-        // Le navigateur a fourni le vrai chemin
-        fullPath = rawValue;
-      } else if (basePath) {
-        // Utiliser le chemin de base mémorisé + nom du fichier
+      if (basePath) {
+        // Utiliser le chemin de base mémorisé + nom du fichier (priorité au chemin NAS)
         fullPath = basePath + file.name;
       } else {
         // Pas de chemin de base : demander à l'utilisateur
@@ -1132,15 +1128,11 @@ function SubStepItem({
     const file = e.target.files?.[0];
     if (file) {
       // Récupérer le chemin complet depuis l'input file
-      const rawValue = e.target.value || '';
       const basePath = localStorage.getItem(NAS_DOCUMENT_BASE_KEY) || '';
 
       let fullPath: string;
-      if (rawValue && !rawValue.includes('fakepath')) {
-        // Le navigateur a fourni le vrai chemin
-        fullPath = rawValue;
-      } else if (basePath) {
-        // Utiliser le chemin de base mémorisé + nom du fichier
+      if (basePath) {
+        // Utiliser le chemin de base mémorisé + nom du fichier (priorité au chemin NAS)
         fullPath = basePath + file.name;
       } else {
         // Pas de chemin de base : demander à l'utilisateur
