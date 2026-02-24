@@ -1,26 +1,16 @@
 import { useAppStore } from '@/store/useAppStore';
-import { useCategories } from '@/hooks/useDatabase';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 
 export default function FilterPanel() {
   const { searchFilters, setSearchFilters, clearFilters } = useAppStore();
-  const categories = useCategories();
-
-  const difficulties = [
-    { value: 'trainee', label: 'Apprenti', color: 'bg-blue-500' },
-    { value: 'easy', label: 'Facile', color: 'bg-green-500' },
-    { value: 'medium', label: 'Moyen', color: 'bg-yellow-500' },
-    { value: 'hard', label: 'Difficile', color: 'bg-red-500' },
-    { value: 'control', label: 'Contrôle', color: 'bg-orange-500' },
-  ];
 
   const statuses = [
-    { value: 'draft', label: 'Brouillon' },
-    { value: 'in_progress', label: 'En cours' },
-    { value: 'in_review', label: 'En révision' },
-    { value: 'completed', label: 'Terminé' },
-    { value: 'archived', label: 'Archivé' },
+    { value: 'en_cours', label: 'En cours' },
+    { value: 'verification', label: 'Vérification Technique' },
+    { value: 'relecture', label: 'Relecture et Correction' },
+    { value: 'mise_a_jour_timetonic', label: 'Mise à jour Timetonic' },
+    { value: 'completed', label: 'Terminée' },
   ];
 
   const toggleFilter = (key: string, value: any) => {
@@ -54,45 +44,6 @@ export default function FilterPanel() {
           ))}
         </div>
       </div>
-
-      {/* Difficulty */}
-      <div>
-        <h4 className="text-sm font-medium mb-2">Difficulté</h4>
-        <div className="flex flex-wrap gap-2">
-          {difficulties.map((diff) => (
-            <Badge
-              key={diff.value}
-              variant={isActive('difficulty', diff.value) ? 'default' : 'secondary'}
-              className="cursor-pointer flex items-center gap-1"
-              onClick={() => toggleFilter('difficulty', diff.value)}
-            >
-              <div className={`w-2 h-2 rounded-full ${diff.color}`}></div>
-              {diff.label}
-            </Badge>
-          ))}
-        </div>
-      </div>
-
-      {/* Categories */}
-      {categories && categories.length > 0 && (
-        <div>
-          <h4 className="text-sm font-medium mb-2">Catégories</h4>
-          <div className="flex flex-wrap gap-2">
-            {categories.map((cat) => (
-              <Badge
-                key={cat.id}
-                variant={
-                  isActive('categories', cat.name) ? 'default' : 'secondary'
-                }
-                className="cursor-pointer"
-                onClick={() => toggleFilter('categories', cat.name)}
-              >
-                {cat.name}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Clear Filters */}
       <div className="pt-2">
