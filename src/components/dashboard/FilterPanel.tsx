@@ -1,5 +1,6 @@
 import { useAppStore } from '@/store/useAppStore';
 import { Button } from '@/components/ui/Button';
+import { ProcedureStatus } from '@/types';
 
 export default function FilterPanel() {
   const { searchFilters, setSearchFilters, clearFilters } = useAppStore();
@@ -16,7 +17,7 @@ export default function FilterPanel() {
   const currentStatus = ((searchFilters as any).status || [])[0] || '';
 
   const handleStatusChange = (value: string) => {
-    setSearchFilters({ ...searchFilters, status: value ? [value] : [] });
+    setSearchFilters({ ...searchFilters, status: value ? [value as ProcedureStatus] : [] });
   };
 
   return (
