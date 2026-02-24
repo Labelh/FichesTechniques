@@ -1,11 +1,11 @@
 import { useAppStore } from '@/store/useAppStore';
-import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 
 export default function FilterPanel() {
   const { searchFilters, setSearchFilters, clearFilters } = useAppStore();
 
   const statuses = [
+    { value: '', label: 'Tous les statuts' },
     { value: 'en_cours', label: 'En cours' },
     { value: 'verification', label: 'Vérification Technique' },
     { value: 'relecture', label: 'Relecture et Correction' },
@@ -13,17 +13,10 @@ export default function FilterPanel() {
     { value: 'completed', label: 'Terminée' },
   ];
 
-  const toggleFilter = (key: string, value: any) => {
-    const current = (searchFilters as any)[key] || [];
-    const newFilters = current.includes(value)
-      ? current.filter((v: any) => v !== value)
-      : [...current, value];
+  const currentStatus = ((searchFilters as any).status || [])[0] || '';
 
-    setSearchFilters({ ...searchFilters, [key]: newFilters });
-  };
-
-  const isActive = (key: string, value: any) => {
-    return ((searchFilters as any)[key] || []).includes(value);
+  const handleStatusChange = (value: string) => {
+    setSearchFilters({ ...searchFilters, status: value ? [value] : [] });
   };
 
   return (
@@ -31,18 +24,17 @@ export default function FilterPanel() {
       {/* Status */}
       <div>
         <h4 className="text-sm font-medium mb-2">Statut</h4>
-        <div className="flex flex-wrap gap-2">
+        <select
+          value={currentStatus}
+          onChange={(e) => handleStatusChange(e.target.value)}
+          className="w-full rounded-md border border-[#323232] bg-transparent px-3 py-2 text-sm text-white"
+        >
           {statuses.map((status) => (
-            <Badge
-              key={status.value}
-              variant={isActive('status', status.value) ? 'default' : 'secondary'}
-              className="cursor-pointer"
-              onClick={() => toggleFilter('status', status.value)}
-            >
+            <option key={status.value} value={status.value} className="bg-[#1a1a1a]">
               {status.label}
-            </Badge>
+            </option>
           ))}
-        </div>
+        </select>
       </div>
 
       {/* Clear Filters */}
