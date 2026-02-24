@@ -91,7 +91,11 @@ export default function ProcedureList({ procedures }: ProcedureListProps) {
                   </span>
                 ) : procedure.status === 'relecture' ? (
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-900 text-red-300">
-                    Relecture
+                    Relecture et Correction
+                  </span>
+                ) : procedure.status === 'mise_a_jour_timetonic' ? (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-900 text-purple-300">
+                    Mise à jour Timetonic
                   </span>
                 ) : (
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-900 text-yellow-300">

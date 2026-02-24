@@ -15,6 +15,7 @@ export enum ProcedureStatus {
   EN_COURS = 'en_cours',
   VERIFICATION = 'verification',
   RELECTURE = 'relecture',
+  MISE_A_JOUR_TIMETONIC = 'mise_a_jour_timetonic',
   IN_REVIEW = 'in_review',
   COMPLETED = 'completed',
   ARCHIVED = 'archived',
