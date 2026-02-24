@@ -36,7 +36,7 @@ export default function ProcedureEditor() {
   const [showVersionForm, setShowVersionForm] = useState(false);
   const [newVersionType, setNewVersionType] = useState<'major' | 'minor'>('minor');
   const [newVersionDescription, setNewVersionDescription] = useState('');
-  const [status, setStatus] = useState<'en_cours' | 'completed'>('en_cours');
+  const [status, setStatus] = useState<'en_cours' | 'verification' | 'relecture' | 'completed'>('en_cours');
 
   useEffect(() => {
     if (existingProcedure) {
@@ -45,7 +45,8 @@ export default function ProcedureEditor() {
       setDefects(existingProcedure.defects || []);
       setVersionString(existingProcedure.versionString || '1.0');
       setChangelog(existingProcedure.changelog || []);
-      setStatus(existingProcedure.status === 'completed' ? 'completed' : 'en_cours');
+      const s = existingProcedure.status as string;
+      setStatus((['en_cours', 'verification', 'relecture', 'completed'].includes(s) ? s : 'en_cours') as 'en_cours' | 'verification' | 'relecture' | 'completed');
 
       if (existingProcedure.coverImage) {
         setCoverImage(existingProcedure.coverImage);
@@ -481,10 +482,12 @@ export default function ProcedureEditor() {
           <div className="flex gap-2 items-center">
             <select
               value={status}
-              onChange={(e) => setStatus(e.target.value as 'en_cours' | 'completed')}
+              onChange={(e) => setStatus(e.target.value as 'en_cours' | 'verification' | 'relecture' | 'completed')}
               className="rounded-md border border-[#323232] bg-transparent px-3 py-2 text-sm text-white"
             >
               <option value="en_cours">En cours</option>
+              <option value="verification">Vérification Technique</option>
+              <option value="relecture">Relecture</option>
               <option value="completed">Terminée</option>
             </select>
             {id && existingProcedure && (

@@ -13,6 +13,8 @@ export enum DifficultyLevel {
 export enum ProcedureStatus {
   DRAFT = 'draft',
   EN_COURS = 'en_cours',
+  VERIFICATION = 'verification',
+  RELECTURE = 'relecture',
   IN_REVIEW = 'in_review',
   COMPLETED = 'completed',
   ARCHIVED = 'archived',

@@ -85,8 +85,16 @@ export default function ProcedureList({ procedures }: ProcedureListProps) {
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-900 text-green-300">
                     Terminée
                   </span>
+                ) : procedure.status === 'verification' ? (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-900 text-orange-300">
+                    Vérification Technique
+                  </span>
+                ) : procedure.status === 'relecture' ? (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-900 text-red-300">
+                    Relecture
+                  </span>
                 ) : (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-900 text-blue-300">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-900 text-yellow-300">
                     En cours
                   </span>
                 )}
