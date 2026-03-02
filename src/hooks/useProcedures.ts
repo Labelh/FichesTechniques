@@ -138,8 +138,18 @@ export function useProcedures(filters?: SearchFilters, sort?: SortOption) {
             return 0;
           });
         } else {
-          // Tri par défaut : updatedAt desc
+          // Tri par défaut : par statut, puis updatedAt desc à statut égal
+          const STATUS_ORDER: Record<string, number> = {
+            'en_cours': 0,
+            'verification': 1,
+            'relecture': 2,
+            'mise_a_jour_timetonic': 3,
+            'completed': 4,
+          };
           results.sort((a, b) => {
+            const aOrder = STATUS_ORDER[a.status] ?? 0;
+            const bOrder = STATUS_ORDER[b.status] ?? 0;
+            if (aOrder !== bOrder) return aOrder - bOrder;
             const aDate = a.updatedAt instanceof Date ? a.updatedAt : new Date(a.updatedAt);
             const bDate = b.updatedAt instanceof Date ? b.updatedAt : new Date(b.updatedAt);
             return bDate.getTime() - aDate.getTime();
