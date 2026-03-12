@@ -1758,8 +1758,11 @@ export async function generateHTML(
 </body>
 </html>`;
 
+  // Minification sans perte : supprime commentaires HTML, indentations et lignes vides
+  const minified = minifyHtml(html);
+
   // Créer un Blob et télécharger
-  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const blob = new Blob([minified], { type: 'text/html;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -1776,6 +1779,33 @@ export async function generateHTML(
   URL.revokeObjectURL(url);
 }
 
+
+/**
+ * Minifie le HTML généré sans perte de qualité.
+ * Préserve le contenu des blocs <script> et <style> intacts.
+ */
+function minifyHtml(html: string): string {
+  const blocks: string[] = [];
+
+  // Extraire les blocs <script> et <style> pour les protéger
+  const protected_ = html.replace(/<(script|style)([\s\S]*?)<\/\1>/gi, (match) => {
+    blocks.push(match);
+    return `\x00BLOCK${blocks.length - 1}\x00`;
+  });
+
+  const minified = protected_
+    .replace(/<!--[\s\S]*?-->/g, '')   // supprime commentaires HTML
+    .replace(/[ \t]+/g, ' ')           // réduit espaces/tabs multiples à un seul espace
+    .replace(/\s*\n\s*/g, '\n')        // supprime espaces autour des sauts de ligne
+    .replace(/\n{2,}/g, '\n')          // supprime lignes vides multiples
+    .replace(/>\n</g, '><')            // supprime sauts de ligne entre balises
+    .replace(/>\n/g, '>')              // supprime sauts de ligne après balise ouvrante
+    .replace(/\n</g, '<')              // supprime sauts de ligne avant balise fermante
+    .trim();
+
+  // Réinsérer les blocs protégés
+  return minified.replace(/\x00BLOCK(\d+)\x00/g, (_, i) => blocks[parseInt(i)]);
+}
 
 /**
  * Génère le HTML pour les ressources globales
