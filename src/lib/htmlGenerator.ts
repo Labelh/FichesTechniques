@@ -369,10 +369,9 @@ export async function generateHTML(
 
         .defects-header h2 {
             color: var(--text-primary);
-            font-size: 1.4rem;
+            font-size: 1.8rem;
             font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
             margin: 0;
             flex: 1;
         }
@@ -1822,7 +1821,7 @@ function generateDefects(procedure: Procedure, renderedImageUrls: Map<string, st
   return `
     <div class="defects-section" id="defautheque">
         <div class="defects-header" onclick="toggleDefects()" style="cursor: pointer;">
-            <h2>Défauthèque</h2>
+            <h2>Défauthèque - A consulter avant prestation</h2>
         </div>
 
         <div class="defects-content collapsed" id="defects-content">

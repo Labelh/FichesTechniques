@@ -847,15 +847,13 @@ function SubStepItem({
   const videoFileInputRef = useRef<HTMLInputElement>(null);
 
   const textColors = [
-    { name: 'Orange-rouge', value: '#ff5722' },
     { name: 'Rouge', value: '#ef4444' },
-    { name: 'Orange', value: '#f97316' },
-    { name: 'Jaune', value: '#eab308' },
-    { name: 'Vert', value: '#22c55e' },
+    { name: 'Orange', value: 'rgb(249, 55, 5)' },
+    { name: 'Jaune', value: '#f59e0b' },
+    { name: 'Vert', value: '#10b981' },
     { name: 'Bleu', value: '#3b82f6' },
-    { name: 'Violet', value: '#a855f7' },
+    { name: 'Violet', value: '#8b5cf6' },
     { name: 'Rose', value: '#ec4899' },
-    { name: 'Cyan', value: '#06b6d4' },
     { name: 'Blanc', value: '#ffffff' },
   ];
 
