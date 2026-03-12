@@ -372,18 +372,21 @@ export async function generateHTML(
             font-size: 1.8rem;
             font-weight: 700;
             letter-spacing: 0.5px;
-            margin: 0;
-            flex: 1;
-            display: flex;
-            align-items: baseline;
-            gap: 12px;
+            margin: 0 0 2px 0;
+            flex: none;
         }
 
-        .defects-header h2 .defects-subtitle {
+        .defects-subtitle {
             font-size: 0.85rem;
             font-weight: 400;
             color: #aaa;
             letter-spacing: 0;
+        }
+
+        .defects-header-content {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
         }
 
         .defects-toggle-icon {
@@ -1831,7 +1834,10 @@ function generateDefects(procedure: Procedure, renderedImageUrls: Map<string, st
   return `
     <div class="defects-section" id="defautheque">
         <div class="defects-header" onclick="toggleDefects()" style="cursor: pointer;">
-            <h2>Défauthèque <span class="defects-subtitle">— A consulter avant prestation</span></h2>
+            <div class="defects-header-content">
+                <h2>Défauthèque</h2>
+                <span class="defects-subtitle">A consulter avant prestation</span>
+            </div>
         </div>
 
         <div class="defects-content collapsed" id="defects-content">
