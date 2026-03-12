@@ -749,7 +749,20 @@ export default function ProcedureEditor() {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold">Phases</h2>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-xl font-bold">Phases</h2>
+                  {existingProcedure && existingProcedure.phases.length > 0 && (() => {
+                    const totalMin = existingProcedure.phases.reduce((sum, p) => sum + (p.estimatedTime || 0), 0);
+                    return (
+                      <>
+                        <span className="text-gray-600">|</span>
+                        <span className="text-sm text-gray-400">
+                          {totalMin} min &nbsp;·&nbsp; {(totalMin / 60).toFixed(2)} h
+                        </span>
+                      </>
+                    );
+                  })()}
+                </div>
                 <Button onClick={handleAddPhase}>
                   <Plus className="h-4 w-4 mr-2" />
                   Ajouter une phase

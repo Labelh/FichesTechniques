@@ -493,7 +493,7 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
           <Badge className={`${getDifficultyColor(difficulty)} text-white text-xs`}>
             {getDifficultyLabel(difficulty)}
           </Badge>
-          <span className="text-sm text-gray-400">{estimatedTime} min</span>
+          <span className="text-sm text-gray-400">{estimatedTime} min &nbsp;·&nbsp; {(estimatedTime / 60).toFixed(2)} h</span>
           {steps.length > 0 && (
             <span className="text-xs text-gray-500">({steps.length} sous-étape{steps.length > 1 ? 's' : ''})</span>
           )}
