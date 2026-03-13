@@ -176,6 +176,7 @@ export async function uploadImageToHost(file: File): Promise<string> {
     formData.append('key', IMGBB_API_KEY);
     formData.append('image', base64Image);
     formData.append('name', file.name);
+    formData.append('expiration', '0'); // 0 = stockage permanent
 
     // Upload vers ImgBB
     const response = await fetch('https://api.imgbb.com/1/upload', {
@@ -195,8 +196,8 @@ export async function uploadImageToHost(file: File): Promise<string> {
       throw new Error('Upload failed: ImgBB returned error');
     }
 
-    // Retourner l'URL de l'image (display_url est optimisé pour l'affichage)
-    return data.data.display_url;
+    // Retourner l'URL directe de l'image (plus stable que display_url)
+    return data.data.image.url;
   } catch (error) {
     console.error('Error uploading image to ImgBB:', error);
     throw error;

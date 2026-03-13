@@ -631,125 +631,142 @@ export default function ProcedureEditor() {
                       Aucun défaut répertorié. Cliquez sur "Ajouter un défaut" pour commencer.
                     </p>
                   ) : (
-                    <div className="space-y-3">
-                      {defects.map((defect) => (
-                        <div key={defect.id} className="border border-[#323232] rounded-lg bg-background-elevated p-4">
-                          <div className="flex items-start gap-3 mb-3">
-                            <AlertTriangle className="h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
-                            <div className="flex-1 space-y-3">
-                              {/* Champ Défaut */}
-                              <div>
-                                <label className="block text-sm font-medium text-red-500 mb-1">
-                                  Défaut
-                                </label>
-                                <textarea
-                                  value={defect.defect || ''}
-                                  onChange={(e) => handleUpdateDefect(defect.id, 'defect', e.target.value)}
-                                  placeholder="Description du défaut..."
-                                  rows={2}
-                                  className="w-full rounded-lg border border-[#323232] bg-transparent px-3 py-2 text-sm text-white focus:ring-2 focus:ring-primary focus:border-transparent"
-                                />
-                              </div>
-
-                              {/* Champ Intervention */}
-                              <div>
-                                <label className="block text-sm font-medium text-green-500 mb-1">
-                                  Intervention
-                                </label>
-                                <textarea
-                                  value={defect.whatToDo || ''}
-                                  onChange={(e) => handleUpdateDefect(defect.id, 'whatToDo', e.target.value)}
-                                  placeholder="Intervention face à ce défaut..."
-                                  rows={2}
-                                  className="w-full rounded-lg border border-[#323232] bg-transparent px-3 py-2 text-sm text-white focus:ring-2 focus:ring-primary focus:border-transparent"
-                                />
-                              </div>
-
-                              {/* Critère */}
-                              <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-1">
-                                  Critère
-                                </label>
-                                <select
-                                  value={defect.criteria || ''}
-                                  onChange={(e) => handleUpdateDefect(defect.id, 'criteria', e.target.value)}
-                                  className="w-full rounded-lg border border-[#323232] bg-transparent px-3 py-2 text-sm text-white focus:ring-2 focus:ring-primary focus:border-transparent"
-                                >
-                                  <option value="">— Sélectionner —</option>
-                                  <option value="non_acceptable">Non-acceptable</option>
-                                  <option value="a_retoucher">A retoucher</option>
-                                </select>
-                              </div>
-
-                              {/* Images */}
-                              <div>
-                                <label className="block text-xs font-medium text-gray-400 mb-2">
-                                  Images ({defect.images?.length || 0})
-                                </label>
-                                <div className="flex flex-wrap gap-2 mb-2">
-                                  {(defect.images || []).map((img) => (
-                                    <div key={img.imageId} className="relative group">
-                                      <img
-                                        src={img.image.url || URL.createObjectURL(img.image.blob)}
-                                        alt={img.description || 'Image du défaut'}
-                                        className="h-16 w-16 object-cover rounded border border-[#323232]"
-                                      />
-                                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
-                                        <button
-                                          onClick={() => setImageToAnnotate({ defectId: defect.id, image: img })}
-                                          className="bg-primary text-white rounded p-1 hover:bg-primary/80"
-                                          title="Annoter l'image"
-                                        >
-                                          <Pencil className="h-3 w-3" />
-                                        </button>
-                                        <button
-                                          onClick={() => handleRemoveDefectImage(defect.id, img.imageId)}
-                                          className="bg-red-500 text-white rounded p-1 hover:bg-red-600"
-                                          title="Supprimer l'image"
-                                        >
-                                          <X className="h-3 w-3" />
-                                        </button>
-                                      </div>
-                                      {img.annotations && img.annotations.length > 0 && (
-                                        <div className="absolute bottom-0 left-0 right-0 bg-primary/80 text-white text-xs px-1 text-center">
-                                          {img.annotations.length} annotation{img.annotations.length > 1 ? 's' : ''}
-                                        </div>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                                <div
-                                  onClick={() => {
-                                    const input = document.createElement('input');
-                                    input.type = 'file';
-                                    input.accept = 'image/*';
-                                    input.multiple = true;
-                                    input.onchange = async (e) => {
-                                      const files = Array.from((e.target as HTMLInputElement).files || []);
-                                      await handleAddDefectImage(defect.id, files);
-                                    };
-                                    input.click();
-                                  }}
-                                  onDragOver={(e) => e.preventDefault()}
-                                  onDrop={async (e) => {
-                                    e.preventDefault();
-                                    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
-                                    await handleAddDefectImage(defect.id, files);
-                                  }}
-                                  className="border-2 border-dashed border-[#323232] rounded-lg p-3 text-center cursor-pointer bg-background-elevated"
-                                >
-                                  <p className="text-xs text-gray-500">Cliquez ou glissez-déposez des images</p>
-                                </div>
-                              </div>
+                    <div className="space-y-4">
+                      {defects.map((defect, defectIndex) => (
+                        <div key={defect.id} className="rounded-lg border border-[#2a2a2a] bg-[#111] overflow-hidden" style={{ borderLeft: '4px solid #ef4444' }}>
+                          {/* En-tête de la carte */}
+                          <div className="flex items-center justify-between px-4 py-2 bg-[#1a1a1a] border-b border-[#2a2a2a]">
+                            <div className="flex items-center gap-2">
+                              <AlertTriangle className="h-4 w-4 text-orange-500" />
+                              <span className="text-sm font-semibold text-gray-300">Défaut #{defectIndex + 1}</span>
                             </div>
                             <Button
                               variant="ghost"
                               size="icon"
                               onClick={() => handleRemoveDefect(defect.id)}
-                              className="flex-shrink-0"
+                              className="h-7 w-7 text-red-500 hover:text-red-400 hover:bg-red-500/10"
                             >
-                              <X className="h-4 w-4 text-red-500" />
+                              <X className="h-4 w-4" />
                             </Button>
+                          </div>
+
+                          <div className="p-4 space-y-4">
+                            {/* Défaut + Critère côte à côte */}
+                            <div className="grid grid-cols-3 gap-3">
+                              <div className="col-span-2">
+                                <label className="block text-xs font-semibold text-red-400 uppercase tracking-wide mb-1.5">
+                                  Défaut
+                                </label>
+                                <textarea
+                                  value={defect.defect || ''}
+                                  onChange={(e) => handleUpdateDefect(defect.id, 'defect', e.target.value)}
+                                  placeholder="Description du défaut observé..."
+                                  rows={3}
+                                  className="w-full rounded-lg border border-[#323232] bg-[#0d0d0d] px-3 py-2 text-sm text-white placeholder-gray-600 focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 resize-none"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">
+                                  Critère
+                                </label>
+                                <select
+                                  value={defect.criteria || ''}
+                                  onChange={(e) => handleUpdateDefect(defect.id, 'criteria', e.target.value)}
+                                  className="w-full rounded-lg border border-[#323232] bg-[#0d0d0d] px-3 py-2 text-sm text-white focus:ring-2 focus:ring-primary focus:border-primary"
+                                >
+                                  <option value="">— Critère —</option>
+                                  <option value="non_acceptable">Non-acceptable</option>
+                                  <option value="a_retoucher">A retoucher</option>
+                                </select>
+                                {defect.criteria && (
+                                  <span className={`inline-block mt-2 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                    defect.criteria === 'non_acceptable'
+                                      ? 'bg-red-500/20 text-red-400'
+                                      : 'bg-amber-500/20 text-amber-400'
+                                  }`}>
+                                    {defect.criteria === 'non_acceptable' ? 'Non-acceptable' : 'A retoucher'}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Intervention */}
+                            <div>
+                              <label className="block text-xs font-semibold text-green-400 uppercase tracking-wide mb-1.5">
+                                Intervention
+                              </label>
+                              <textarea
+                                value={defect.whatToDo || ''}
+                                onChange={(e) => handleUpdateDefect(defect.id, 'whatToDo', e.target.value)}
+                                placeholder="Action corrective à mener..."
+                                rows={2}
+                                className="w-full rounded-lg border border-[#323232] bg-[#0d0d0d] px-3 py-2 text-sm text-white placeholder-gray-600 focus:ring-2 focus:ring-green-500/50 focus:border-green-500/50 resize-none"
+                              />
+                            </div>
+
+                            {/* Images */}
+                            <div>
+                              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                                Photos {defect.images && defect.images.length > 0 && <span className="text-gray-500 normal-case font-normal">({defect.images.length})</span>}
+                              </label>
+                              {(defect.images || []).length > 0 && (
+                                <div className="flex flex-wrap gap-2 mb-2">
+                                  {(defect.images || []).map((img) => (
+                                    <div key={img.imageId} className="relative group w-20 h-20">
+                                      <img
+                                        src={img.image.url || URL.createObjectURL(img.image.blob)}
+                                        alt={img.description || 'Image du défaut'}
+                                        className="w-full h-full object-cover rounded-lg border border-[#323232]"
+                                      />
+                                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-1.5">
+                                        <button
+                                          onClick={() => setImageToAnnotate({ defectId: defect.id, image: img })}
+                                          className="bg-primary text-white rounded-md p-1.5 hover:bg-primary/80"
+                                          title="Annoter"
+                                        >
+                                          <Pencil className="h-3 w-3" />
+                                        </button>
+                                        <button
+                                          onClick={() => handleRemoveDefectImage(defect.id, img.imageId)}
+                                          className="bg-red-500 text-white rounded-md p-1.5 hover:bg-red-600"
+                                          title="Supprimer"
+                                        >
+                                          <X className="h-3 w-3" />
+                                        </button>
+                                      </div>
+                                      {img.annotations && img.annotations.length > 0 && (
+                                        <div className="absolute bottom-0 left-0 right-0 bg-primary/80 text-white text-xs px-1 py-0.5 text-center rounded-b-lg">
+                                          {img.annotations.length} ann.
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              <div
+                                onClick={() => {
+                                  const input = document.createElement('input');
+                                  input.type = 'file';
+                                  input.accept = 'image/*';
+                                  input.multiple = true;
+                                  input.onchange = async (e) => {
+                                    const files = Array.from((e.target as HTMLInputElement).files || []);
+                                    await handleAddDefectImage(defect.id, files);
+                                  };
+                                  input.click();
+                                }}
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={async (e) => {
+                                  e.preventDefault();
+                                  const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+                                  await handleAddDefectImage(defect.id, files);
+                                }}
+                                className="border-2 border-dashed border-[#2a2a2a] hover:border-[#444] rounded-lg p-4 text-center cursor-pointer transition-colors"
+                              >
+                                <ImageIcon className="h-5 w-5 text-gray-600 mx-auto mb-1" />
+                                <p className="text-xs text-gray-600">Cliquez ou glissez des photos</p>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       ))}
