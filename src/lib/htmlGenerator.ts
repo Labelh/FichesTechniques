@@ -1922,7 +1922,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                 ${phase.estimatedTime ? `<span class="phase-time-badge">${phase.estimatedTime} min/pièce</span>` : ''}
             </div>
         </div>
-        <div class="phase-content" id="phase-${phaseIndex + 1}-content">
+        <div class="phase-content collapsed" id="phase-${phaseIndex + 1}-content">
 
         ${phase.steps && phase.steps.length > 0 ? `
         <div class="steps">
