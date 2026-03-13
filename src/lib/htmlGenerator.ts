@@ -1888,6 +1888,22 @@ function generateDefects(procedure: Procedure, renderedImageUrls: Map<string, st
                     </div>
                     ` : ''}
 
+                    ${defect.criteria ? `
+                    <div class="defect-field" style="margin-bottom: 12px; line-height: 1.6;">
+                        <span style="color: #6b7280; font-weight: 600;">Critère : </span>
+                        <span style="
+                            display: inline-block;
+                            padding: 2px 10px;
+                            border-radius: 12px;
+                            font-size: 0.8rem;
+                            font-weight: 600;
+                            ${defect.criteria === 'non_acceptable'
+                              ? 'background: #fee2e2; color: #b91c1c;'
+                              : 'background: #fef3c7; color: #92400e;'}
+                        ">${defect.criteria === 'non_acceptable' ? 'Non-acceptable' : 'A retoucher'}</span>
+                    </div>
+                    ` : ''}
+
                     ${!defect.defect && !defect.whatToDo && defect.description ? `
                     <div class="defect-description">${escapeHtml(defect.description)}</div>
                     ` : ''}

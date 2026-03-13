@@ -183,6 +183,7 @@ export interface DefectItem {
   description: string; // Ancien champ (compatibilité)
   defect?: string; // Nouveau: Description du défaut
   whatToDo?: string; // Nouveau: Que faire face à ce défaut
+  criteria?: 'non_acceptable' | 'a_retoucher'; // Critère de jugement
   images?: AnnotatedImage[];
 }
 

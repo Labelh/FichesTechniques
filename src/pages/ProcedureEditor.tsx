@@ -195,11 +195,12 @@ export default function ProcedureEditor() {
       description: '',
       defect: '',
       whatToDo: '',
+      criteria: undefined,
       images: []
     }]);
   };
 
-  const handleUpdateDefect = (id: string, field: 'description' | 'defect' | 'whatToDo', value: string) => {
+  const handleUpdateDefect = (id: string, field: 'description' | 'defect' | 'whatToDo' | 'criteria', value: string) => {
     setDefects(defects.map(d => d.id === id ? { ...d, [field]: value } : d));
   };
 
@@ -662,6 +663,22 @@ export default function ProcedureEditor() {
                                   rows={2}
                                   className="w-full rounded-lg border border-[#323232] bg-transparent px-3 py-2 text-sm text-white focus:ring-2 focus:ring-primary focus:border-transparent"
                                 />
+                              </div>
+
+                              {/* Critère */}
+                              <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-1">
+                                  Critère
+                                </label>
+                                <select
+                                  value={defect.criteria || ''}
+                                  onChange={(e) => handleUpdateDefect(defect.id, 'criteria', e.target.value)}
+                                  className="w-full rounded-lg border border-[#323232] bg-transparent px-3 py-2 text-sm text-white focus:ring-2 focus:ring-primary focus:border-transparent"
+                                >
+                                  <option value="">— Sélectionner —</option>
+                                  <option value="non_acceptable">Non-acceptable</option>
+                                  <option value="a_retoucher">A retoucher</option>
+                                </select>
                               </div>
 
                               {/* Images */}
