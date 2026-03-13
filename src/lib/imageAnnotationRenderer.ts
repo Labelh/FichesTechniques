@@ -157,9 +157,20 @@ export async function renderAnnotatedImage(annotatedImage: AnnotatedImage): Prom
  * Rend une image avec ses annotations et retourne une data URL base64
  */
 export async function renderAnnotatedImageToBase64(annotatedImage: AnnotatedImage): Promise<string> {
-  // Si pas d'annotations, retourner l'URL originale
+  // Si pas d'annotations, convertir quand même en base64
+  const srcUrl = annotatedImage.image.url || '';
+  if (!srcUrl) return '';
+
+  // Charger l'image en base64 via fetch pour éviter le canvas taint CORS
+  let base64Src: string;
+  try {
+    base64Src = await imageUrlToBase64(srcUrl);
+  } catch {
+    base64Src = srcUrl; // fallback à l'URL directe
+  }
+
   if (!annotatedImage.annotations || annotatedImage.annotations.length === 0) {
-    return annotatedImage.image.url || '';
+    return base64Src;
   }
 
   return new Promise((resolve, reject) => {
@@ -167,7 +178,6 @@ export async function renderAnnotatedImageToBase64(annotatedImage: AnnotatedImag
 
     img.onload = () => {
       try {
-        // Créer un canvas aux dimensions de l'image
         const canvas = document.createElement('canvas');
         canvas.width = img.width;
         canvas.height = img.height;
@@ -178,26 +188,18 @@ export async function renderAnnotatedImageToBase64(annotatedImage: AnnotatedImag
           return;
         }
 
-        // Dessiner l'image de base
         ctx.drawImage(img, 0, 0);
+        annotatedImage.annotations!.forEach(ann => drawAnnotation(ctx, ann));
 
-        // Dessiner toutes les annotations
-        annotatedImage.annotations.forEach(ann => drawAnnotation(ctx, ann));
-
-        // Convertir en data URL base64
-        const dataUrl = canvas.toDataURL('image/png');
-        resolve(dataUrl);
+        resolve(canvas.toDataURL('image/png'));
       } catch (error) {
         reject(error);
       }
     };
 
-    img.onerror = () => {
-      reject(new Error('Failed to load image'));
-    };
-
-    img.crossOrigin = 'anonymous';
-    img.src = annotatedImage.image.url || '';
+    img.onerror = () => reject(new Error('Failed to load image'));
+    // Pas de crossOrigin ici : l'image est déjà en base64, pas d'URL externe
+    img.src = base64Src;
   });
 }
 
@@ -228,38 +230,17 @@ export async function renderAllAnnotatedImages(
 }
 
 /**
- * Convertit une URL d'image en base64
+ * Convertit une URL d'image en base64 via fetch (évite les problèmes de canvas taint CORS)
  */
 async function imageUrlToBase64(url: string): Promise<string> {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`);
+  const blob = await response.blob();
   return new Promise((resolve, reject) => {
-    const img = new Image();
-
-    img.onload = () => {
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          reject(new Error('Could not get canvas context'));
-          return;
-        }
-
-        ctx.drawImage(img, 0, 0);
-        const dataUrl = canvas.toDataURL('image/png');
-        resolve(dataUrl);
-      } catch (error) {
-        reject(error);
-      }
-    };
-
-    img.onerror = () => {
-      reject(new Error('Failed to load image'));
-    };
-
-    img.crossOrigin = 'anonymous';
-    img.src = url;
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error('FileReader failed'));
+    reader.readAsDataURL(blob);
   });
 }
 
