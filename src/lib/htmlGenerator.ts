@@ -124,7 +124,7 @@ export async function generateHTML(
     <title>${escapeHtml(procedure.designation || procedure.title)}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -165,7 +165,7 @@ export async function generateHTML(
         }
 
         body {
-            font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
             line-height: 1.7;
             color: var(--text-primary);
             background: linear-gradient(to bottom, #f5f7fa 0%, #f8f9fa 100%);
@@ -173,7 +173,7 @@ export async function generateHTML(
             padding: 0;
             overflow-x: hidden;
             max-width: 100vw;
-            font-size: 16px;
+            font-size: 1rem;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
@@ -357,6 +357,7 @@ export async function generateHTML(
             cursor: pointer;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: var(--spacing-sm);
             background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
             transition: all 0.3s ease;
@@ -368,18 +369,18 @@ export async function generateHTML(
         }
 
         .defects-header h2 {
-            color: #444;
+            color: #1a1a1a;
             font-size: 1.8rem;
             font-weight: 700;
             letter-spacing: 0.5px;
-            margin: 0 0 2px 0;
+            margin: 0 0 3px 0;
             flex: none;
         }
 
         .defects-subtitle {
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             font-weight: 400;
-            color: #aaa;
+            color: #bbb;
             letter-spacing: 0;
         }
 
@@ -387,6 +388,20 @@ export async function generateHTML(
             display: flex;
             flex-direction: column;
             flex: 1;
+        }
+
+        .defects-count-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #ef4444;
+            color: white;
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 3px 12px;
+            border-radius: 20px;
+            letter-spacing: 0.3px;
+            flex-shrink: 0;
         }
 
         .defects-toggle-icon {
@@ -397,7 +412,7 @@ export async function generateHTML(
             padding: var(--spacing-lg);
             overflow: hidden;
             transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out, padding 0.4s ease-in-out;
-            max-height: 5000px;
+            max-height: 10000px;
             opacity: 1;
         }
 
@@ -410,27 +425,110 @@ export async function generateHTML(
 
         .defects-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 24px;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 20px;
         }
 
+        @media (max-width: 860px) {
+            .defects-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Carte défaut */
         .defect-item {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-            border: 1px solid #f0f0f0;
+            background: #fff;
+            border-radius: var(--radius-md);
+            border: 1px solid #e8e8e8;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+        .defect-item:hover {
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+        }
+        .defect-item.criteria-non-acceptable {
+            background: linear-gradient(175deg, #fff8f8 0%, #ffffff 50%);
+        }
+        .defect-item.criteria-a-retoucher {
+            background: linear-gradient(175deg, #fffbf0 0%, #ffffff 50%);
         }
 
-        @media print {
-            .defects-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
+        .defect-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background: rgba(0,0,0,0.025);
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+        .defect-card-number {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #bbb;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+        }
+        .defect-criteria-badge {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+        }
+        .defect-criteria-badge.non-acceptable {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+        }
+        .defect-criteria-badge.a-retoucher {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fcd34d;
+        }
+
+        .defect-card-body {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .defect-block {
+            padding: 11px 14px;
+            border-radius: 8px;
+            line-height: 1.65;
+        }
+        .defect-block-red {
+            background: #fff5f5;
+            border-left: 3px solid #ef4444;
+        }
+        .defect-block-green {
+            background: #f0fdf7;
+            border-left: 3px solid #10b981;
+        }
+        .defect-block-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            margin-bottom: 5px;
+        }
+        .defect-block-red  .defect-block-label { color: #ef4444; }
+        .defect-block-green .defect-block-label { color: #10b981; }
+        .defect-block-text {
+            font-size: 0.92rem;
+            color: #333;
         }
 
         .defect-description {
             color: #555;
             line-height: 1.6;
+        }
+
+        @media print {
+            .defects-grid { grid-template-columns: repeat(2, 1fr); }
+            .defect-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         }
 
         .resources h2 {
@@ -528,6 +626,7 @@ export async function generateHTML(
             overflow-wrap: break-word;
             flex: 1;
             letter-spacing: 0.5px;
+            color: #444;
         }
 
         .phase-badges {
@@ -639,7 +738,7 @@ export async function generateHTML(
         .step-label {
             font-size: 1.3rem;
             font-weight: 700;
-            color: var(--text-primary);
+            color: #444;
             letter-spacing: 0.3px;
             flex: 1;
         }
@@ -696,15 +795,6 @@ export async function generateHTML(
             color: #555;
             word-wrap: break-word;
             overflow-wrap: break-word;
-        }
-
-        /* Forcer le texte blanc (mode sombre) en noir pour l'export */
-        .step-description-content span[style*="color: #ffffff"],
-        .step-description-content span[style*="color: #FFFFFF"],
-        .step-description-content span[style*="color: #fff"],
-        .step-description-content span[style*="color: white"],
-        .step-description-content span[style*="color: rgb(255, 255, 255)"] {
-            color: #1a1a1a !important;
         }
 
         .step-description-content ul,
@@ -1036,7 +1126,7 @@ export async function generateHTML(
         /* Carrousels */
         .carousel-container {
             position: relative;
-            background: white;
+            background: transparent;
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
@@ -1051,7 +1141,7 @@ export async function generateHTML(
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #000;
+            background: transparent;
         }
 
         .carousel-items {
@@ -1073,7 +1163,7 @@ export async function generateHTML(
             width: 100%;
             height: 500px;
             object-fit: contain;
-            background: #000;
+            background: transparent;
             cursor: pointer;
             transition: opacity 0.3s ease;
         }
@@ -1152,27 +1242,32 @@ export async function generateHTML(
             font-weight: 600;
         }
 
-        /* Défauthèque - Images complètes (non coupées) */
+        /* Défauthèque - Images format 1:1 */
         .defect-item .carousel-container {
-            height: 600px;
+            width: 100%;
+            aspect-ratio: 1 / 1;
             display: flex;
             flex-direction: column;
         }
 
         .defect-item .carousel-wrapper {
-            height: 600px;
+            flex: 1;
+            min-height: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #000;
+            background: transparent;
+            overflow: hidden;
         }
 
         .defect-item .carousel-items {
-            height: 600px;
+            width: 100%;
+            height: 100%;
         }
 
         .defect-item .carousel-item {
-            height: 600px;
+            width: 100%;
+            height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1180,10 +1275,10 @@ export async function generateHTML(
 
         .defect-item .carousel-item img {
             width: 100%;
-            height: 600px;
-            object-fit: contain;
+            height: 100%;
+            object-fit: cover;
             border-radius: 4px;
-            background: #000;
+            background: transparent;
         }
 
         /* Images cliquables pour zoom */
@@ -1300,10 +1395,296 @@ export async function generateHTML(
             .step {
                 page-break-inside: avoid;
             }
+
+            .toolbar-capsule {
+                display: none;
+            }
+        }
+
+        /* Mode sombre — couverture complète */
+        body.dark-mode {
+            --text-primary: #e0e0e0;
+            --text-secondary: #aaa;
+            --text-muted: #666;
+            --border-color: #333;
+            --bg-primary: #1e1e1e;
+            --bg-secondary: #242424;
+            background: linear-gradient(to bottom, #141414 0%, #1a1a1a 100%);
+            color: #e0e0e0;
+        }
+        /* Fonds principaux */
+        body.dark-mode .header,
+        body.dark-mode .resources,
+        body.dark-mode .phase,
+        body.dark-mode .step,
+        body.dark-mode .carousel-container {
+            background: #1e1e1e;
+            border-color: #333;
+        }
+        body.dark-mode .steps {
+            background: #181818;
+        }
+        body.dark-mode .phase-header,
+        body.dark-mode .step-header {
+            background: linear-gradient(135deg, #252525 0%, #1e1e1e 100%);
+            border-color: #333;
+        }
+        body.dark-mode .phase-header:hover,
+        body.dark-mode .step-header:hover {
+            background: linear-gradient(135deg, #2c2c2c 0%, #252525 100%);
+        }
+        /* Défauthèque dark mode */
+        body.dark-mode .defects-section {
+            background: #1e1e1e;
+            border-color: #333;
+        }
+        body.dark-mode .defects-header {
+            background: linear-gradient(135deg, #252525 0%, #1e1e1e 100%);
+            border-bottom-color: #2a2a2a;
+        }
+        body.dark-mode .defects-header:hover {
+            background: linear-gradient(135deg, #2c2c2c 0%, #252525 100%);
+        }
+        body.dark-mode .defect-item {
+            background: #1e1e1e;
+            border-color: #333;
+        }
+        body.dark-mode .defect-item.criteria-non-acceptable {
+            background: linear-gradient(175deg, #1f1313 0%, #1e1e1e 50%);
+        }
+        body.dark-mode .defect-item.criteria-a-retoucher {
+            background: linear-gradient(175deg, #1f1c10 0%, #1e1e1e 50%);
+        }
+        body.dark-mode .defect-card-header {
+            background: rgba(255,255,255,0.025);
+            border-bottom-color: rgba(255,255,255,0.05);
+        }
+        body.dark-mode .defect-card-number { color: #555; }
+        body.dark-mode .defect-criteria-badge.non-acceptable {
+            background: rgba(239,68,68,0.15);
+            color: #f87171;
+            border-color: rgba(239,68,68,0.35);
+        }
+        body.dark-mode .defect-criteria-badge.a-retoucher {
+            background: rgba(245,158,11,0.15);
+            color: #fbbf24;
+            border-color: rgba(245,158,11,0.35);
+        }
+        body.dark-mode .defect-block-red  { background: rgba(239,68,68,0.08); }
+        body.dark-mode .defect-block-green { background: rgba(16,185,129,0.08); }
+        body.dark-mode .defect-block-text { color: #ccc; }
+        body.dark-mode .step-tool-box,
+        body.dark-mode .carousel-indicators {
+            background: #242424;
+        }
+        body.dark-mode .step-image-desc,
+        body.dark-mode .step-video-link {
+            background: #252525;
+            color: #aaa;
+        }
+        body.dark-mode .step-video-link:hover {
+            background: #2e2e2e;
+        }
+        /* Textes secondaires */
+        body.dark-mode .description,
+        body.dark-mode .meta-item,
+        body.dark-mode .document-version,
+        body.dark-mode .defect-description,
+        body.dark-mode .resource-desc,
+        body.dark-mode .phase-meta,
+        body.dark-mode .step-description,
+        body.dark-mode .step-description-content,
+        body.dark-mode .step-tool-details,
+        body.dark-mode .step-tool-location,
+        body.dark-mode .step-time,
+        body.dark-mode .tip-item,
+        body.dark-mode .safety-note > div:last-child {
+            color: #aaa;
+        }
+        body.dark-mode .defects-header h2,
+        body.dark-mode .defects-subtitle,
+        body.dark-mode .resources h2,
+        body.dark-mode .resources h3,
+        body.dark-mode .resource-name,
+        body.dark-mode .step-description-box,
+        body.dark-mode .step-description-title,
+        body.dark-mode .step-tool-title,
+        body.dark-mode .step-tool-name,
+        body.dark-mode .step-tool-info-label {
+            color: #d0d0d0;
+        }
+        /* Badges */
+        body.dark-mode .version-badge {
+            background: linear-gradient(135deg, #2a2a2a 0%, #333 100%);
+            color: #aaa;
+            border-color: #444;
+        }
+        body.dark-mode .phase-time-badge {
+            background: linear-gradient(135deg, #2a2a2a 0%, #333 100%);
+            border-color: #444;
+            color: #aaa;
+        }
+        body.dark-mode .tag {
+            background: #333;
+            color: #ccc;
+        }
+        body.dark-mode .step-tool-location-badge {
+            background: #333;
+            color: #aaa;
+        }
+        /* Bordures */
+        body.dark-mode .resource-item {
+            border-bottom-color: #333;
+        }
+        body.dark-mode .step-image-wrapper,
+        body.dark-mode .step-video-wrapper {
+            border-color: #333;
+        }
+        /* Carousel */
+        body.dark-mode .carousel-indicator {
+            background: #444;
+        }
+        /* Forcer le texte blanc RTE à rester lisible en dark mode */
+        body.dark-mode .step-description-content span[style*="color: #ffffff"],
+        body.dark-mode .step-description-content span[style*="color: #FFFFFF"],
+        body.dark-mode .step-description-content span[style*="color: #fff"],
+        body.dark-mode .step-description-content span[style*="color: white"],
+        body.dark-mode .step-description-content span[style*="color: rgb(255, 255, 255)"] {
+            color: #e0e0e0 !important;
+        }
+        /* Neutraliser le forçage du texte blanc en mode clair */
+        body:not(.dark-mode) .step-description-content span[style*="color: #ffffff"],
+        body:not(.dark-mode) .step-description-content span[style*="color: #FFFFFF"],
+        body:not(.dark-mode) .step-description-content span[style*="color: #fff"],
+        body:not(.dark-mode) .step-description-content span[style*="color: white"],
+        body:not(.dark-mode) .step-description-content span[style*="color: rgb(255, 255, 255)"] {
+            color: #1a1a1a !important;
+        }
+
+        /* Barre flottante */
+        /* Capsules flottantes communes */
+        .toolbar-capsule {
+            position: fixed;
+            top: 14px;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.92);
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 28px;
+            padding: 6px 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+        }
+        body.dark-mode .toolbar-capsule {
+            background: rgba(30,30,30,0.95);
+            border-color: rgba(255,255,255,0.1);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+        }
+        .toolbar-left  { left: 18px; }
+        .toolbar-right { right: 18px; }
+        .toolbar-clock {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+            min-width: 64px;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+        .toolbar-sep {
+            width: 1px;
+            height: 20px;
+            background: rgba(0,0,0,0.12);
+        }
+        body.dark-mode .toolbar-sep {
+            background: rgba(255,255,255,0.12);
+        }
+        .toolbar-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 7px;
+            border-radius: 14px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            line-height: 1;
+            transition: background 0.18s, color 0.18s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .toolbar-btn:hover {
+            background: rgba(0,0,0,0.07);
+            color: var(--text-primary);
+        }
+        body.dark-mode .toolbar-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        .toolbar-btn.theme-btn {
+            font-size: 1rem;
+            padding: 4px 6px;
+        }
+        .toolbar-font-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            padding: 0 2px;
+            user-select: none;
+        }
+        /* Section headings (Description, Outil, Vidéo, Document) */
+        .section-heading {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+        }
+        .video-section-title,
+        .document-section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 12px;
+        }
+        /* Dark mode — titres de phase, étape et sections */
+        body.dark-mode .phase-title,
+        body.dark-mode .step-label {
+            color: #d0d0d0 !important;
+        }
+        body.dark-mode .section-heading,
+        body.dark-mode .video-section-title,
+        body.dark-mode .document-section-title {
+            color: #d0d0d0 !important;
+        }
+        body.dark-mode .document-button {
+            background: linear-gradient(135deg, #2a1a1a 0%, #331a1a 100%) !important;
+            border-color: #4a2a2a !important;
+            color: #aaa !important;
+        }
+        body.dark-mode .document-button span,
+        body.dark-mode .document-button div {
+            color: #ccc !important;
         }
     </style>
 </head>
 <body>
+    <!-- Capsule gauche : police + thème -->
+    <div class="toolbar-capsule toolbar-left">
+        <button class="toolbar-btn" onclick="changeFontSize(-1)" title="Réduire la police">A−</button>
+        <span class="toolbar-font-label" id="font-size-label">16px</span>
+        <button class="toolbar-btn" onclick="changeFontSize(1)" title="Agrandir la police">A+</button>
+        <div class="toolbar-sep"></div>
+        <button class="toolbar-btn theme-btn" id="theme-btn" onclick="toggleTheme()" title="Basculer clair / sombre">☀</button>
+    </div>
+    <!-- Capsule droite : horloge -->
+    <div class="toolbar-capsule toolbar-right">
+        <span class="toolbar-clock" id="toolbar-clock">00:00:00</span>
+    </div>
+
     <!-- Contenu principal -->
     <div class="container">
         <!-- En-tête -->
@@ -1595,6 +1976,45 @@ export async function generateHTML(
         window.addEventListener('load', equalizeStepBottomRowHeights);
         window.addEventListener('resize', equalizeStepBottomRowHeights);
 
+        // === Horloge ===
+        function updateClock() {
+            var now = new Date();
+            var h = String(now.getHours()).padStart(2, '0');
+            var m = String(now.getMinutes()).padStart(2, '0');
+            var s = String(now.getSeconds()).padStart(2, '0');
+            var clockEl = document.getElementById('toolbar-clock');
+            if (clockEl) clockEl.textContent = h + ':' + m + ':' + s;
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // === Taille de police (cible html pour que rem s'adapte) ===
+        var BASE_FONT = 16;
+        var MIN_FONT = 12;
+        var MAX_FONT = 26;
+        var currentFontSize = parseInt(localStorage.getItem('ft-font-size') || BASE_FONT, 10);
+        function applyFontSize(size) {
+            currentFontSize = Math.max(MIN_FONT, Math.min(MAX_FONT, size));
+            document.documentElement.style.fontSize = currentFontSize + 'px';
+            var label = document.getElementById('font-size-label');
+            if (label) label.textContent = currentFontSize + 'px';
+            localStorage.setItem('ft-font-size', currentFontSize);
+        }
+        function changeFontSize(delta) { applyFontSize(currentFontSize + delta); }
+        applyFontSize(currentFontSize);
+
+        // === Thème clair / sombre ===
+        var isDark = localStorage.getItem('ft-dark-mode') === '1';
+        function applyTheme(dark) {
+            isDark = dark;
+            document.body.classList.toggle('dark-mode', dark);
+            var btn = document.getElementById('theme-btn');
+            if (btn) btn.textContent = dark ? '☾' : '☀';
+            localStorage.setItem('ft-dark-mode', dark ? '1' : '0');
+        }
+        function toggleTheme() { applyTheme(!isDark); }
+        applyTheme(isDark);
+
         // Fonctions pour la modal d'agrandissement d'image
         function openImageModal(src, alt) {
             const modal = document.getElementById('image-modal');
@@ -1861,58 +2281,62 @@ function generateDefects(procedure: Procedure, renderedImageUrls: Map<string, st
     return '';
   }
 
+  const count = procedure.defects.length;
+
   return `
     <div class="defects-section" id="defautheque">
-        <div class="defects-header" onclick="toggleDefects()" style="cursor: pointer;">
+        <div class="defects-header" onclick="toggleDefects()">
             <div class="defects-header-content">
                 <h2>Défauthèque</h2>
-                <span class="defects-subtitle">A consulter avant prestation</span>
+                <span class="defects-subtitle">À consulter avant prestation</span>
             </div>
+            <span class="defects-count-badge">${count} défaut${count > 1 ? 's' : ''}</span>
         </div>
 
         <div class="defects-content collapsed" id="defects-content">
             <div class="defects-grid">
-            ${procedure.defects.map((defect, defectIndex) => `
-                <div class="defect-item">
-                    ${defect.defect ? `
-                    <div class="defect-field" style="margin-bottom: 12px; line-height: 1.6;">
-                        <span style="color: #ef4444; font-weight: 600;">Défaut : </span>
-                        <span style="color: #555;">${escapeHtml(defect.defect)}</span>
+            ${procedure.defects.map((defect, defectIndex) => {
+              const criteriaClass = defect.criteria === 'non_acceptable'
+                ? 'criteria-non-acceptable'
+                : defect.criteria === 'a_retoucher'
+                ? 'criteria-a-retoucher'
+                : '';
+              const criteriaBadge = defect.criteria
+                ? `<span class="defect-criteria-badge ${defect.criteria === 'non_acceptable' ? 'non-acceptable' : 'a-retoucher'}">${defect.criteria === 'non_acceptable' ? 'Non-acceptable' : 'À retoucher'}</span>`
+                : '';
+              return `
+                <div class="defect-item ${criteriaClass}">
+                    <div class="defect-card-header">
+                        <span class="defect-card-number">Défaut #${defectIndex + 1}</span>
+                        ${criteriaBadge}
                     </div>
-                    ` : ''}
 
-                    ${defect.whatToDo ? `
-                    <div class="defect-field" style="margin-bottom: 12px; line-height: 1.6;">
-                        <span style="color: #10b981; font-weight: 600;">Intervention : </span>
-                        <span style="color: #555;">${escapeHtml(defect.whatToDo)}</span>
+                    <div class="defect-card-body">
+                        ${defect.defect ? `
+                        <div class="defect-block defect-block-red">
+                            <div class="defect-block-label">Défaut</div>
+                            <div class="defect-block-text">${escapeHtml(defect.defect)}</div>
+                        </div>
+                        ` : ''}
+
+                        ${defect.whatToDo ? `
+                        <div class="defect-block defect-block-green">
+                            <div class="defect-block-label">Intervention</div>
+                            <div class="defect-block-text">${escapeHtml(defect.whatToDo)}</div>
+                        </div>
+                        ` : ''}
+
+                        ${!defect.defect && !defect.whatToDo && defect.description ? `
+                        <div class="defect-description">${escapeHtml(defect.description)}</div>
+                        ` : ''}
+
+                        ${defect.images && defect.images.length > 0 ? `
+                        ${generateImageCarousel(defect.images, renderedImageUrls, `defect-${defectIndex}`)}
+                        ` : ''}
                     </div>
-                    ` : ''}
-
-                    ${defect.criteria ? `
-                    <div class="defect-field" style="margin-bottom: 12px; line-height: 1.6;">
-                        <span style="color: #6b7280; font-weight: 600;">Critère : </span>
-                        <span style="
-                            display: inline-block;
-                            padding: 2px 10px;
-                            border-radius: 12px;
-                            font-size: 0.8rem;
-                            font-weight: 600;
-                            ${defect.criteria === 'non_acceptable'
-                              ? 'background: #fee2e2; color: #b91c1c;'
-                              : 'background: #fef3c7; color: #92400e;'}
-                        ">${defect.criteria === 'non_acceptable' ? 'Non-acceptable' : 'A retoucher'}</span>
-                    </div>
-                    ` : ''}
-
-                    ${!defect.defect && !defect.whatToDo && defect.description ? `
-                    <div class="defect-description">${escapeHtml(defect.description)}</div>
-                    ` : ''}
-
-                    ${defect.images && defect.images.length > 0 ? `
-                    ${generateImageCarousel(defect.images, renderedImageUrls, `defect-${defectIndex}`)}
-                    ` : ''}
                 </div>
-            `).join('')}
+              `;
+            }).join('')}
             </div>
         </div>
     </div>
@@ -1932,7 +2356,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
         <div class="phase-header" onclick="togglePhase('phase-${phaseIndex + 1}')" style="cursor: pointer;"
              onmouseover="this.style.backgroundColor='${hoverColor}'"
              onmouseout="this.style.backgroundColor='transparent'">
-            <div class="phase-title" style="color: #444;">Phase ${phase.phaseNumber || phaseIndex + 1} : ${escapeHtml(phase.title)}</div>
+            <div class="phase-title">Phase ${phase.phaseNumber || phaseIndex + 1} : ${escapeHtml(phase.title)}</div>
             <div class="phase-badges">
                 <span class="difficulty-badge" style="background: ${difficultyColor};">${difficultyLabel.toUpperCase()}</span>
                 ${phase.estimatedTime ? `<span class="phase-time-badge">${phase.estimatedTime} min/pièce</span>` : ''}
@@ -1955,7 +2379,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                      style="cursor: pointer;"
                      onmouseover="this.style.backgroundColor='${hoverColor}'"
                      onmouseout="this.style.backgroundColor='transparent'">
-                    <div class="step-label" style="color: #444;">
+                    <div class="step-label">
                         Étape ${stepIndex + 1}${step.title ? ` : ${escapeHtml(step.title)}` : ''}
                     </div>
                     <div class="step-toggle-icon" style="display: none;">▼</div>
@@ -1966,7 +2390,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                     <div style="display: flex; gap: 20px; align-items: flex-start;">
                         ${step.description || hasConsignes ? `
                         <div style="flex: 1;">
-                            <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 20px; color: #1a1a1a;">Description</div>
+                            <div class="section-heading">Description</div>
                             <div style="border-radius: 8px; font-size: 1.1rem;">
                                 ${step.description ? `<div class="step-description-content" style="padding-left: 0;">${step.description}</div>` : ''}
 
@@ -1997,7 +2421,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
 
                         ${hasTools ? `
                         <div style="width: 300px; flex-shrink: 0;">
-                            <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 20px; color: #1a1a1a;">Outil(s)</div>
+                            <div class="section-heading">Outil(s)</div>
                             <div class="step-tools-column">
                                 ${tools.map(tool => {
                                     const truncatedName = tool.name.length > 30 ? tool.name.substring(0, 30) + '...' : tool.name;
@@ -2018,7 +2442,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                                         <div class="step-tool-info">
                                             <div class="step-tool-name" title="${escapeHtml(tool.name)}">${escapeHtml(truncatedName)}</div>
                                             ${tool.reference ? `<div class="step-tool-ref" style="color: ${refColor};">${escapeHtml(tool.reference)}</div>` : ''}
-                                            ${tool.location ? `<div class="step-tool-location" style="color: #666; font-size: 0.8rem; margin-top: 2px;">${escapeHtml(tool.location)}</div>` : ''}
+                                            ${tool.location ? `<div class="step-tool-location">${escapeHtml(tool.location)}</div>` : ''}
                                         </div>
                                     </div>
                                     `;
@@ -2123,8 +2547,10 @@ function generateImageCarousel(images: AnnotatedImage[], renderedImageUrls: Map<
     `;
   }
 
-  // Générer les miniatures
-  const thumbnails = images.map((_img, index) => {
+  const isDefect = carouselId.startsWith('defect-');
+
+  // Miniatures uniquement hors défauthèque
+  const thumbnails = isDefect ? '' : images.map((_img, index) => {
     const imageUrl = imageUrls[index];
     if (!imageUrl) return '';
     return `
@@ -2143,9 +2569,26 @@ function generateImageCarousel(images: AnnotatedImage[], renderedImageUrls: Map<
     `;
   }).join('');
 
-  // Ne pas afficher le titre "Photo" pour la défauthèque
-  const isDefect = carouselId.startsWith('defect-');
   const photoTitle = isDefect ? '' : '<div style="font-size: 1.1rem; font-weight: 600; color: #444; margin-bottom: 12px;">Photo</div>';
+
+  if (isDefect) {
+    return `
+    <div>
+      <div class="carousel-container" id="carousel-${carouselId}">
+        <div class="carousel-wrapper">
+          <div class="carousel-items" id="items-${carouselId}">
+            ${carouselItems}
+          </div>
+        </div>
+        ${images.length > 1 ? `
+        <div class="carousel-controls">
+          <button class="carousel-button prev" onclick="changeSlide('${carouselId}', -1)">‹</button>
+          <button class="carousel-button next" onclick="changeSlide('${carouselId}', 1)">›</button>
+        </div>` : ''}
+      </div>
+    </div>
+    `;
+  }
 
   return `
     <div>
@@ -2245,7 +2688,7 @@ function generateVideoCarousel(videos: any[], _carouselId: string): string {
           <polygon points="5 3 19 12 5 21 5 3"></polygon>
         </svg>
         <div style="text-align: left;">
-          <div style="font-size: 0.95rem; font-weight: 600; color: #333;">${escapeHtml(videoTitle)}</div>
+          <div style="font-size: 0.95rem; font-weight: 600;">${escapeHtml(videoTitle)}</div>
         </div>
       </button>
     `;
@@ -2253,7 +2696,7 @@ function generateVideoCarousel(videos: any[], _carouselId: string): string {
 
   return `
     <div class="video-section" style="margin-top: 20px;">
-      <div class="video-section-title" style="font-size: 1.1rem; font-weight: 600; color: #444; margin-bottom: 12px;">Vidéo</div>
+      <div class="video-section-title">Vidéo</div>
       <div style="display: flex; flex-wrap: wrap; align-items: flex-start;">
         ${videoButtons}
       </div>
@@ -2305,7 +2748,7 @@ function generateDocumentSection(documents: any[]): string {
           <polyline points="10 9 9 9 8 9"></polyline>
         </svg>
         <div style="text-align: left;">
-          <div style="font-size: 0.95rem; font-weight: 600; color: #333;">${escapeHtml(docTitle)}</div>
+          <div style="font-size: 0.95rem; font-weight: 600;">${escapeHtml(docTitle)}</div>
         </div>
       </a>
     `;
@@ -2313,7 +2756,7 @@ function generateDocumentSection(documents: any[]): string {
 
   return `
     <div class="document-section" style="margin-top: 20px;">
-      <div class="document-section-title" style="font-size: 1.1rem; font-weight: 600; color: #444; margin-bottom: 12px;">Document</div>
+      <div class="document-section-title">Document</div>
       <div style="display: flex; flex-wrap: wrap; align-items: flex-start;">
         ${documentButtons}
       </div>

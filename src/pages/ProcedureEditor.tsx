@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Plus, Image as ImageIcon, X, Download, AlertTriangle, Pencil, CheckCircle, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Image as ImageIcon, X, Download, AlertTriangle, Pencil, CheckCircle, ChevronDown, ChevronUp, Trash2, FileText, Layers, GitBranch, Shield, Tag } from 'lucide-react';
 import { useProcedure } from '@/hooks/useProcedures';
 import { useTools } from '@/hooks/useTools';
 import { createProcedure, updateProcedure, addPhase, deletePhase } from '@/services/procedureService';
@@ -468,23 +468,41 @@ export default function ProcedureEditor() {
     }
   };
 
+  const statusConfig: Record<string, { label: string; dot: string; text: string }> = {
+    en_cours:              { label: 'En cours',              dot: 'bg-blue-400',   text: 'text-blue-400'   },
+    verification:          { label: 'Vérification Technique', dot: 'bg-yellow-400', text: 'text-yellow-400' },
+    relecture:             { label: 'Relecture et Correction',dot: 'bg-purple-400', text: 'text-purple-400' },
+    mise_a_jour_timetonic: { label: 'Mise à jour Timetonic', dot: 'bg-orange-400', text: 'text-orange-400' },
+    completed:             { label: 'Terminée',               dot: 'bg-green-400',  text: 'text-green-400'  },
+  };
+  const currentStatus = statusConfig[status] ?? statusConfig['en_cours'];
+
   return (
     <div className="max-w-5xl mx-auto pb-20">
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
+      {/* Header sticky */}
+      <div className="sticky top-0 z-20 -mx-6 px-6 py-3 mb-6 bg-[#0a0a0a]/95 backdrop-blur-sm border-b border-[#1c1c1c] flex items-center justify-between gap-4">
         <Link to="/">
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" className="shrink-0">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Retour
           </Button>
         </Link>
 
-        <div className="flex items-center gap-3">
-          <div className="flex gap-2 items-center">
+        {designation && (
+          <p className="text-sm font-semibold text-gray-300 truncate max-w-xs hidden sm:block">
+            {reference && <span className="text-primary mr-2">{reference}</span>}
+            {designation}
+          </p>
+        )}
+
+        <div className="flex items-center gap-2 ml-auto shrink-0">
+          {/* Status avec dot coloré */}
+          <div className="relative flex items-center gap-2 rounded-lg border border-[#2a2a2a] bg-[#111] px-3 py-1.5">
+            <span className={`h-2 w-2 rounded-full shrink-0 ${currentStatus.dot}`} />
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as 'en_cours' | 'verification' | 'relecture' | 'mise_a_jour_timetonic' | 'completed')}
-              className="rounded-md border border-[#323232] bg-transparent px-3 py-2 text-sm text-white"
+              className={`bg-transparent border-none outline-none text-sm font-medium ${currentStatus.text} cursor-pointer pr-1`}
             >
               <option value="en_cours">En cours</option>
               <option value="verification">Vérification Technique</option>
@@ -492,22 +510,23 @@ export default function ProcedureEditor() {
               <option value="mise_a_jour_timetonic">Mise à jour Timetonic</option>
               <option value="completed">Terminée</option>
             </select>
-            {id && existingProcedure && (
-              <Button variant="secondary" onClick={handleExportHTML}>
-                <Download className="h-4 w-4 mr-2" />
-                Exporter HTML
-              </Button>
-            )}
-            <Button
-              onClick={handleQuickSave}
-              variant="secondary"
-              title="Ctrl+S"
-              className={quickSaveSuccess ? 'bg-green-600 hover:bg-green-700 border-green-600' : ''}
-            >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Sauvegarde rapide
-            </Button>
           </div>
+
+          {id && existingProcedure && (
+            <Button variant="secondary" onClick={handleExportHTML} size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Exporter HTML
+            </Button>
+          )}
+          <Button
+            onClick={handleQuickSave}
+            size="sm"
+            title="Ctrl+S"
+            className={quickSaveSuccess ? 'bg-green-600 hover:bg-green-700 border-green-600' : ''}
+          >
+            <CheckCircle className="h-4 w-4 mr-2" />
+            Sauvegarder
+          </Button>
         </div>
       </div>
 
@@ -515,7 +534,16 @@ export default function ProcedureEditor() {
       <div className="space-y-6">
         {/* Basic Info */}
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-0">
+            <div className="flex items-center gap-3 px-1 py-4 mb-4 border-b border-[#1e1e1e]">
+              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 border border-primary/20">
+                <FileText className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold leading-none">Informations générales</h2>
+                <p className="text-xs text-gray-500 mt-0.5">Référence, désignation et image de couverture</p>
+              </div>
+            </div>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -606,19 +634,24 @@ export default function ProcedureEditor() {
         {/* Défauthèque */}
         {id && (
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between mb-4">
-                <button
-                  onClick={() => setShowDefects(!showDefects)}
-                  className="flex items-center gap-2 text-xl font-bold hover:text-primary transition-colors"
-                >
-                  {showDefects ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-                  Défauthèque
-                  {defects.length > 0 && (
-                    <span className="text-sm font-normal text-text-muted">({defects.length})</span>
-                  )}
-                </button>
-                <Button onClick={handleAddDefect} variant="secondary">
+            <CardContent className="pt-0">
+              <div className="flex items-center justify-between px-1 py-4 mb-4 border-b border-[#1e1e1e]">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-red-500/10 border border-red-500/20">
+                    <Shield className="h-4 w-4 text-red-400" />
+                  </div>
+                  <button
+                    onClick={() => setShowDefects(!showDefects)}
+                    className="flex items-center gap-2 hover:text-primary transition-colors"
+                  >
+                    <span className="text-base font-bold">Défauthèque</span>
+                    {defects.length > 0 && (
+                      <span className="text-xs font-normal text-gray-500 bg-[#1e1e1e] px-2 py-0.5 rounded-full border border-[#2a2a2a]">{defects.length}</span>
+                    )}
+                    {showDefects ? <ChevronUp className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
+                  </button>
+                </div>
+                <Button onClick={handleAddDefect} variant="secondary" size="sm">
                   <Plus className="h-4 w-4 mr-2" />
                   Ajouter un défaut
                 </Button>
@@ -627,33 +660,64 @@ export default function ProcedureEditor() {
               {showDefects && (
                 <>
                   {defects.length === 0 ? (
-                    <p className="text-gray-400 text-center py-8">
-                      Aucun défaut répertorié. Cliquez sur "Ajouter un défaut" pour commencer.
-                    </p>
+                    <div className="text-center py-10">
+                      <Shield className="h-8 w-8 text-gray-700 mx-auto mb-3" />
+                      <p className="text-gray-500 text-sm">Aucun défaut répertorié.</p>
+                      <p className="text-gray-600 text-xs mt-1">Cliquez sur "Ajouter un défaut" pour commencer.</p>
+                    </div>
                   ) : (
                     <div className="space-y-4">
                       {defects.map((defect, defectIndex) => (
-                        <div key={defect.id} className="rounded-lg border border-[#2a2a2a] bg-[#111] overflow-hidden" style={{ borderLeft: '4px solid #ef4444' }}>
+                        <div key={defect.id} className="rounded-xl border border-[#2a2a2a] bg-[#0d0d0d] overflow-hidden" style={{ borderLeft: '3px solid #ef4444' }}>
                           {/* En-tête de la carte */}
-                          <div className="flex items-center justify-between px-4 py-2 bg-[#1a1a1a] border-b border-[#2a2a2a]">
+                          <div className="flex items-center justify-between px-4 py-2.5 bg-[#141414] border-b border-[#222]">
                             <div className="flex items-center gap-2">
-                              <AlertTriangle className="h-4 w-4 text-orange-500" />
-                              <span className="text-sm font-semibold text-gray-300">Défaut #{defectIndex + 1}</span>
+                              <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
+                              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Défaut #{defectIndex + 1}</span>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
+                            <button
                               onClick={() => handleRemoveDefect(defect.id)}
-                              className="h-7 w-7 text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                              className="h-6 w-6 flex items-center justify-center rounded-md text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                             >
-                              <X className="h-4 w-4" />
-                            </Button>
+                              <X className="h-3.5 w-3.5" />
+                            </button>
                           </div>
 
-                          <div className="p-4 space-y-4">
-                            {/* Défaut + Critère côte à côte */}
-                            <div className="grid grid-cols-3 gap-3">
-                              <div className="col-span-2">
+                          <div className="p-4 space-y-3">
+                            {/* Critère — sélecteur pills en haut */}
+                            <div>
+                              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                                <Tag className="inline h-3 w-3 mr-1 -mt-0.5" />Critère
+                              </label>
+                              <div className="flex gap-2 flex-wrap">
+                                {([
+                                  { value: '',              label: 'Non défini' },
+                                  { value: 'non_acceptable', label: 'Non-acceptable' },
+                                  { value: 'a_retoucher',    label: 'À retoucher' },
+                                ] as const).map(opt => (
+                                  <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => handleUpdateDefect(defect.id, 'criteria', opt.value)}
+                                    className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
+                                      defect.criteria === opt.value
+                                        ? opt.value === 'non_acceptable'
+                                          ? 'bg-red-500/20 border-red-500/50 text-red-400'
+                                          : opt.value === 'a_retoucher'
+                                          ? 'bg-amber-500/20 border-amber-500/50 text-amber-400'
+                                          : 'bg-[#2a2a2a] border-[#444] text-gray-300'
+                                        : 'bg-transparent border-[#2a2a2a] text-gray-600 hover:border-[#3a3a3a] hover:text-gray-400'
+                                    }`}
+                                  >
+                                    {opt.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Défaut + Intervention côte à côte */}
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
                                 <label className="block text-xs font-semibold text-red-400 uppercase tracking-wide mb-1.5">
                                   Défaut
                                 </label>
@@ -662,52 +726,27 @@ export default function ProcedureEditor() {
                                   onChange={(e) => handleUpdateDefect(defect.id, 'defect', e.target.value)}
                                   placeholder="Description du défaut observé..."
                                   rows={3}
-                                  className="w-full rounded-lg border border-[#323232] bg-[#0d0d0d] px-3 py-2 text-sm text-white placeholder-gray-600 focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 resize-none"
+                                  className="w-full rounded-lg border border-[#323232] bg-[#0a0a0a] px-3 py-2 text-sm text-white placeholder-gray-600 focus:ring-2 focus:ring-red-500/40 focus:border-red-500/40 resize-none"
                                 />
                               </div>
                               <div>
-                                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">
-                                  Critère
+                                <label className="block text-xs font-semibold text-green-400 uppercase tracking-wide mb-1.5">
+                                  Intervention
                                 </label>
-                                <select
-                                  value={defect.criteria || ''}
-                                  onChange={(e) => handleUpdateDefect(defect.id, 'criteria', e.target.value)}
-                                  className="w-full rounded-lg border border-[#323232] bg-[#0d0d0d] px-3 py-2 text-sm text-white focus:ring-2 focus:ring-primary focus:border-primary"
-                                >
-                                  <option value="">— Critère —</option>
-                                  <option value="non_acceptable">Non-acceptable</option>
-                                  <option value="a_retoucher">A retoucher</option>
-                                </select>
-                                {defect.criteria && (
-                                  <span className={`inline-block mt-2 px-2 py-0.5 rounded-full text-xs font-semibold ${
-                                    defect.criteria === 'non_acceptable'
-                                      ? 'bg-red-500/20 text-red-400'
-                                      : 'bg-amber-500/20 text-amber-400'
-                                  }`}>
-                                    {defect.criteria === 'non_acceptable' ? 'Non-acceptable' : 'A retoucher'}
-                                  </span>
-                                )}
+                                <textarea
+                                  value={defect.whatToDo || ''}
+                                  onChange={(e) => handleUpdateDefect(defect.id, 'whatToDo', e.target.value)}
+                                  placeholder="Action corrective à mener..."
+                                  rows={3}
+                                  className="w-full rounded-lg border border-[#323232] bg-[#0a0a0a] px-3 py-2 text-sm text-white placeholder-gray-600 focus:ring-2 focus:ring-green-500/40 focus:border-green-500/40 resize-none"
+                                />
                               </div>
-                            </div>
-
-                            {/* Intervention */}
-                            <div>
-                              <label className="block text-xs font-semibold text-green-400 uppercase tracking-wide mb-1.5">
-                                Intervention
-                              </label>
-                              <textarea
-                                value={defect.whatToDo || ''}
-                                onChange={(e) => handleUpdateDefect(defect.id, 'whatToDo', e.target.value)}
-                                placeholder="Action corrective à mener..."
-                                rows={2}
-                                className="w-full rounded-lg border border-[#323232] bg-[#0d0d0d] px-3 py-2 text-sm text-white placeholder-gray-600 focus:ring-2 focus:ring-green-500/50 focus:border-green-500/50 resize-none"
-                              />
                             </div>
 
                             {/* Images */}
                             <div>
-                              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
-                                Photos {defect.images && defect.images.length > 0 && <span className="text-gray-500 normal-case font-normal">({defect.images.length})</span>}
+                              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                                Photos {defect.images && defect.images.length > 0 && <span className="text-gray-600 normal-case font-normal">({defect.images.length})</span>}
                               </label>
                               {(defect.images || []).length > 0 && (
                                 <div className="flex flex-wrap gap-2 mb-2">
@@ -781,32 +820,36 @@ export default function ProcedureEditor() {
         {/* Phases */}
         {id && (
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between mb-4">
+            <CardContent className="pt-0">
+              <div className="flex items-center justify-between px-1 py-4 mb-4 border-b border-[#1e1e1e]">
                 <div className="flex items-center gap-3">
-                  <h2 className="text-xl font-bold">Phases</h2>
-                  {existingProcedure && existingProcedure.phases.length > 0 && (() => {
-                    const totalMin = existingProcedure.phases.reduce((sum, p) => sum + (p.estimatedTime || 0), 0);
-                    return (
-                      <>
-                        <span className="text-gray-600">|</span>
-                        <span className="text-sm text-gray-400">
-                          {totalMin} min &nbsp;·&nbsp; {(totalMin / 60).toFixed(2)} h
-                        </span>
-                      </>
-                    );
-                  })()}
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <Layers className="h-4 w-4 text-blue-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold leading-none">Phases</h2>
+                    {existingProcedure && existingProcedure.phases.length > 0 && (() => {
+                      const totalMin = existingProcedure.phases.reduce((sum, p) => sum + (p.estimatedTime || 0), 0);
+                      return (
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {existingProcedure.phases.length} phase{existingProcedure.phases.length > 1 ? 's' : ''} · {totalMin} min · {(totalMin / 60).toFixed(2)} h
+                        </p>
+                      );
+                    })()}
+                  </div>
                 </div>
-                <Button onClick={handleAddPhase}>
+                <Button onClick={handleAddPhase} size="sm">
                   <Plus className="h-4 w-4 mr-2" />
                   Ajouter une phase
                 </Button>
               </div>
 
               {existingProcedure?.phases.length === 0 ? (
-                <p className="text-gray-400 text-center py-8">
-                  Aucune phase. Cliquez sur "Ajouter une phase" pour commencer.
-                </p>
+                <div className="text-center py-10">
+                  <Layers className="h-8 w-8 text-gray-700 mx-auto mb-3" />
+                  <p className="text-gray-500 text-sm">Aucune phase pour l'instant.</p>
+                  <p className="text-gray-600 text-xs mt-1">Cliquez sur "Ajouter une phase" pour commencer.</p>
+                </div>
               ) : (
                 <div className="space-y-3">
                   {existingProcedure?.phases.map((phase, index) => (
@@ -828,15 +871,16 @@ export default function ProcedureEditor() {
         {/* Versioning Manuel */}
         {id && (
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-xl font-bold mb-1">
-                    Versioning
-                  </h2>
-                  <span className="text-xs text-text-muted">
-                    Version actuelle: v{versionString}
-                  </span>
+            <CardContent className="pt-0">
+              <div className="flex items-center justify-between px-1 py-4 mb-4 border-b border-[#1e1e1e]">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-green-500/10 border border-green-500/20">
+                    <GitBranch className="h-4 w-4 text-green-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold leading-none">Versioning</h2>
+                    <p className="text-xs text-gray-500 mt-0.5">Version actuelle : <span className="text-primary font-semibold">v{versionString}</span></p>
+                  </div>
                 </div>
                 <Button
                   onClick={() => setShowVersionForm(!showVersionForm)}
@@ -916,9 +960,11 @@ export default function ProcedureEditor() {
 
               {/* Historique des versions */}
               {changelog.length === 0 ? (
-                <p className="text-gray-400 text-center py-8">
-                  Aucune version enregistrée. Version actuelle: {versionString}
-                </p>
+                <div className="text-center py-10">
+                  <GitBranch className="h-8 w-8 text-gray-700 mx-auto mb-3" />
+                  <p className="text-gray-500 text-sm">Aucune version enregistrée.</p>
+                  <p className="text-gray-600 text-xs mt-1">Version actuelle : v{versionString}</p>
+                </div>
               ) : (
                 <>
                   {/* Dernière version */}
