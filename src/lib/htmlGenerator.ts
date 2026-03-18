@@ -427,6 +427,7 @@ export async function generateHTML(
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
             gap: 20px;
+            align-items: stretch;
         }
 
         @media (max-width: 860px) {
@@ -440,16 +441,18 @@ export async function generateHTML(
             border: 1px solid #e8e8e8;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            transition: box-shadow 0.2s ease, transform 0.2s ease;
+            transition: box-shadow 0.2s ease;
+            display: flex;
+            flex-direction: column;
         }
         .defect-item:hover {
             box-shadow: 0 6px 20px rgba(0,0,0,0.1);
         }
         .defect-item.criteria-non-acceptable {
-            background: linear-gradient(175deg, #fff8f8 0%, #ffffff 50%);
+            background: #fff;
         }
         .defect-item.criteria-a-retoucher {
-            background: linear-gradient(175deg, #fffbf0 0%, #ffffff 50%);
+            background: #fff;
         }
 
         .defect-card-header {
@@ -492,6 +495,7 @@ export async function generateHTML(
             display: flex;
             flex-direction: column;
             gap: 10px;
+            flex: 1;
         }
 
         .defect-block {
@@ -1454,11 +1458,9 @@ export async function generateHTML(
             background: #1e1e1e;
             border-color: #333;
         }
-        body.dark-mode .defect-item.criteria-non-acceptable {
-            background: linear-gradient(175deg, #1f1313 0%, #1e1e1e 50%);
-        }
+        body.dark-mode .defect-item.criteria-non-acceptable,
         body.dark-mode .defect-item.criteria-a-retoucher {
-            background: linear-gradient(175deg, #1f1c10 0%, #1e1e1e 50%);
+            background: #1e1e1e;
         }
         body.dark-mode .defect-card-header {
             background: rgba(255,255,255,0.025);
