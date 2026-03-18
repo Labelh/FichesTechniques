@@ -1174,41 +1174,46 @@ export async function generateHTML(
 
 
         .carousel-button {
-            background: #6b7280;
-            color: white;
+            background: rgba(0, 0, 0, 0.05);
+            color: #999;
             border: none;
-            flex: 1;
-            min-height: 56px;
+            width: 54px;
+            height: 54px;
+            flex-shrink: 0;
             cursor: pointer;
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             font-weight: bold;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s ease;
+            border-radius: 10px;
+            transition: background 0.2s ease, color 0.2s ease;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
         }
 
         .carousel-button:hover,
         .carousel-button:active {
-            background: #4b5563;
-            transform: scale(0.98);
+            background: rgba(0, 0, 0, 0.1);
+            color: #666;
         }
 
-        .carousel-button.prev {
-            border-radius: 0 0 0 var(--radius-lg);
+        body.dark-mode .carousel-button {
+            background: rgba(255,255,255,0.07);
+            color: #666;
         }
 
-        .carousel-button.next {
-            border-radius: 0 0 var(--radius-lg) 0;
+        body.dark-mode .carousel-button:hover {
+            background: rgba(255,255,255,0.13);
+            color: #999;
         }
 
         .carousel-controls {
             display: flex;
-            gap: 0;
-            width: 100%;
-            margin-top: 0;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0 6px;
         }
 
         .carousel-indicators {

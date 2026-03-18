@@ -1,6 +1,5 @@
 import type { AnnotatedImage, Annotation } from '../types';
 import { AnnotationType } from '../types';
-import { blobToBase64 } from './utils';
 
 /**
  * Convertir hex en rgba avec opacité
@@ -153,11 +152,17 @@ export async function renderAnnotatedImage(annotatedImage: AnnotatedImage): Prom
   });
 }
 
+/** Résolution max pour l'export HTML (px sur le grand côté) */
+const MAX_EXPORT_PX = 1600;
+
+/** Qualité JPEG pour l'export (0–1) */
+const JPEG_QUALITY = 0.82;
+
 /**
- * Rend une image avec ses annotations et retourne une data URL base64
+ * Rend une image avec ses annotations et retourne une data URL base64 JPEG compressée.
+ * L'image est redimensionnée si elle dépasse MAX_EXPORT_PX sur le grand côté.
  */
 export async function renderAnnotatedImageToBase64(annotatedImage: AnnotatedImage): Promise<string> {
-  // Si pas d'annotations, convertir quand même en base64
   const srcUrl = annotatedImage.image.url || '';
   if (!srcUrl) return '';
 
@@ -166,11 +171,7 @@ export async function renderAnnotatedImageToBase64(annotatedImage: AnnotatedImag
   try {
     base64Src = await imageUrlToBase64(srcUrl);
   } catch {
-    base64Src = srcUrl; // fallback à l'URL directe
-  }
-
-  if (!annotatedImage.annotations || annotatedImage.annotations.length === 0) {
-    return base64Src;
+    base64Src = srcUrl;
   }
 
   return new Promise((resolve, reject) => {
@@ -178,27 +179,43 @@ export async function renderAnnotatedImageToBase64(annotatedImage: AnnotatedImag
 
     img.onload = () => {
       try {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          reject(new Error('Could not get canvas context'));
-          return;
+        // Calcul des dimensions avec limite de résolution
+        let w = img.width;
+        let h = img.height;
+        if (Math.max(w, h) > MAX_EXPORT_PX) {
+          const ratio = MAX_EXPORT_PX / Math.max(w, h);
+          w = Math.round(w * ratio);
+          h = Math.round(h * ratio);
         }
 
-        ctx.drawImage(img, 0, 0);
-        annotatedImage.annotations!.forEach(ann => drawAnnotation(ctx, ann));
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
 
-        resolve(canvas.toDataURL('image/png'));
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { reject(new Error('Could not get canvas context')); return; }
+
+        ctx.drawImage(img, 0, 0, w, h);
+
+        // Dessiner les annotations uniquement si présentes
+        if (annotatedImage.annotations && annotatedImage.annotations.length > 0) {
+          // Les annotations sont en coordonnées de l'image originale — adapter le scale
+          const scaleX = w / img.width;
+          const scaleY = h / img.height;
+          ctx.save();
+          ctx.scale(scaleX, scaleY);
+          annotatedImage.annotations.forEach(ann => drawAnnotation(ctx, ann));
+          ctx.restore();
+        }
+
+        // JPEG compressé au lieu de PNG
+        resolve(canvas.toDataURL('image/jpeg', JPEG_QUALITY));
       } catch (error) {
         reject(error);
       }
     };
 
     img.onerror = () => reject(new Error('Failed to load image'));
-    // Pas de crossOrigin ici : l'image est déjà en base64, pas d'URL externe
     img.src = base64Src;
   });
 }
@@ -245,55 +262,43 @@ async function imageUrlToBase64(url: string): Promise<string> {
 }
 
 /**
- * Rend toutes les images annotées d'une liste et retourne un Map de data URLs base64
+ * Rend toutes les images annotées d'une liste et retourne un Map d'URLs.
+ * - Images AVEC annotations : rendues en base64 JPEG compressé (annotations dessinées)
+ * - Images SANS annotations + URL hébergée : URL directe (pas de base64, fichier plus léger)
+ * - Images SANS annotations + blob uniquement : base64 JPEG compressé
  */
 export async function renderAllAnnotatedImagesToBase64(
   images: AnnotatedImage[]
 ): Promise<Map<string, string>> {
   const urlMap = new Map<string, string>();
 
-  console.log('renderAllAnnotatedImagesToBase64: Processing', images.length, 'images');
-
   for (const img of images) {
     try {
-      if (img.annotations && img.annotations.length > 0) {
-        // Image avec annotations - rendre avec les annotations
-        console.log(`Rendering image ${img.imageId} with ${img.annotations.length} annotations`);
+      const hasAnnotations = img.annotations && img.annotations.length > 0;
+
+      if (hasAnnotations) {
+        // Image avec annotations : rendu canvas → JPEG compressé
         const renderedUrl = await renderAnnotatedImageToBase64(img);
         urlMap.set(img.imageId, renderedUrl);
-        console.log(`Image ${img.imageId} rendered successfully`);
       } else if (img.image.url) {
-        // Image sans annotations - convertir en base64 quand même pour l'export HTML
-        console.log(`Converting image ${img.imageId} without annotations to base64`);
-        try {
-          const base64Url = await imageUrlToBase64(img.image.url);
-          urlMap.set(img.imageId, base64Url);
-          console.log(`Image ${img.imageId} converted successfully`);
-        } catch (error) {
-          console.error(`Failed to convert image ${img.imageId} to base64:`, error);
-          // Fallback à l'URL originale
-          urlMap.set(img.imageId, img.image.url);
-        }
+        // Image sans annotations et déjà hébergée : URL directe, pas de base64
+        urlMap.set(img.imageId, img.image.url);
       } else if (img.image.blob) {
-        // Image avec blob uniquement - convertir en base64
-        console.log(`Converting image ${img.imageId} blob to base64`);
+        // Image sans annotations, blob local uniquement : compresser via canvas
+        const blobUrl = URL.createObjectURL(img.image.blob);
+        const syntheticImg: AnnotatedImage = { ...img, image: { ...img.image, url: blobUrl }, annotations: [] };
         try {
-          const base64Url = await blobToBase64(img.image.blob);
-          urlMap.set(img.imageId, base64Url);
-          console.log(`Image ${img.imageId} blob converted successfully`);
-        } catch (error) {
-          console.error(`Failed to convert blob ${img.imageId} to base64:`, error);
+          const compressed = await renderAnnotatedImageToBase64(syntheticImg);
+          urlMap.set(img.imageId, compressed);
+        } finally {
+          URL.revokeObjectURL(blobUrl);
         }
       }
     } catch (error) {
       console.error(`Failed to render image ${img.imageId}:`, error);
-      // En cas d'erreur, utiliser l'URL originale si disponible
-      if (img.image.url) {
-        urlMap.set(img.imageId, img.image.url);
-      }
+      if (img.image.url) urlMap.set(img.imageId, img.image.url);
     }
   }
 
-  console.log('renderAllAnnotatedImagesToBase64: Completed. URL map size:', urlMap.size);
   return urlMap;
 }
