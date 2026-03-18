@@ -795,6 +795,23 @@ export async function generateHTML(
             color: #1a1a1a;
         }
 
+        .desc-scroll {
+            max-height: 350px;
+            overflow-y: auto;
+            border: 1px solid #e4e4e4;
+            border-radius: 8px;
+            padding: 12px;
+            scrollbar-width: thin;
+            scrollbar-color: #d0d0d0 transparent;
+        }
+        .desc-scroll::-webkit-scrollbar { width: 4px; }
+        .desc-scroll::-webkit-scrollbar-track { background: transparent; }
+        .desc-scroll::-webkit-scrollbar-thumb { background: #d0d0d0; border-radius: 4px; }
+        .desc-scroll::-webkit-scrollbar-thumb:hover { background: #b0b0b0; }
+        body.dark-mode .desc-scroll { border-color: #333; scrollbar-color: #444 transparent; }
+        body.dark-mode .desc-scroll::-webkit-scrollbar-thumb { background: #444; }
+        body.dark-mode .desc-scroll::-webkit-scrollbar-thumb:hover { background: #555; }
+
         .step-description-content {
             color: #555;
             word-wrap: break-word;
@@ -2398,30 +2415,32 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                         ${step.description || hasConsignes ? `
                         <div style="flex: 1;">
                             <div class="section-heading">Description</div>
-                            <div style="border-radius: 8px; font-size: 1.1rem;">
-                                ${step.description ? `<div class="step-description-content" style="padding-left: 0;">${step.description}</div>` : ''}
+                            <div class="desc-scroll" style="min-height: 350px;">
+                                <div style="font-size: 1.1rem;">
+                                    ${step.description ? `<div class="step-description-content" style="padding-left: 0;">${step.description}</div>` : ''}
 
-                                ${hasConsignes ? `
-                                    ${step.description ? '<div style="margin-top: 16px;"></div>' : ''}
+                                    ${hasConsignes ? `
+                                        ${step.description ? '<div style="margin-top: 16px;"></div>' : ''}
 
-                                    ${step.safetyNotes && step.safetyNotes.length > 0 ? `
-                                    <div style="margin-bottom: 16px;">
-                                        <div class="safety-notes-title" style="font-size: 1.1rem;">Consignes de sécurité</div>
-                                        ${step.safetyNotes.map(note => `
-                                        <div class="safety-note">
-                                            <div>• ${escapeHtml(note.content)}</div>
+                                        ${step.safetyNotes && step.safetyNotes.length > 0 ? `
+                                        <div style="margin-bottom: 16px;">
+                                            <div class="safety-notes-title" style="font-size: 1.1rem;">Consignes de sécurité</div>
+                                            ${step.safetyNotes.map(note => `
+                                            <div class="safety-note">
+                                                <div>• ${escapeHtml(note.content)}</div>
+                                            </div>
+                                            `).join('')}
                                         </div>
-                                        `).join('')}
-                                    </div>
-                                    ` : ''}
+                                        ` : ''}
 
-                                    ${step.tips && step.tips.length > 0 ? `
-                                    <div>
-                                        <div class="tips-title" style="font-size: 1.1rem;">Conseils</div>
-                                        ${step.tips.map(tip => `<div class="tip-item">• ${escapeHtml(tip)}</div>`).join('')}
-                                    </div>
+                                        ${step.tips && step.tips.length > 0 ? `
+                                        <div>
+                                            <div class="tips-title" style="font-size: 1.1rem;">Conseils</div>
+                                            ${step.tips.map(tip => `<div class="tip-item">• ${escapeHtml(tip)}</div>`).join('')}
+                                        </div>
+                                        ` : ''}
                                     ` : ''}
-                                ` : ''}
+                                </div>
                             </div>
                         </div>
                         ` : ''}
@@ -2429,6 +2448,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                         ${hasTools ? `
                         <div style="width: 300px; flex-shrink: 0;">
                             <div class="section-heading">Outil(s)</div>
+                            <div class="desc-scroll" style="border: none; padding: 0;">
                             <div class="step-tools-column">
                                 ${tools.map(tool => {
                                     const truncatedName = tool.name.length > 30 ? tool.name.substring(0, 30) + '...' : tool.name;
@@ -2454,6 +2474,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                                     </div>
                                     `;
                                 }).join('')}
+                            </div>
                             </div>
                         </div>
                         ` : ''}
