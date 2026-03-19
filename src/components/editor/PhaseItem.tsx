@@ -1535,7 +1535,6 @@ function SubStepItem({
           {/* Vidéos */}
           <div>
             <label className="block text-xs font-medium text-gray-400 mb-2">
-              <VideoIcon className="h-3 w-3 inline mr-1" />
               Vidéos ({step.videos?.length || 0})
             </label>
             <div className="flex flex-wrap gap-3 mb-2">
@@ -1545,7 +1544,17 @@ function SubStepItem({
                 <div key={video.id} className="relative group flex items-center gap-2 p-2 bg-background-elevated rounded border border-[#323232]">
                   <VideoIcon className="h-5 w-5 text-text-muted flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-white truncate">{video.name}</div>
+                    <input
+                      className="text-sm font-medium text-white bg-transparent border-none outline-none w-full hover:bg-[#2a2a2a] focus:bg-[#2a2a2a] rounded px-1 -mx-1 truncate"
+                      value={video.name}
+                      onChange={(e) => {
+                        const updatedVideos = (step.videos || []).map(v =>
+                          v.id === video.id ? { ...v, name: e.target.value } : v
+                        );
+                        onUpdate({ videos: updatedVideos });
+                      }}
+                      title="Cliquer pour modifier le titre"
+                    />
                     <div
                       className={`text-xs truncate cursor-pointer hover:underline ${hasFullPath ? 'text-gray-500' : 'text-orange-400'}`}
                       title={hasFullPath ? video.url : 'Chemin incomplet ! Cliquez pour corriger.'}
@@ -1665,7 +1674,6 @@ function SubStepItem({
           {/* Documents */}
           <div>
             <label className="block text-xs font-medium text-gray-400 mb-2">
-              <FileText className="h-3 w-3 inline mr-1" />
               Documents ({step.documents?.length || 0})
             </label>
             <div className="flex flex-wrap gap-3 mb-2">
@@ -1675,7 +1683,17 @@ function SubStepItem({
                 <div key={doc.id} className="relative group flex items-center gap-2 p-2 bg-background-elevated rounded border border-[#323232]">
                   <FileText className="h-5 w-5 text-red-500 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-white truncate">{doc.name}</div>
+                    <input
+                      className="text-sm font-medium text-white bg-transparent border-none outline-none w-full hover:bg-[#2a2a2a] focus:bg-[#2a2a2a] rounded px-1 -mx-1 truncate"
+                      value={doc.name}
+                      onChange={(e) => {
+                        const updatedDocs = (step.documents || []).map(d =>
+                          d.id === doc.id ? { ...d, name: e.target.value } : d
+                        );
+                        onUpdate({ documents: updatedDocs });
+                      }}
+                      title="Cliquer pour modifier le titre"
+                    />
                     <div
                       className={`text-xs truncate cursor-pointer hover:underline ${hasFullPath ? 'text-gray-500' : 'text-orange-400'}`}
                       title={hasFullPath ? doc.url : 'Chemin incomplet ! Cliquez pour corriger.'}

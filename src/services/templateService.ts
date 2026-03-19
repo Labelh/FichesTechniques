@@ -177,3 +177,33 @@ export async function incrementSubStepTemplateUsage(templateId: string, currentC
     usageCount: currentCount + 1,
   });
 }
+
+/**
+ * Met à jour un template de sous-étape
+ */
+export async function updateSubStepTemplate(
+  templateId: string,
+  updates: Partial<SubStepTemplate>
+): Promise<void> {
+  await updateSubStepTemplateFirestore(templateId, updates);
+}
+
+/**
+ * Duplique un template de phase
+ */
+export async function duplicatePhaseTemplate(template: ProcedureTemplate): Promise<string> {
+  const { id: _id, createdAt: _c, updatedAt: _u, ...rest } = template as any;
+  return await createTemplate({ ...rest, name: `${template.name} (copie)`, usageCount: 0 });
+}
+
+/**
+ * Duplique un template de sous-étape
+ */
+export async function duplicateSubStepTemplate(template: SubStepTemplate): Promise<string> {
+  return await createSubStepTemplateFirestore({
+    name: `${template.name} (copie)`,
+    category: template.category,
+    subStep: template.subStep,
+    usageCount: 0,
+  });
+}

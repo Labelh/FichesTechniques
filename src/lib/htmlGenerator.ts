@@ -914,6 +914,9 @@ export async function generateHTML(
             font-weight: 600;
             font-size: 0.85rem;
             color: #2c3e50;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
             margin-bottom: 2px;
         }
 
