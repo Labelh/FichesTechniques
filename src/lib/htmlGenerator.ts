@@ -454,6 +454,9 @@ export async function generateHTML(
         .defect-item.criteria-a-retoucher {
             background: #fff;
         }
+        .defect-item.criteria-acceptable {
+            background: #fff;
+        }
 
         .defect-card-header {
             display: flex;
@@ -488,6 +491,11 @@ export async function generateHTML(
             background: #fef3c7;
             color: #92400e;
             border: 1px solid #fcd34d;
+        }
+        .defect-criteria-badge.acceptable {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
         }
 
         .defect-card-body {
@@ -1487,7 +1495,8 @@ export async function generateHTML(
             border-color: #333;
         }
         body.dark-mode .defect-item.criteria-non-acceptable,
-        body.dark-mode .defect-item.criteria-a-retoucher {
+        body.dark-mode .defect-item.criteria-a-retoucher,
+        body.dark-mode .defect-item.criteria-acceptable {
             background: #1e1e1e;
         }
         body.dark-mode .defect-card-header {
@@ -1504,6 +1513,11 @@ export async function generateHTML(
             background: rgba(245,158,11,0.15);
             color: #fbbf24;
             border-color: rgba(245,158,11,0.35);
+        }
+        body.dark-mode .defect-criteria-badge.acceptable {
+            background: rgba(34,197,94,0.15);
+            color: #4ade80;
+            border-color: rgba(34,197,94,0.35);
         }
         body.dark-mode .defect-block-red  { background: rgba(239,68,68,0.08); }
         body.dark-mode .defect-block-green { background: rgba(16,185,129,0.08); }
@@ -2741,9 +2755,11 @@ function generateDefects(procedure: Procedure, renderedImageUrls: Map<string, st
                 ? 'criteria-non-acceptable'
                 : defect.criteria === 'a_retoucher'
                 ? 'criteria-a-retoucher'
+                : defect.criteria === 'acceptable'
+                ? 'criteria-acceptable'
                 : '';
               const criteriaBadge = defect.criteria
-                ? `<span class="defect-criteria-badge ${defect.criteria === 'non_acceptable' ? 'non-acceptable' : 'a-retoucher'}">${defect.criteria === 'non_acceptable' ? 'Non-acceptable' : 'À retoucher'}</span>`
+                ? `<span class="defect-criteria-badge ${defect.criteria === 'non_acceptable' ? 'non-acceptable' : defect.criteria === 'a_retoucher' ? 'a-retoucher' : 'acceptable'}">${defect.criteria === 'non_acceptable' ? 'Non-acceptable' : defect.criteria === 'a_retoucher' ? 'À retoucher' : 'Acceptable'}</span>`
                 : '';
               return `
                 <div class="defect-item ${criteriaClass}">

@@ -696,9 +696,10 @@ export default function ProcedureEditor() {
                               </label>
                               <div className="flex gap-2 flex-wrap">
                                 {([
-                                  { value: '',              label: 'Non défini' },
+                                  { value: '',               label: 'Non défini' },
                                   { value: 'non_acceptable', label: 'Non-acceptable' },
                                   { value: 'a_retoucher',    label: 'À retoucher' },
+                                  { value: 'acceptable',     label: 'Acceptable' },
                                 ] as const).map(opt => (
                                   <button
                                     key={opt.value}
@@ -710,6 +711,8 @@ export default function ProcedureEditor() {
                                           ? 'bg-red-500/20 border-red-500/50 text-red-400'
                                           : opt.value === 'a_retoucher'
                                           ? 'bg-amber-500/20 border-amber-500/50 text-amber-400'
+                                          : opt.value === 'acceptable'
+                                          ? 'bg-green-500/20 border-green-500/50 text-green-400'
                                           : 'bg-[#2a2a2a] border-[#444] text-gray-300'
                                         : 'bg-transparent border-[#2a2a2a] text-gray-600 hover:border-[#3a3a3a] hover:text-gray-400'
                                     }`}
