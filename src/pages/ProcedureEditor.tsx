@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { ArrowLeft, Plus, Image as ImageIcon, X, Download, AlertTriangle, Pencil, CheckCircle, ChevronDown, ChevronUp, Trash2, FileText, Layers, GitBranch, Shield, Tag } from 'lucide-react';
 import { useProcedure } from '@/hooks/useProcedures';
@@ -40,9 +40,11 @@ export default function ProcedureEditor() {
   const [newVersionType, setNewVersionType] = useState<'major' | 'minor'>('minor');
   const [newVersionDescription, setNewVersionDescription] = useState('');
   const [status, setStatus] = useState<'en_cours' | 'verification' | 'relecture' | 'mise_a_jour_timetonic' | 'completed'>('en_cours');
+  const initializedRef = useRef(false);
 
   useEffect(() => {
-    if (existingProcedure) {
+    if (existingProcedure && !initializedRef.current) {
+      initializedRef.current = true;
       setReference(existingProcedure.reference || '');
       setDesignation(existingProcedure.designation || existingProcedure.title || '');
       setDefects(existingProcedure.defects || []);
