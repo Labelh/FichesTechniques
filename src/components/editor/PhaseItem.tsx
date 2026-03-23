@@ -21,10 +21,13 @@ interface PhaseItemProps {
   procedureId: string;
   totalPhases: number;
   onDelete: (phaseId: string) => void;
+  initiallyExpanded?: boolean;
+  initialExpandStepIndex?: number;
 }
 
-export default function PhaseItem({ phase, index, procedureId, totalPhases, onDelete }: PhaseItemProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+export default function PhaseItem({ phase, index, procedureId, totalPhases, onDelete, initiallyExpanded, initialExpandStepIndex }: PhaseItemProps) {
+  const [isExpanded, setIsExpanded] = useState(initiallyExpanded ?? false);
+  const phaseRef = useRef<HTMLDivElement>(null);
   const [title, setTitle] = useState(phase.title);
   const [phaseNumber, setPhaseNumber] = useState(phase.phaseNumber || index + 1);
   const [difficulty, setDifficulty] = useState<DifficultyLevel>(phase.difficulty);
@@ -36,6 +39,12 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
   const [showSubStepTemplateModal, setShowSubStepTemplateModal] = useState(false);
   const [subStepTemplates, setSubStepTemplates] = useState<SubStepTemplate[]>([]);
   const [subStepTemplateCategory, setSubStepTemplateCategory] = useState<string>('Tous');
+
+  useEffect(() => {
+    if (initiallyExpanded && phaseRef.current) {
+      setTimeout(() => phaseRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
+    }
+  }, []);
 
   // Charger les templates de sous-étapes quand le modal s'ouvre
   useEffect(() => {
@@ -481,7 +490,7 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
   };
 
   return (
-    <div className="border border-[#323232] rounded-lg bg-background-elevated">
+    <div ref={phaseRef} className="border border-[#323232] rounded-lg bg-background-elevated">
       {/* Header - Collapsible */}
       <div
         className="p-4 flex items-center justify-between cursor-pointer hover:bg-background-hover rounded-t-lg transition-colors"
@@ -631,6 +640,7 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
                       key={step.id}
                       step={step}
                       index={idx}
+                      initiallyExpanded={initialExpandStepIndex !== undefined && initialExpandStepIndex === idx}
                       totalSteps={steps.length}
                       availableTools={availableTools}
                       onUpdate={(updates) => updateStep(step.id, updates)}
@@ -806,6 +816,7 @@ interface SubStepItemProps {
   onMoveDown: () => void;
   onSaveAnnotations: (imageId: string, annotations: Annotation[], description: string) => Promise<void>;
   onSaveAsTemplate: () => void;
+  initiallyExpanded?: boolean;
 }
 
 function SubStepItem({
@@ -827,8 +838,9 @@ function SubStepItem({
   onMoveDown,
   onSaveAnnotations,
   onSaveAsTemplate,
+  initiallyExpanded,
 }: SubStepItemProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(initiallyExpanded ?? false);
   const [imageToAnnotate, setImageToAnnotate] = useState<AnnotatedImage | null>(null);
   const [showToolSelector, setShowToolSelector] = useState(false);
   const [showVideoInput, setShowVideoInput] = useState(false);

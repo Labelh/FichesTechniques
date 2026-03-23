@@ -5,16 +5,19 @@ import {
   FolderKanban,
   Package,
   Menu,
+  MessageSquareDiff,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useAppStore } from '@/store/useAppStore';
 import { useProcedureStats } from '@/hooks/useProcedures';
+import { useVerificationCount } from '@/hooks/useVerificationCount';
 import { cn } from '@/lib/utils';
 
 export default function Sidebar() {
   const location = useLocation();
   const { sidebarOpen, toggleSidebar } = useAppStore();
   const stats = useProcedureStats();
+  const verifCount = useVerificationCount();
 
   const navItems = [
     {
@@ -32,6 +35,13 @@ export default function Sidebar() {
       name: 'Templates',
       href: '/templates',
       icon: FolderKanban,
+    },
+    {
+      name: 'Demandes de modification',
+      href: '/verification-requests',
+      icon: MessageSquareDiff,
+      count: verifCount,
+      countColor: 'bg-red-500',
     },
   ];
 
@@ -94,7 +104,9 @@ export default function Sidebar() {
                     <item.icon size={20} />
                     <span className="flex-1">{item.name}</span>
                     {item.count !== undefined && item.count > 0 && (
-                      <span className="sidebar-badge">{item.count}</span>
+                      (item as any).countColor
+                        ? <span className={`text-xs text-white font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center ${(item as any).countColor}`}>{item.count}</span>
+                        : <span className="sidebar-badge">{item.count}</span>
                     )}
                   </div>
                 </Link>

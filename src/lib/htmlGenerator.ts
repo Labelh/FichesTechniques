@@ -796,8 +796,9 @@ export async function generateHTML(
         }
 
         .desc-scroll {
-            max-height: 350px;
+            max-height: 280px;
             overflow-y: auto;
+            overflow-x: hidden;
             border: 1px solid #e4e4e4;
             border-radius: 8px;
             padding: 12px;
@@ -833,6 +834,8 @@ export async function generateHTML(
             padding: 8px 10px;
             background: #fafafa;
             max-width: 100%;
+            min-width: 0;
+            overflow: hidden;
             word-wrap: break-word;
             overflow-wrap: break-word;
             display: flex;
@@ -901,6 +904,8 @@ export async function generateHTML(
 
         .step-tool-info {
             flex: 1;
+            min-width: 0;
+            overflow: hidden;
         }
 
         .step-tool-title {
@@ -962,6 +967,8 @@ export async function generateHTML(
             display: flex;
             flex-direction: column;
             gap: 12px;
+            min-width: 0;
+            overflow: hidden;
         }
 
         .step-tool {
@@ -1198,8 +1205,8 @@ export async function generateHTML(
 
 
         .carousel-button {
-            background: rgba(0, 0, 0, 0.05);
-            color: #999;
+            background: #e8e8e8;
+            color: #666;
             border: none;
             width: 54px;
             height: 54px;
@@ -1218,18 +1225,19 @@ export async function generateHTML(
 
         .carousel-button:hover,
         .carousel-button:active {
-            background: rgba(0, 0, 0, 0.1);
-            color: #666;
+            background: #d8d8d8;
+            color: #333;
         }
 
         body.dark-mode .carousel-button {
-            background: rgba(255,255,255,0.07);
-            color: #666;
+            background: rgba(255,255,255,0.1);
+            color: #aaa;
         }
 
-        body.dark-mode .carousel-button:hover {
-            background: rgba(255,255,255,0.13);
-            color: #999;
+        body.dark-mode .carousel-button:hover,
+        body.dark-mode .carousel-button:active {
+            background: rgba(255,255,255,0.18);
+            color: #e0e0e0;
         }
 
         .carousel-controls {
@@ -1663,6 +1671,236 @@ export async function generateHTML(
             padding: 0 2px;
             user-select: none;
         }
+        /* ── Bouton Demande de vérification ── */
+        .verif-fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 9999;
+            background: #e0e0e0;
+            color: #666;
+            border: none;
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            padding: 0;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+        }
+        .verif-fab:hover {
+            background: #cfcfcf;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+            color: #444;
+        }
+        body.dark-mode .verif-fab {
+            background: #2e2e2e;
+            color: #888;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        }
+        body.dark-mode .verif-fab:hover {
+            background: #383838;
+            color: #bbb;
+        }
+
+        /* ── Modal overlay ── */
+        .verif-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .verif-overlay.open { display: flex; }
+
+        /* ── Modal box ── */
+        .verif-modal {
+            background: #fff;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 520px;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.2);
+            overflow: hidden;
+            animation: verifSlideIn 0.22s ease;
+        }
+        @keyframes verifSlideIn {
+            from { opacity: 0; transform: translateY(16px) scale(0.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        body.dark-mode .verif-modal {
+            background: #1e1e1e;
+            border: 1px solid #333;
+        }
+        .verif-modal-header {
+            padding: 20px 24px 16px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        body.dark-mode .verif-modal-header { border-color: #2a2a2a; }
+        .verif-modal-header-left { display: flex; align-items: center; gap: 12px; }
+        .verif-modal-icon {
+            width: 40px; height: 40px;
+            background: rgba(249,55,5,0.1);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .verif-modal-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #111;
+            margin: 0;
+        }
+        body.dark-mode .verif-modal-title { color: #e0e0e0; }
+        .verif-modal-subtitle {
+            font-size: 0.75rem;
+            color: #888;
+            margin: 2px 0 0;
+        }
+        .verif-close-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #aaa;
+            padding: 4px;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            line-height: 1;
+            transition: color 0.15s, background 0.15s;
+        }
+        .verif-close-btn:hover { color: #555; background: #f5f5f5; }
+        body.dark-mode .verif-close-btn:hover { color: #ddd; background: #2a2a2a; }
+
+        .verif-modal-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
+
+        .verif-field label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        body.dark-mode .verif-field label { color: #999; }
+        .verif-field select,
+        .verif-field input,
+        .verif-field textarea {
+            width: 100%;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 9px 12px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            color: #222;
+            background: #fafafa;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+            box-sizing: border-box;
+        }
+        body.dark-mode .verif-field select,
+        body.dark-mode .verif-field input,
+        body.dark-mode .verif-field textarea {
+            background: #252525;
+            border-color: #333;
+            color: #e0e0e0;
+        }
+        .verif-field select:focus,
+        .verif-field input:focus,
+        .verif-field textarea:focus {
+            border-color: var(--primary-color, #f93705);
+            box-shadow: 0 0 0 3px rgba(249,55,5,0.1);
+            background: #fff;
+        }
+        body.dark-mode .verif-field select:focus,
+        body.dark-mode .verif-field input:focus,
+        body.dark-mode .verif-field textarea:focus { background: #1a1a1a; }
+        .verif-field textarea { resize: vertical; min-height: 80px; }
+
+        .verif-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        .verif-modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        body.dark-mode .verif-modal-footer { border-color: #2a2a2a; }
+        .verif-btn-cancel {
+            background: none;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 9px 18px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s;
+        }
+        .verif-btn-cancel:hover { background: #f5f5f5; }
+        body.dark-mode .verif-btn-cancel { border-color: #333; color: #999; }
+        body.dark-mode .verif-btn-cancel:hover { background: #2a2a2a; }
+        .verif-btn-submit {
+            background: var(--primary-color, #f93705);
+            border: none;
+            border-radius: 8px;
+            padding: 9px 22px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #fff;
+            cursor: pointer;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            transition: opacity 0.15s, transform 0.15s;
+        }
+        .verif-btn-submit:hover { opacity: 0.9; transform: translateY(-1px); }
+        .verif-btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .verif-success {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 24px;
+            text-align: center;
+            gap: 12px;
+        }
+        .verif-success.show { display: flex; }
+        .verif-success-icon {
+            width: 56px; height: 56px;
+            background: rgba(34,197,94,0.12);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.8rem;
+        }
+        .verif-success p {
+            color: #444;
+            font-size: 0.85rem;
+            max-width: 300px;
+            line-height: 1.5;
+            margin: 0;
+        }
+        body.dark-mode .verif-success p { color: #aaa; }
+        .verif-success strong { color: #111; }
+        body.dark-mode .verif-success strong { color: #ddd; }
+
+        @media print { .verif-fab { display: none !important; } }
+
         /* Section headings (Description, Outil, Vidéo, Document) */
         .section-heading {
             font-weight: 600;
@@ -2201,7 +2439,183 @@ export async function generateHTML(
                 }
             }
         });
+
+        // ── Demande de vérification ──
+        var VERIF_PHASES = ${JSON.stringify(phases.map((p, i) => ({
+          index: i,
+          title: p.title ? `Phase ${i + 1} \u00B7 ${p.title}` : `Phase ${i + 1}`,
+          steps: (p.steps || []).map((s, j) => ({
+            index: j,
+            title: s.title ? `\u00C9tape ${j + 1} \u00B7 ${s.title}` : `\u00C9tape ${j + 1}`
+          }))
+        })))};
+        var VERIF_PROCEDURE_ID   = ${JSON.stringify(procedure.id || '')};
+        var VERIF_PROCEDURE_REF  = ${JSON.stringify(procedure.reference || '')};
+        var VERIF_PROCEDURE_NAME = ${JSON.stringify(procedure.designation || procedure.title || '')};
+        var FIREBASE_PROJECT_ID  = 'fichestechniques-cd97c';
+        var FIREBASE_API_KEY     = 'AIzaSyDmnjA7AFMiLEyzYYD1m1Tg1UAioh-Xxjg';
+
+        function openVerifModal() {
+            document.getElementById('verif-overlay').classList.add('open');
+            document.body.style.overflow = 'hidden';
+            document.getElementById('verif-success').classList.remove('show');
+            document.getElementById('verif-form-body').style.display = '';
+            document.getElementById('verif-footer').style.display = '';
+            document.getElementById('verif-submit-btn').disabled = false;
+        }
+        function closeVerifModal() {
+            document.getElementById('verif-overlay').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        function handleVerifOverlayClick(e) {
+            if (e.target === document.getElementById('verif-overlay')) closeVerifModal();
+        }
+        function verifUpdateSteps() {
+            var phaseIdx = document.getElementById('verif-phase').value;
+            var stepSel  = document.getElementById('verif-step');
+            stepSel.innerHTML = '<option value="">— Toute la phase —</option>';
+            if (phaseIdx === '') return;
+            var phase = VERIF_PHASES[parseInt(phaseIdx)];
+            if (!phase) return;
+            phase.steps.forEach(function(s) {
+                var opt = document.createElement('option');
+                opt.value = s.index;
+                opt.textContent = s.title;
+                stepSel.appendChild(opt);
+            });
+        }
+        function submitVerifRequest() {
+            var phase   = document.getElementById('verif-phase').value;
+            var element = document.getElementById('verif-element').value;
+            var comment = document.getElementById('verif-comment').value.trim();
+            if (!phase)   { alert('Veuillez sélectionner une phase.'); return; }
+            if (!element) { alert("Veuillez sélectionner l'élément à modifier."); return; }
+            if (!comment) { alert('Veuillez décrire la modification souhaitée.'); return; }
+            var phaseObj  = VERIF_PHASES[parseInt(phase)];
+            var stepIdx   = document.getElementById('verif-step').value;
+            var stepLabel = stepIdx !== '' ? (phaseObj.steps[parseInt(stepIdx)] ? phaseObj.steps[parseInt(stepIdx)].title : '') : '';
+            var requester = document.getElementById('verif-requester').value.trim();
+            var btn = document.getElementById('verif-submit-btn');
+            btn.disabled = true;
+            btn.textContent = 'Envoi en cours…';
+            var body = { fields: {
+                procedureId:   { stringValue: VERIF_PROCEDURE_ID },
+                procedureRef:  { stringValue: VERIF_PROCEDURE_REF },
+                procedureName: { stringValue: VERIF_PROCEDURE_NAME },
+                phase:         { stringValue: phaseObj.title },
+                step:          { stringValue: stepLabel || '' },
+                phaseIndex:    { integerValue: parseInt(phase) },
+                stepIndex:     { integerValue: stepIdx !== '' ? parseInt(stepIdx) : -1 },
+                element:       { stringValue: element },
+                comment:       { stringValue: comment },
+                requester:     { stringValue: requester },
+                status:        { stringValue: 'nouveau' },
+                createdAt:     { timestampValue: new Date().toISOString() }
+            }};
+            fetch('https://firestore.googleapis.com/v1/projects/' + FIREBASE_PROJECT_ID + '/databases/(default)/documents/verification_requests?key=' + FIREBASE_API_KEY, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            }).then(function(r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                document.getElementById('verif-form-body').style.display = 'none';
+                document.getElementById('verif-footer').style.display = 'none';
+                document.getElementById('verif-success').classList.add('show');
+                setTimeout(closeVerifModal, 3000);
+            }).catch(function(err) {
+                console.error('Erreur:', err);
+                alert("Erreur lors de l'envoi. Veuillez réessayer.");
+                btn.disabled = false;
+                btn.textContent = 'Envoyer la demande';
+            });
+        }
     </script>
+
+    <button class="verif-fab" onclick="openVerifModal()" title="Demande de modification">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+    </button>
+
+    <div class="verif-overlay" id="verif-overlay" onclick="handleVerifOverlayClick(event)">
+        <div class="verif-modal" id="verif-modal">
+
+            <!-- Header -->
+            <div class="verif-modal-header">
+                <div class="verif-modal-header-left">
+                    <div class="verif-modal-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f93705" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="verif-modal-title">Demande de modification</p>
+                        <p class="verif-modal-subtitle">${escapeHtml(procedure.designation || procedure.title || '')} ${procedure.reference ? '· ' + escapeHtml(procedure.reference) : ''}</p>
+                    </div>
+                </div>
+                <button class="verif-close-btn" onclick="closeVerifModal()">✕</button>
+            </div>
+
+            <!-- Form -->
+            <div class="verif-modal-body" id="verif-form-body">
+                <div class="verif-row">
+                    <div class="verif-field">
+                        <label>Phase concernée *</label>
+                        <select id="verif-phase" onchange="verifUpdateSteps()">
+                            <option value="">— Sélectionner —</option>
+                            ${phases.map((p, i) => `<option value="${i}">Phase ${i + 1}${p.title ? ' · ' + escapeHtml(p.title) : ''}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="verif-field">
+                        <label>Étape concernée</label>
+                        <select id="verif-step">
+                            <option value="">— Toute la phase —</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="verif-field">
+                    <label>Élément à modifier *</label>
+                    <select id="verif-element">
+                        <option value="">— Sélectionner —</option>
+                        <option value="Description">Description</option>
+                        <option value="Outil">Outil</option>
+                        <option value="Consigne de sécurité">Consigne de sécurité</option>
+                        <option value="Conseil">Conseil</option>
+                        <option value="Titre de phase / étape">Titre de phase / étape</option>
+                        <option value="Photo / Vidéo">Photo / Vidéo</option>
+                        <option value="Autre">Autre</option>
+                    </select>
+                </div>
+                <div class="verif-field">
+                    <label>Description de la modification souhaitée *</label>
+                    <textarea id="verif-comment" placeholder="Décrivez précisément ce qui doit être modifié…"></textarea>
+                </div>
+                <div class="verif-field">
+                    <label>Votre nom <span style="font-weight:400;text-transform:none;">(optionnel)</span></label>
+                    <input type="text" id="verif-requester" placeholder="Prénom Nom">
+                </div>
+            </div>
+
+            <!-- Success state -->
+            <div class="verif-success" id="verif-success">
+                <div class="verif-success-icon">✓</div>
+                <strong style="font-size:1rem;">Demande envoyée !</strong>
+                <p>Votre demande de modification a bien été transmise à l'équipe FichesTech. Elle sera traitée prochainement.</p>
+            </div>
+
+            <!-- Footer -->
+            <div class="verif-modal-footer" id="verif-footer">
+                <button class="verif-btn-cancel" onclick="closeVerifModal()">Annuler</button>
+                <button class="verif-btn-submit" id="verif-submit-btn" onclick="submitVerifRequest()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                    </svg>
+                    Envoyer la demande
+                </button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>`;
 
@@ -2418,7 +2832,7 @@ function generatePhasesHTML(phases: Phase[], renderedImageUrls: Map<string, stri
                         ${step.description || hasConsignes ? `
                         <div style="flex: 1;">
                             <div class="section-heading">Description</div>
-                            <div class="desc-scroll" style="min-height: 350px;">
+                            <div class="desc-scroll" style="min-height: 280px;">
                                 <div style="font-size: 1.1rem;">
                                     ${step.description ? `<div class="step-description-content" style="padding-left: 0;">${step.description}</div>` : ''}
 

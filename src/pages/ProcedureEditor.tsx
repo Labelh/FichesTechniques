@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { ArrowLeft, Plus, Image as ImageIcon, X, Download, AlertTriangle, Pencil, CheckCircle, ChevronDown, ChevronUp, Trash2, FileText, Layers, GitBranch, Shield, Tag } from 'lucide-react';
 import { useProcedure } from '@/hooks/useProcedures';
 import { useTools } from '@/hooks/useTools';
@@ -18,6 +18,9 @@ import type { DefectItem, AnnotatedImage, Annotation, VersionLog } from '@/types
 export default function ProcedureEditor() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const expandPhaseIndex = (location.state as any)?.expandPhaseIndex as number | undefined;
+  const expandStepIndex  = (location.state as any)?.expandStepIndex  as number | undefined;
   const existingProcedure = useProcedure(id);
   const availableTools = useTools();
 
@@ -860,6 +863,8 @@ export default function ProcedureEditor() {
                       procedureId={id!}
                       totalPhases={existingProcedure.phases.length}
                       onDelete={handleDeletePhase}
+                      initiallyExpanded={expandPhaseIndex !== undefined && index === expandPhaseIndex}
+                      initialExpandStepIndex={expandPhaseIndex !== undefined && index === expandPhaseIndex ? expandStepIndex : undefined}
                     />
                   ))}
                 </div>
