@@ -93,6 +93,43 @@ export async function updateProcedure(
 }
 
 /**
+ * Duplique une procedure avec une nouvelle désignation et référence
+ */
+export async function duplicateProcedure(
+  sourceId: string,
+  newDesignation: string,
+  newReference: string
+): Promise<string> {
+  const source = await getProcedureFirestore(sourceId);
+  if (!source) throw new Error(`Procedure ${sourceId} introuvable`);
+
+  const phases = await getPhasesByProcedureFirestore(sourceId);
+
+  // Créer la nouvelle procédure sans l'id et les phases
+  const { id: _id, phases: _phases, createdAt: _c, updatedAt: _u, ...rest } = source as any;
+  const newId = await createProcedureFirestore({
+    ...rest,
+    title: newDesignation || rest.title,
+    designation: newDesignation,
+    reference: newReference || undefined,
+    status: 'en_cours',
+    version: 1,
+    versionString: '1.0',
+    changelog: [],
+    viewCount: 0,
+    exportCount: 0,
+  });
+
+  // Dupliquer les phases dans le même ordre
+  for (const phase of phases) {
+    const { id: _pid, createdAt: _pc, updatedAt: _pu, ...phaseRest } = phase as any;
+    await createPhaseFirestore({ ...phaseRest, procedureId: newId });
+  }
+
+  return newId;
+}
+
+/**
  * Supprime une procedure
  */
 export async function deleteProcedure(id: string): Promise<void> {
