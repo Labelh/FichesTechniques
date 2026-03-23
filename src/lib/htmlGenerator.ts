@@ -3119,17 +3119,17 @@ function generateVideoCarousel(videos: any[], _carouselId: string): string {
         align-items: center;
         gap: 10px;
         padding: 10px 14px;
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
         color: #555;
-        border: 1px solid #d0d0d0;
+        border: 1px solid #fca5a5;
         border-radius: 8px;
         cursor: pointer;
         transition: all 0.2s ease;
         margin-right: 12px;
         margin-bottom: 12px;
         font-family: inherit;
-      " onmouseover="this.style.borderColor='var(--primary-color)'; this.style.background='#fff'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';" onmouseout="this.style.borderColor='#d0d0d0'; this.style.background='linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)'; this.style.boxShadow='none';">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+      " onmouseover="this.style.borderColor='#ef4444'; this.style.background='#fff'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)';" onmouseout="this.style.borderColor='#fca5a5'; this.style.background='linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)'; this.style.boxShadow='none';">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
           <polygon points="5 3 19 12 5 21 5 3"></polygon>
         </svg>
         <div style="text-align: left;">
