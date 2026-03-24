@@ -1939,13 +1939,16 @@ export async function generateHTML(
         body.dark-mode .document-section-title {
             color: #d0d0d0 !important;
         }
-        body.dark-mode .document-button {
+        body.dark-mode .document-button,
+        body.dark-mode .video-button {
             background: linear-gradient(135deg, #2a1a1a 0%, #331a1a 100%) !important;
             border-color: #4a2a2a !important;
             color: #aaa !important;
         }
         body.dark-mode .document-button span,
-        body.dark-mode .document-button div {
+        body.dark-mode .document-button div,
+        body.dark-mode .video-button span,
+        body.dark-mode .video-button div {
             color: #ccc !important;
         }
     </style>
