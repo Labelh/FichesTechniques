@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, Save, Pencil, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Video as VideoIcon, Bold, Italic, Palette, List, ListOrdered, Smile, FileText } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, Save, Pencil, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Video as VideoIcon, Bold, Italic, Palette, List, ListOrdered, Smile, FileText, FolderInput } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -216,6 +216,16 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
         ? { ...s, images: (s.images || []).filter(img => img.imageId !== imageId) }
         : s
     ));
+  };
+
+  const moveImageToStep = (fromStepId: string, imageId: string, toStepId: string) => {
+    const imageToMove = (steps.find(s => s.id === fromStepId)?.images || []).find(img => img.imageId === imageId);
+    if (!imageToMove) return;
+    setSteps(steps.map(s => {
+      if (s.id === fromStepId) return { ...s, images: (s.images || []).filter(img => img.imageId !== imageId) };
+      if (s.id === toStepId)   return { ...s, images: [...(s.images || []), imageToMove] };
+      return s;
+    }));
   };
 
   const addStepVideo = (stepId: string, newVideos: any[]) => {
@@ -642,11 +652,13 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
                       index={idx}
                       initiallyExpanded={initialExpandStepIndex !== undefined && initialExpandStepIndex === idx}
                       totalSteps={steps.length}
+                      allSteps={steps}
                       availableTools={availableTools}
                       onUpdate={(updates) => updateStep(step.id, updates)}
                       onRemove={() => removeStep(step.id)}
                       onAddImage={(images) => addStepImage(step.id, images)}
                       onRemoveImage={(imageId) => removeStepImage(step.id, imageId)}
+                      onMoveImageToStep={(imageId, toStepId) => moveImageToStep(step.id, imageId, toStepId)}
                       onAddVideo={(videos) => addStepVideo(step.id, videos)}
                       onRemoveVideo={(videoId) => removeStepVideo(step.id, videoId)}
                       onAddDocument={(documents) => addStepDocument(step.id, documents)}
@@ -801,11 +813,13 @@ interface SubStepItemProps {
   step: SubStep;
   index: number;
   totalSteps: number;
+  allSteps: SubStep[];
   availableTools?: Tool[];
   onUpdate: (updates: Partial<SubStep>) => void;
   onRemove: () => void;
   onAddImage: (images: AnnotatedImage[]) => void;
   onRemoveImage: (imageId: string) => void;
+  onMoveImageToStep: (imageId: string, toStepId: string) => void;
   onAddVideo: (videos: any[]) => void;
   onRemoveVideo: (videoId: string) => void;
   onAddDocument: (documents: any[]) => void;
@@ -823,11 +837,13 @@ function SubStepItem({
   step,
   index,
   totalSteps,
+  allSteps,
   availableTools,
   onUpdate,
   onRemove,
   onAddImage,
   onRemoveImage,
+  onMoveImageToStep,
   onAddVideo,
   onRemoveVideo,
   onAddDocument,
@@ -842,6 +858,13 @@ function SubStepItem({
 }: SubStepItemProps) {
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded ?? false);
   const [imageToAnnotate, setImageToAnnotate] = useState<AnnotatedImage | null>(null);
+  const [moveMenuForImage, setMoveMenuForImage] = useState<string | null>(null);
+  useEffect(() => {
+    if (!moveMenuForImage) return;
+    const close = () => setMoveMenuForImage(null);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [moveMenuForImage]);
   const [showToolSelector, setShowToolSelector] = useState(false);
   const [showVideoInput, setShowVideoInput] = useState(false);
   const [showDocumentInput, setShowDocumentInput] = useState(false);
@@ -1497,6 +1520,13 @@ function SubStepItem({
                         <Pencil className="h-3 w-3" />
                       </button>
                       <button
+                        onClick={(e) => { e.stopPropagation(); setMoveMenuForImage(moveMenuForImage === img.imageId ? null : img.imageId); }}
+                        className="bg-blue-600 text-white rounded p-1 hover:bg-blue-500"
+                        title="Déplacer vers une autre sous-étape"
+                      >
+                        <FolderInput className="h-3 w-3" />
+                      </button>
+                      <button
                         onClick={() => onRemoveImage(img.imageId)}
                         className="bg-red-500 text-white rounded p-1 hover:bg-red-600"
                         title="Supprimer l'image"
@@ -1516,6 +1546,28 @@ function SubStepItem({
                         <ArrowRight className="h-3 w-3" />
                       </button>
                     </div>
+                    {/* Menu de sélection de la sous-étape cible */}
+                    {moveMenuForImage === img.imageId && (
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 z-20 bg-[#1a1a1a] border border-[#333] rounded-lg shadow-xl p-2 min-w-[160px]" onClick={e => e.stopPropagation()}>
+                        <p className="text-gray-400 text-xs font-semibold mb-1.5 px-1">Déplacer vers :</p>
+                        {allSteps.filter(s => s.id !== step.id).length === 0 ? (
+                          <p className="text-gray-600 text-xs px-1">Aucune autre sous-étape</p>
+                        ) : (
+                          allSteps.filter(s => s.id !== step.id).map((targetStep) => {
+                            const realIndex = allSteps.findIndex(s => s.id === targetStep.id);
+                            return (
+                              <button
+                                key={targetStep.id}
+                                onClick={() => { onMoveImageToStep(img.imageId, targetStep.id); setMoveMenuForImage(null); }}
+                                className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-[#2a2a2a] text-gray-300 truncate"
+                              >
+                                {realIndex + 1}. {targetStep.title || `Sous-étape ${realIndex + 1}`}
+                              </button>
+                            );
+                          })
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
