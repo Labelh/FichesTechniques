@@ -20,12 +20,14 @@ interface PhaseItemProps {
   index: number;
   procedureId: string;
   totalPhases: number;
+  allPhases?: Phase[];
   onDelete: (phaseId: string) => void;
+  onMoveImageToOtherPhase?: (image: AnnotatedImage, toPhaseId: string, toStepId: string) => void;
   initiallyExpanded?: boolean;
   initialExpandStepIndex?: number;
 }
 
-export default function PhaseItem({ phase, index, procedureId, totalPhases, onDelete, initiallyExpanded, initialExpandStepIndex }: PhaseItemProps) {
+export default function PhaseItem({ phase, index, procedureId, totalPhases, allPhases, onDelete, onMoveImageToOtherPhase, initiallyExpanded, initialExpandStepIndex }: PhaseItemProps) {
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded ?? false);
   const phaseRef = useRef<HTMLDivElement>(null);
   const [title, setTitle] = useState(phase.title);
@@ -218,14 +220,22 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
     ));
   };
 
-  const moveImageToStep = (fromStepId: string, imageId: string, toStepId: string) => {
+  const moveImageToStep = (fromStepId: string, imageId: string, toStepId: string, toPhaseId?: string) => {
     const imageToMove = (steps.find(s => s.id === fromStepId)?.images || []).find(img => img.imageId === imageId);
     if (!imageToMove) return;
-    setSteps(steps.map(s => {
-      if (s.id === fromStepId) return { ...s, images: (s.images || []).filter(img => img.imageId !== imageId) };
-      if (s.id === toStepId)   return { ...s, images: [...(s.images || []), imageToMove] };
-      return s;
-    }));
+    if (toPhaseId && toPhaseId !== phase.id) {
+      // Cross-phase : retirer de la phase courante, déléguer l'ajout au parent
+      setSteps(steps.map(s =>
+        s.id === fromStepId ? { ...s, images: (s.images || []).filter(img => img.imageId !== imageId) } : s
+      ));
+      onMoveImageToOtherPhase?.(imageToMove, toPhaseId, toStepId);
+    } else {
+      setSteps(steps.map(s => {
+        if (s.id === fromStepId) return { ...s, images: (s.images || []).filter(img => img.imageId !== imageId) };
+        if (s.id === toStepId)   return { ...s, images: [...(s.images || []), imageToMove] };
+        return s;
+      }));
+    }
   };
 
   const addStepVideo = (stepId: string, newVideos: any[]) => {
@@ -653,12 +663,14 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, onDe
                       initiallyExpanded={initialExpandStepIndex !== undefined && initialExpandStepIndex === idx}
                       totalSteps={steps.length}
                       allSteps={steps}
+                      allPhases={allPhases}
+                      currentPhaseId={phase.id}
                       availableTools={availableTools}
                       onUpdate={(updates) => updateStep(step.id, updates)}
                       onRemove={() => removeStep(step.id)}
                       onAddImage={(images) => addStepImage(step.id, images)}
                       onRemoveImage={(imageId) => removeStepImage(step.id, imageId)}
-                      onMoveImageToStep={(imageId, toStepId) => moveImageToStep(step.id, imageId, toStepId)}
+                      onMoveImageToStep={(imageId, toStepId, toPhaseId) => moveImageToStep(step.id, imageId, toStepId, toPhaseId)}
                       onAddVideo={(videos) => addStepVideo(step.id, videos)}
                       onRemoveVideo={(videoId) => removeStepVideo(step.id, videoId)}
                       onAddDocument={(documents) => addStepDocument(step.id, documents)}
@@ -814,12 +826,14 @@ interface SubStepItemProps {
   index: number;
   totalSteps: number;
   allSteps: SubStep[];
+  allPhases?: Phase[];
+  currentPhaseId?: string;
   availableTools?: Tool[];
   onUpdate: (updates: Partial<SubStep>) => void;
   onRemove: () => void;
   onAddImage: (images: AnnotatedImage[]) => void;
   onRemoveImage: (imageId: string) => void;
-  onMoveImageToStep: (imageId: string, toStepId: string) => void;
+  onMoveImageToStep: (imageId: string, toStepId: string, toPhaseId?: string) => void;
   onAddVideo: (videos: any[]) => void;
   onRemoveVideo: (videoId: string) => void;
   onAddDocument: (documents: any[]) => void;
@@ -838,6 +852,8 @@ function SubStepItem({
   index,
   totalSteps,
   allSteps,
+  allPhases,
+  currentPhaseId,
   availableTools,
   onUpdate,
   onRemove,
@@ -1548,23 +1564,48 @@ function SubStepItem({
                     </div>
                     {/* Menu de sélection de la sous-étape cible */}
                     {moveMenuForImage === img.imageId && (
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 z-20 bg-[#1a1a1a] border border-[#333] rounded-lg shadow-xl p-2 min-w-[160px]" onClick={e => e.stopPropagation()}>
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 z-20 bg-[#1a1a1a] border border-[#333] rounded-lg shadow-xl p-2 min-w-[180px] max-h-64 overflow-y-auto" onClick={e => e.stopPropagation()}>
                         <p className="text-gray-400 text-xs font-semibold mb-1.5 px-1">Déplacer vers :</p>
-                        {allSteps.filter(s => s.id !== step.id).length === 0 ? (
-                          <p className="text-gray-600 text-xs px-1">Aucune autre sous-étape</p>
-                        ) : (
-                          allSteps.filter(s => s.id !== step.id).map((targetStep) => {
-                            const realIndex = allSteps.findIndex(s => s.id === targetStep.id);
-                            return (
+
+                        {/* Sous-étapes de la même phase */}
+                        {allSteps.filter(s => s.id !== step.id).length > 0 && (
+                          <>
+                            <p className="text-gray-600 text-[10px] uppercase tracking-wider px-1 mb-1">Cette phase</p>
+                            {allSteps.filter(s => s.id !== step.id).map((targetStep) => {
+                              const realIndex = allSteps.findIndex(s => s.id === targetStep.id);
+                              return (
+                                <button
+                                  key={targetStep.id}
+                                  onClick={() => { onMoveImageToStep(img.imageId, targetStep.id); setMoveMenuForImage(null); }}
+                                  className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-[#2a2a2a] text-gray-300 truncate"
+                                >
+                                  {realIndex + 1}. {targetStep.title || `Sous-étape ${realIndex + 1}`}
+                                </button>
+                              );
+                            })}
+                          </>
+                        )}
+
+                        {/* Sous-étapes des autres phases */}
+                        {(allPhases || []).filter(p => p.id !== currentPhaseId && (p.steps || []).length > 0).map((otherPhase) => (
+                          <div key={otherPhase.id}>
+                            <p className="text-gray-600 text-[10px] uppercase tracking-wider px-1 mt-2 mb-1 truncate">
+                              Phase {otherPhase.phaseNumber || ''} — {otherPhase.title || `Phase ${otherPhase.phaseNumber}`}
+                            </p>
+                            {(otherPhase.steps || []).map((targetStep, tIdx) => (
                               <button
                                 key={targetStep.id}
-                                onClick={() => { onMoveImageToStep(img.imageId, targetStep.id); setMoveMenuForImage(null); }}
+                                onClick={() => { onMoveImageToStep(img.imageId, targetStep.id, otherPhase.id); setMoveMenuForImage(null); }}
                                 className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-[#2a2a2a] text-gray-300 truncate"
                               >
-                                {realIndex + 1}. {targetStep.title || `Sous-étape ${realIndex + 1}`}
+                                {tIdx + 1}. {targetStep.title || `Sous-étape ${tIdx + 1}`}
                               </button>
-                            );
-                          })
+                            ))}
+                          </div>
+                        ))}
+
+                        {allSteps.filter(s => s.id !== step.id).length === 0 && (allPhases || []).filter(p => p.id !== currentPhaseId && (p.steps || []).length > 0).length === 0 && (
+                          <p className="text-gray-600 text-xs px-1">Aucune autre sous-étape</p>
                         )}
                       </div>
                     )}

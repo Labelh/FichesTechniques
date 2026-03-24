@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { ArrowLeft, Plus, Image as ImageIcon, X, Download, AlertTriangle, Pencil, CheckCircle, ChevronDown, ChevronUp, Trash2, FileText, Layers, GitBranch, Shield, Tag } from 'lucide-react';
 import { useProcedure } from '@/hooks/useProcedures';
 import { useTools } from '@/hooks/useTools';
-import { createProcedure, updateProcedure, addPhase, deletePhase } from '@/services/procedureService';
+import { createProcedure, updateProcedure, addPhase, deletePhase, updatePhase } from '@/services/procedureService';
 import { uploadImageToHost } from '@/services/imageHostingService';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -339,6 +339,21 @@ export default function ProcedureEditor() {
       toast.success('Phase supprimée');
     } catch (error) {
       toast.error('Erreur lors de la suppression');
+    }
+  };
+
+  const handleMoveImageToOtherPhase = async (image: AnnotatedImage, toPhaseId: string, toStepId: string) => {
+    if (!id) return;
+    const targetPhase = existingProcedure?.phases.find(p => p.id === toPhaseId);
+    if (!targetPhase) return;
+    const updatedSteps = (targetPhase.steps || []).map(s =>
+      s.id === toStepId ? { ...s, images: [...(s.images || []), image] } : s
+    );
+    try {
+      await updatePhase(id, toPhaseId, { steps: updatedSteps });
+      toast.success('Image déplacée');
+    } catch (error) {
+      toast.error('Erreur lors du déplacement');
     }
   };
 
@@ -867,7 +882,9 @@ export default function ProcedureEditor() {
                       index={index}
                       procedureId={id!}
                       totalPhases={existingProcedure.phases.length}
+                      allPhases={existingProcedure.phases}
                       onDelete={handleDeletePhase}
+                      onMoveImageToOtherPhase={handleMoveImageToOtherPhase}
                       initiallyExpanded={expandPhaseIndex !== undefined && index === expandPhaseIndex}
                       initialExpandStepIndex={expandPhaseIndex !== undefined && index === expandPhaseIndex ? expandStepIndex : undefined}
                     />
