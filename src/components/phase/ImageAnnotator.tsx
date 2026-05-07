@@ -38,7 +38,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
   const [strokeWidth, setStrokeWidth] = useState(3);
   const [strokeOpacity, setStrokeOpacity] = useState(1);
   const [fontSize, setFontSize] = useState(20);
-  const [moveMode, setMoveMode] = useState(false);
+  const moveMode = false;
   const [selectedAnnotation, setSelectedAnnotation] = useState<string | null>(null);
   const [hoveredAnnotation, setHoveredAnnotation] = useState<string | null>(null);
 
