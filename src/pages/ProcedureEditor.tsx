@@ -200,7 +200,6 @@ export default function ProcedureEditor() {
       description: '',
       defect: '',
       whatToDo: '',
-      criteria: undefined,
       images: []
     }]);
   };

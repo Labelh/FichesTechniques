@@ -84,8 +84,25 @@ export async function updateProcedure(
       updatedData.validationScore = calculateValidationScore({ ...procedure, ...updates });
     }
 
-    console.log('Updating procedure', id, 'with data size:', JSON.stringify(updatedData).length, 'bytes');
-    await updateProcedureFirestore(id, updatedData);
+    // Nettoyer récursivement les valeurs undefined (Firestore les refuse)
+    const cleanUndefined = (obj: any): any => {
+      if (obj === null || obj === undefined) return null;
+      if (Array.isArray(obj)) return obj.map(item => cleanUndefined(item));
+      if (typeof obj === 'object' && !(obj instanceof Date)) {
+        const cleaned: any = {};
+        for (const key in obj) {
+          if (obj[key] !== undefined) {
+            cleaned[key] = cleanUndefined(obj[key]);
+          }
+        }
+        return cleaned;
+      }
+      return obj;
+    };
+    const cleanedData = cleanUndefined(updatedData);
+
+    console.log('Updating procedure', id, 'with data size:', JSON.stringify(cleanedData).length, 'bytes');
+    await updateProcedureFirestore(id, cleanedData);
   } catch (error) {
     console.error('Error updating procedure:', error);
     throw error;
