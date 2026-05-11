@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Save, Undo, Redo, Pencil, ArrowRight, Circle, Square, Minus, Type, Palette, ZoomIn, ZoomOut, Scan, Trash2 } from 'lucide-react';
+import { X, Save, Undo, Redo, Pencil, ArrowRight, Circle, Square, Minus, Type, Palette, ZoomIn, ZoomOut, Scan, Trash2, Move } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import type { AnnotatedImage, Annotation, Tool } from '@/types';
 import { AnnotationType } from '@/types';
@@ -38,7 +38,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
   const [strokeWidth, setStrokeWidth] = useState(3);
   const [strokeOpacity, setStrokeOpacity] = useState(1);
   const [fontSize, setFontSize] = useState(20);
-  const moveMode = false;
+  const [moveMode, setMoveMode] = useState(false);
   const [selectedAnnotation, setSelectedAnnotation] = useState<string | null>(null);
   const [hoveredAnnotation, setHoveredAnnotation] = useState<string | null>(null);
 
@@ -536,9 +536,11 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
       const clickedAnn = findAnnotationAt(point, annotations, true);
       if (clickedAnn) {
         setSelectedAnnotation(clickedAnn.id);
-        dragState.current.isDragging = true;
-        dragState.current.start = point;
-        dragState.current.initialPoints = clickedAnn.points ? [...clickedAnn.points] : [];
+        if (moveMode) {
+          dragState.current.isDragging = true;
+          dragState.current.start = point;
+          dragState.current.initialPoints = clickedAnn.points ? [...clickedAnn.points] : [];
+        }
         return;
       }
 
@@ -933,6 +935,15 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
             title="Suivre les arêtes (pour traits main levée)"
           >
             <Scan className="h-5 w-5" />
+          </button>
+          <button
+            onClick={() => setMoveMode(!moveMode)}
+            className={`p-3 rounded transition-colors ${
+              moveMode ? 'bg-primary text-white' : 'bg-black text-gray-400 hover:bg-[#1a1a1a] border border-[#323232]'
+            }`}
+            title="Déplacer forme"
+          >
+            <Move className="h-5 w-5" />
           </button>
           {selectedAnnotation && (
             <button
