@@ -357,7 +357,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
 
     // Dessiner les annotations
     annotations.forEach(ann => {
-      const isSelected = ann.id === selectedAnnotation;
+      const isSelected = moveMode && ann.id === selectedAnnotation;
       drawAnnotation(ctx, ann, isSelected);
     });
 
@@ -572,10 +572,12 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
         return;
       }
 
-      // Hover detection — changer le curseur quand on survole une forme
-      if (!drawing.current.active) {
+      // Hover detection — changer le curseur quand on survole une forme (uniquement en mode déplacer)
+      if (!drawing.current.active && moveMode) {
         const hovered = findAnnotationAt(point, annotations, false);
         setHoveredAnnotation(hovered?.id || null);
+      } else if (!moveMode && hoveredAnnotation) {
+        setHoveredAnnotation(null);
       }
 
       if (!drawing.current.active) return;
@@ -1023,7 +1025,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
           <div style={{ display: 'inline-block', lineHeight: 0 }}>
             <canvas
               ref={canvasRef}
-              className={moveMode || hoveredAnnotation ? 'cursor-move' : 'cursor-crosshair'}
+              className={moveMode ? 'cursor-move' : 'cursor-crosshair'}
               style={{
                 display: 'block',
                 transform: `scale(${zoom})`,
