@@ -532,16 +532,16 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
 
       const point = getCanvasPoint(e);
 
-      // Chercher une annotation proche du tracé réel (avec cycling si clic répété)
-      const clickedAnn = findAnnotationAt(point, annotations, true);
-      if (clickedAnn) {
-        setSelectedAnnotation(clickedAnn.id);
-        if (moveMode) {
+      // Chercher une annotation proche du tracé réel (uniquement en mode déplacer)
+      if (moveMode) {
+        const clickedAnn = findAnnotationAt(point, annotations, true);
+        if (clickedAnn) {
+          setSelectedAnnotation(clickedAnn.id);
           dragState.current.isDragging = true;
           dragState.current.start = point;
           dragState.current.initialPoints = clickedAnn.points ? [...clickedAnn.points] : [];
+          return;
         }
-        return;
       }
 
       // Aucune annotation sous le curseur → dessin normal
