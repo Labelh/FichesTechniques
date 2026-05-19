@@ -1,66 +1,104 @@
+import { supabase } from '@/lib/supabase';
 import type { Category, StorageZone } from '@/types';
-import { GSTOCK_API_URL } from './consumablesService';
 
+/**
+ * Cache pour les catégories et zones de stockage
+ */
 let categoriesCache: Map<string, Category> | null = null;
 let storageZonesCache: Map<string, StorageZone> | null = null;
 
-async function fetchApi<T>(endpoint: string): Promise<T> {
-  const resp = await fetch(`${GSTOCK_API_URL}${endpoint}`);
-  if (!resp.ok) {
-    throw new Error(`API error ${resp.status}: ${resp.statusText}`);
-  }
-  return resp.json();
-}
-
+/**
+ * Récupère toutes les catégories depuis Supabase
+ */
 export async function getCategories(): Promise<Map<string, Category>> {
-  if (categoriesCache) return categoriesCache;
+  if (categoriesCache) {
+    return categoriesCache;
+  }
 
   try {
-    const data = await fetchApi<Array<{ id: string; name: string; description?: string; created_at?: string }>>('/api/categories');
-    const now = new Date();
-    categoriesCache = new Map(data.map(cat => [cat.id, {
-      id: cat.id,
-      name: cat.name,
-      description: cat.description,
-      createdAt: cat.created_at ? new Date(cat.created_at) : now,
-      updatedAt: now,
-    } as Category]));
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*');
+
+    if (error) {
+      // Supabase non configuré, renvoyer une map vide sans erreur
+      return new Map();
+    }
+
+    categoriesCache = new Map(
+      (data || []).map(cat => [cat.id, cat])
+    );
+
     return categoriesCache;
-  } catch {
+  } catch (error) {
+    // Supabase non configuré, renvoyer une map vide sans erreur
     return new Map();
   }
 }
 
+/**
+ * Récupère une catégorie par son ID
+ */
 export async function getCategoryById(id: string): Promise<Category | null> {
   const categories = await getCategories();
   return categories.get(id) || null;
 }
 
+/**
+ * Récupère toutes les zones de stockage depuis Supabase
+ */
 export async function getStorageZones(): Promise<Map<string, StorageZone>> {
-  if (storageZonesCache) return storageZonesCache;
+  if (storageZonesCache) {
+    return storageZonesCache;
+  }
 
   try {
-    const data = await fetchApi<Array<{ id: string; name: string; description?: string }>>('/api/storage-zones');
-    storageZonesCache = new Map(data.map(zone => [zone.id, { id: zone.id, name: zone.name, description: zone.description } as StorageZone]));
+    const { data, error } = await supabase
+      .from('storage_zones')
+      .select('*');
+
+    if (error) {
+      // La table storage_zones n'existe peut-être pas encore
+      console.warn('Storage zones table not found or error:', error);
+      return new Map();
+    }
+
+    storageZonesCache = new Map(
+      (data || []).map(zone => [zone.id, zone])
+    );
+
     return storageZonesCache;
-  } catch {
+  } catch (error) {
+    console.warn('Error fetching storage zones:', error);
     return new Map();
   }
 }
 
+/**
+ * Récupère une zone de stockage par son ID
+ */
 export async function getStorageZoneById(id: string): Promise<StorageZone | null> {
   const zones = await getStorageZones();
   return zones.get(id) || null;
 }
 
+/**
+ * Invalide le cache des catégories
+ */
 export function invalidateCategoriesCache(): void {
   categoriesCache = null;
 }
 
+/**
+ * Invalide le cache des zones de stockage
+ */
 export function invalidateStorageZonesCache(): void {
   storageZonesCache = null;
 }
 
+/**
+ * Invalide tous les caches
+ */
 export function invalidateAllCaches(): void {
   invalidateCategoriesCache();
   invalidateStorageZonesCache();
