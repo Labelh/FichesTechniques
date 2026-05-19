@@ -16,8 +16,15 @@ export async function getCategories(): Promise<Map<string, Category>> {
   if (categoriesCache) return categoriesCache;
 
   try {
-    const data = await fetchApi<Array<{ id: string; name: string; description?: string }>>('/api/categories');
-    categoriesCache = new Map(data.map(cat => [cat.id, { id: cat.id, name: cat.name, description: cat.description }]));
+    const data = await fetchApi<Array<{ id: string; name: string; description?: string; created_at?: string }>>('/api/categories');
+    const now = new Date();
+    categoriesCache = new Map(data.map(cat => [cat.id, {
+      id: cat.id,
+      name: cat.name,
+      description: cat.description,
+      createdAt: cat.created_at ? new Date(cat.created_at) : now,
+      updatedAt: now,
+    } as Category]));
     return categoriesCache;
   } catch {
     return new Map();
@@ -34,7 +41,7 @@ export async function getStorageZones(): Promise<Map<string, StorageZone>> {
 
   try {
     const data = await fetchApi<Array<{ id: string; name: string; description?: string }>>('/api/storage-zones');
-    storageZonesCache = new Map(data.map(zone => [zone.id, { id: zone.id, name: zone.name, description: zone.description }]));
+    storageZonesCache = new Map(data.map(zone => [zone.id, { id: zone.id, name: zone.name, description: zone.description } as StorageZone]));
     return storageZonesCache;
   } catch {
     return new Map();
