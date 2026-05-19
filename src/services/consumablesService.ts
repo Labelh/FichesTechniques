@@ -1,163 +1,98 @@
-import { supabase } from '@/lib/supabase';
 import type { Consumable } from '@/types';
 
-/**
- * Service pour récupérer les consommables depuis Supabase
- * Base de données: GestionDesStocks
- */
+const GSTOCK_API_URL = import.meta.env.VITE_GSTOCK_API_URL || 'https://gstock.shadow.ajust82.fr';
 
-// Liste des noms de tables possibles à essayer
-const possibleTableNames = [
-  'consommables',
-  'consumables',
-  'stocks',
-  'products',
-  'produits',
-  'articles',
-];
-
-let cachedTableName: string | null = null;
-
-/**
- * Détermine le nom de la table des consommables
- */
-async function findConsumablesTable(): Promise<string> {
-  if (cachedTableName) {
-    return cachedTableName;
+async function fetchApi<T>(endpoint: string): Promise<T> {
+  const resp = await fetch(`${GSTOCK_API_URL}${endpoint}`);
+  if (!resp.ok) {
+    throw new Error(`API error ${resp.status}: ${resp.statusText}`);
   }
+  return resp.json();
+}
 
-  for (const tableName of possibleTableNames) {
-    try {
-      const { error } = await supabase
-        .from(tableName)
-        .select('*')
-        .limit(1);
+interface GStockProduct {
+  id: string;
+  reference: string;
+  designation: string;
+  category_id: string;
+  storage_zone_id: string;
+  shelf: number | string;
+  position: number | string;
+  location: string;
+  current_stock: number;
+  min_stock: number;
+  max_stock: number;
+  unit_id: string;
+  unit_price: number;
+  photo: string | null;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+  category: string;
+  unit: string;
+  storage_zone: string;
+}
 
-      if (!error) {
-        cachedTableName = tableName;
-        console.log(`Found consumables table: ${tableName}`);
-        return tableName;
-      }
-    } catch (err) {
-      // Continue to next table name
-      continue;
+function toConsumable(product: GStockProduct): Consumable {
+  let photoUrl: string | undefined;
+  if (product.photo) {
+    if (product.photo.startsWith('http') || product.photo.startsWith('data:')) {
+      photoUrl = product.photo;
+    } else {
+      photoUrl = `${GSTOCK_API_URL}/uploads/${product.photo}`;
     }
   }
 
-  throw new Error('Could not find consumables table in Supabase database');
+  return {
+    id: product.id,
+    designation: product.designation,
+    description: undefined,
+    category: product.category,
+    quantity: product.current_stock,
+    unit: product.unit,
+    price: product.unit_price,
+    reference: product.reference,
+    photo: photoUrl,
+    image_url: photoUrl,
+    photo_url: photoUrl,
+    created_at: product.created_at,
+    updated_at: product.updated_at,
+    storage_zone_id: product.storage_zone_id,
+    shelf: String(product.shelf || ''),
+    position: String(product.position || ''),
+  };
 }
 
-/**
- * Transforme les données base64 en URL utilisable
- */
-function processConsumableData(consumable: any): Consumable {
-  // Si le champ photo contient des données base64, on l'utilise comme image_url
-  if (consumable.photo && consumable.photo.startsWith('data:image')) {
-    consumable.image_url = consumable.photo;
-    consumable.photo_url = consumable.photo;
-  }
-  return consumable;
-}
-
-/**
- * Récupère tous les consommables depuis Supabase
- */
 export async function fetchConsumables(): Promise<Consumable[]> {
-  try {
-    const tableName = await findConsumablesTable();
-
-    const { data, error } = await supabase
-      .from(tableName)
-      .select('*')
-      .is('deleted_at', null)
-      .order('designation', { ascending: true });
-
-    if (error) {
-      console.error('Error fetching consumables:', error);
-      throw new Error(`Failed to fetch consumables: ${error.message}`);
-    }
-
-    // Traiter les données pour ajouter image_url depuis photo (base64)
-    return (data || []).map(processConsumableData);
-  } catch (error: any) {
-    console.error('Error in fetchConsumables:', error);
-    throw error;
-  }
+  const products = await fetchApi<GStockProduct[]>('/api/products');
+  return products
+    .filter(p => !p.deleted_at)
+    .map(toConsumable)
+    .sort((a, b) => (a.designation || '').localeCompare(b.designation || ''));
 }
 
-/**
- * Récupère un consommable par son ID
- */
 export async function fetchConsumableById(id: string): Promise<Consumable | null> {
   try {
-    const tableName = await findConsumablesTable();
-
-    const { data, error } = await supabase
-      .from(tableName)
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) {
-      console.error('Error fetching consumable:', error);
-      return null;
-    }
-
-    return data ? processConsumableData(data) : null;
-  } catch (error) {
-    console.error('Error in fetchConsumableById:', error);
+    const all = await fetchConsumables();
+    return all.find(c => c.id === id) || null;
+  } catch {
     return null;
   }
 }
 
-/**
- * Recherche de consommables par terme
- */
 export async function searchConsumables(query: string): Promise<Consumable[]> {
-  try {
-    const tableName = await findConsumablesTable();
-
-    const { data, error } = await supabase
-      .from(tableName)
-      .select('*')
-      .is('deleted_at', null)
-      .or(`designation.ilike.%${query}%,description.ilike.%${query}%,reference.ilike.%${query}%`)
-      .order('designation', { ascending: true });
-
-    if (error) {
-      console.error('Error searching consumables:', error);
-      throw new Error(`Failed to search consumables: ${error.message}`);
-    }
-
-    return (data || []).map(processConsumableData);
-  } catch (error: any) {
-    console.error('Error in searchConsumables:', error);
-    throw error;
-  }
+  const all = await fetchConsumables();
+  const q = query.toLowerCase();
+  return all.filter(c =>
+    (c.designation || '').toLowerCase().includes(q) ||
+    (c.description || '').toLowerCase().includes(q) ||
+    (c.reference || '').toLowerCase().includes(q)
+  );
 }
 
-/**
- * Filtre les consommables par catégorie
- */
 export async function fetchConsumablesByCategory(category: string): Promise<Consumable[]> {
-  try {
-    const tableName = await findConsumablesTable();
-
-    const { data, error } = await supabase
-      .from(tableName)
-      .select('*')
-      .is('deleted_at', null)
-      .eq('category', category)
-      .order('designation', { ascending: true });
-
-    if (error) {
-      console.error('Error fetching consumables by category:', error);
-      throw new Error(`Failed to fetch consumables by category: ${error.message}`);
-    }
-
-    return (data || []).map(processConsumableData);
-  } catch (error: any) {
-    console.error('Error in fetchConsumablesByCategory:', error);
-    throw error;
-  }
+  const all = await fetchConsumables();
+  return all.filter(c => c.category === category);
 }
+
+export { GSTOCK_API_URL };

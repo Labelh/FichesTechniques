@@ -5,27 +5,10 @@ import {
   Wrench
 } from 'lucide-react';
 import { fetchConsumables } from '@/services/consumablesService';
-import { supabase } from '@/lib/supabase';
 import { Consumable } from '../types';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { toast } from 'sonner';
-
-const STORAGE_BUCKET = 'product-photos';
-
-function isStoragePath(value: string | null | undefined): boolean {
-  if (!value) return false;
-  return value.startsWith('products/') && !value.startsWith('http') && !value.startsWith('data:');
-}
-
-function getProductPhotoUrl(filePath: string | null | undefined): string | null {
-  if (!filePath) return null;
-  if (filePath.startsWith('http') || filePath.startsWith('data:')) {
-    return filePath;
-  }
-  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(filePath);
-  return data?.publicUrl || null;
-}
 
 export default function ToolsLibrary() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -85,38 +68,7 @@ export default function ToolsLibrary() {
   }, [tools, searchTerm]);
 
   const getItemImage = (item: Consumable) => {
-    const anyItem = item as any;
-
-    // Vérifier le champ photo
-    if (anyItem.photo) {
-      if (isStoragePath(anyItem.photo)) {
-        return getProductPhotoUrl(anyItem.photo);
-      }
-      return anyItem.photo;
-    }
-
-    // Fallback sur photo_url
-    if (anyItem.photo_url) {
-      return isStoragePath(anyItem.photo_url)
-        ? getProductPhotoUrl(anyItem.photo_url)
-        : anyItem.photo_url;
-    }
-
-    // Fallback sur image_url
-    if (anyItem.image_url) {
-      return isStoragePath(anyItem.image_url)
-        ? getProductPhotoUrl(anyItem.image_url)
-        : anyItem.image_url;
-    }
-
-    // Fallback sur image.url
-    if (anyItem.image?.url) {
-      return isStoragePath(anyItem.image.url)
-        ? getProductPhotoUrl(anyItem.image.url)
-        : anyItem.image.url;
-    }
-
-    return undefined;
+    return item.photo || item.photo_url || item.image_url || (item as any).image?.url || undefined;
   };
 
   const getItemLocation = (item: Consumable) => {
