@@ -1,0 +1,17 @@
+{
+  "name": "ft-scripts",
+  "version": "1.0.0",
+  "description": "Scripts d'export Firebase et de sauvegarde images",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "export": "node export-firestore.mjs",
+    "download": "node download-images.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

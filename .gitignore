@@ -33,3 +33,15 @@ ADD_SECRETS.md
 # Database
 *.db
 *.sqlite
+
+# Firebase service account (ne JAMAIS committer)
+serviceAccount.json
+*serviceAccount*.json
+firebase-adminsdk*.json
+
+# Backup local (sauvegarde Firestore + images — trop lourd et sensible)
+backup/
+
+# Scripts — dépendances locales
+scripts/node_modules/
+scripts/package-lock.json

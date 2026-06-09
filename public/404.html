@@ -3,22 +3,15 @@
 <head>
   <meta charset="utf-8">
   <title>Fiches Techniques</title>
-  <script>
-    // Redirection pour GitHub Pages SPA
-    // Configuration
-    var basePath = '/FichesTechniques/';
-
-    // Stocke le chemin complet demandé
-    var path = location.pathname + location.search + location.hash;
-    sessionStorage.setItem('redirect', path);
-
-    // Redirige vers index.html à la racine de l'application
-    location.replace(location.origin + basePath);
-  </script>
+  <!--
+    Cette page n'est plus utilisée comme hack GitHub Pages.
+    Sur nginx (production VPS), le fallback SPA est géré par :
+      location / { try_files $uri /index.html; }
+    Ce fichier est conservé pour compatibilité GitHub Pages (ancien hébergement).
+  -->
+  <meta http-equiv="refresh" content="0; url=/">
 </head>
 <body>
-  <div style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-    <p>Redirection en cours...</p>
-  </div>
+  <p>Redirection...</p>
 </body>
 </html>

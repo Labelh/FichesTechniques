@@ -1,0 +1,32 @@
+node_modules
+dist
+dist-ssr
+
+# Secrets — ne JAMAIS embarquer dans l'image
+.env
+.env.local
+.env.*.local
+serviceAccount.json
+*serviceAccount*.json
+firebase-adminsdk*.json
+
+# Sauvegarde locale (trop lourde + sensible)
+backup/
+
+# Scripts de migration (inutiles dans l'image)
+scripts/
+
+# CI/CD
+.github/
+
+# Dev tools
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docs
+*.md
+MIGRATION-NEODE.md
