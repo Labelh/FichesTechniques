@@ -21,13 +21,13 @@ export default {
           light: '#323232',         // Bordure claire
           lighter: '#323232',       // Bordure encore plus claire
         },
-        // Couleurs primaires rouge-orange
+        // Couleurs primaires orange (#ff6600)
         primary: {
-          DEFAULT: '#f93705',       // Rouge-orange principal (rgb(249, 55, 5))
-          dark: '#d43004',          // Rouge-orange foncé
-          light: '#ff4d1a',         // Rouge-orange clair
-          hover: '#ff5722',         // Rouge-orange hover
-          muted: '#ff6b3d',         // Rouge-orange atténué
+          DEFAULT: '#ff6600',       // Orange principal (rgb(255,102,0))
+          dark: '#cc5200',          // Orange foncé
+          light: '#ff8533',         // Orange clair
+          hover: '#e65c00',         // Orange hover
+          muted: '#ff8c4d',         // Orange atténué
         },
         // Textes
         text: {
@@ -65,8 +65,8 @@ export default {
         '88': '22rem',
       },
       boxShadow: {
-        'glow': '0 0 20px rgba(249, 55, 5, 0.1)',
-        'primary': '0 4px 20px rgba(249, 55, 5, 0.15)',
+        'glow': '0 0 20px rgba(255,102,0, 0.1)',
+        'primary': '0 4px 20px rgba(255,102,0, 0.15)',
         'elevated': '0 2px 8px rgba(0, 0, 0, 0.3)',
         'none': 'none',
       },

@@ -270,7 +270,7 @@ export default function ToolsLibrary() {
                 {selectedItem.reference && (
                   <div>
                     <label className="text-xs text-gray-400 uppercase tracking-wide">Référence</label>
-                    <p className="text-sm font-medium mt-1" style={{ color: 'rgb(249, 55, 5)' }}>
+                    <p className="text-sm font-medium mt-1" style={{ color: 'rgb(255,102,0)' }}>
                       {selectedItem.reference}
                     </p>
                   </div>

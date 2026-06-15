@@ -98,7 +98,7 @@ export default function ToolSelector({ availableTools, availableConsumables, onS
     { name: 'Jaune', value: '#f59e0b' },
     { name: 'Violet', value: '#8b5cf6' },
     { name: 'Rose', value: '#ec4899' },
-    { name: 'Orange', value: 'rgb(249, 55, 5)' },
+    { name: 'Orange', value: 'rgb(255,102,0)' },
   ];
 
   const getItemImage = (item: ToolOrConsumable) => {
@@ -279,7 +279,7 @@ export default function ToolSelector({ availableTools, availableConsumables, onS
                   {selectedItem.reference && (
                     <div>
                       <label className="text-xs text-gray-400 uppercase tracking-wide">Référence</label>
-                      <p className="text-sm font-medium mt-1" style={{ color: 'rgb(249, 55, 5)' }}>
+                      <p className="text-sm font-medium mt-1" style={{ color: 'rgb(255,102,0)' }}>
                         {selectedItem.reference}
                       </p>
                     </div>

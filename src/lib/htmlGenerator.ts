@@ -139,7 +139,7 @@ export async function generateHTML(
 
         /* Variables CSS */
         :root {
-            --primary-color: #f93705;
+            --primary-color: #ff6600;
             --primary-dark: #d42f00;
             --text-primary: #1a1a1a;
             --text-secondary: #555;
@@ -584,7 +584,7 @@ export async function generateHTML(
         }
 
         .resource-ref {
-            color: rgb(249, 55, 5);
+            color: rgb(255,102,0);
             font-weight: 600;
         }
 
@@ -996,7 +996,7 @@ export async function generateHTML(
         }
 
         .step-tool-ref {
-            color: rgb(249, 55, 5);
+            color: rgb(255,102,0);
             font-weight: 600;
             font-size: 0.8rem;
             margin-top: 2px;
@@ -1085,7 +1085,7 @@ export async function generateHTML(
             padding: 16px;
             background: #f8f9fa;
             text-align: center;
-            color: rgb(249, 55, 5);
+            color: rgb(255,102,0);
             text-decoration: none;
             font-weight: 600;
             transition: background 0.2s;
@@ -1274,7 +1274,7 @@ export async function generateHTML(
         }
 
         .carousel-indicator.active {
-            background: #f93705;
+            background: #ff6600;
             transform: scale(1.2);
         }
 
@@ -1764,7 +1764,7 @@ export async function generateHTML(
         .verif-modal-header-left { display: flex; align-items: center; gap: 12px; }
         .verif-modal-icon {
             width: 40px; height: 40px;
-            background: rgba(249,55,5,0.1);
+            background: rgba(255,102,0,0.1);
             border-radius: 10px;
             display: flex; align-items: center; justify-content: center;
             flex-shrink: 0;
@@ -1832,8 +1832,8 @@ export async function generateHTML(
         .verif-field select:focus,
         .verif-field input:focus,
         .verif-field textarea:focus {
-            border-color: var(--primary-color, #f93705);
-            box-shadow: 0 0 0 3px rgba(249,55,5,0.1);
+            border-color: var(--primary-color, #ff6600);
+            box-shadow: 0 0 0 3px rgba(255,102,0,0.1);
             background: #fff;
         }
         body.dark-mode .verif-field select:focus,
@@ -1868,7 +1868,7 @@ export async function generateHTML(
         body.dark-mode .verif-btn-cancel { border-color: #333; color: #999; }
         body.dark-mode .verif-btn-cancel:hover { background: #2a2a2a; }
         .verif-btn-submit {
-            background: var(--primary-color, #f93705);
+            background: var(--primary-color, #ff6600);
             border: none;
             border-radius: 8px;
             padding: 9px 22px;
@@ -2561,7 +2561,7 @@ export async function generateHTML(
             <div class="verif-modal-header">
                 <div class="verif-modal-header-left">
                     <div class="verif-modal-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f93705" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff6600" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                         </svg>
                     </div>
