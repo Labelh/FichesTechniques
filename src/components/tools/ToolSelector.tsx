@@ -2,10 +2,8 @@ import { useState, useMemo, useEffect } from 'react';
 import { Search, X, Wrench, Package, MapPin, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { supabase } from '@/lib/supabase';
+import { gstockUploadUrl } from '@/lib/gstock';
 import type { Tool, Consumable } from '@/types';
-
-const STORAGE_BUCKET = 'product-photos';
 
 function isStoragePath(value: string | null | undefined): boolean {
   if (!value) return false;
@@ -17,8 +15,7 @@ function getProductPhotoUrl(filePath: string | null | undefined): string | null 
   if (filePath.startsWith('http') || filePath.startsWith('data:')) {
     return filePath;
   }
-  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(filePath);
-  return data?.publicUrl || null;
+  return gstockUploadUrl(filePath) || null;
 }
 
 interface ToolSelectorProps {

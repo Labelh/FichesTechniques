@@ -66,8 +66,7 @@ jobs:
             VITE_FIREBASE_MEASUREMENT_ID=G-98QERTYMZ9
             VITE_REFERENTIEL_ORIGIN=https://shadow.ajust82.fr
             VITE_REFERENTIEL_UPLOAD_TOKEN=${{ secrets.VITE_REFERENTIEL_UPLOAD_TOKEN }}
-            VITE_SUPABASE_URL=https://jxymbulpvnzzysfcsxvw.supabase.co
-            VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eW1idWxwdm56enlzZmNzeHZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAzNjc0OTAsImV4cCI6MjA3NTk0MzQ5MH0.J2EFM3FgswrWw1KGRmA-3t9fon0a_nff_0bcqEaeJCc
+            VITE_GSTOCK_API=https://gstock.shadow.ajust82.fr
 
       - name: Image digest
         run: echo "Image poussée → ${{ steps.meta.outputs.tags }}"

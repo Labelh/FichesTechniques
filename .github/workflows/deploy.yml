@@ -40,8 +40,7 @@ jobs:
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
           VITE_REFERENTIEL_ORIGIN: ${{ secrets.VITE_REFERENTIEL_ORIGIN }}
           VITE_REFERENTIEL_UPLOAD_TOKEN: ${{ secrets.VITE_REFERENTIEL_UPLOAD_TOKEN }}
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_GSTOCK_API: ${{ secrets.VITE_GSTOCK_API }}
         run: npm run build
 
       - name: Setup Pages

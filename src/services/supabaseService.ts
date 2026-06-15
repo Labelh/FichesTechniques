@@ -1,14 +1,17 @@
-import { supabase } from '@/lib/supabase';
+import { gstockGet } from '@/lib/gstock';
 import type { Category, StorageZone } from '@/types';
 
 /**
- * Cache pour les catégories et zones de stockage
+ * Lecture des catégories et zones de stockage depuis le gStock Shadow.
+ * (Nom de fichier conservé pour limiter le rayon de changement ;
+ *  la source est désormais l'API gStock, plus Supabase.)
  */
+
 let categoriesCache: Map<string, Category> | null = null;
 let storageZonesCache: Map<string, StorageZone> | null = null;
 
 /**
- * Récupère toutes les catégories depuis Supabase
+ * Récupère toutes les catégories depuis gStock.
  */
 export async function getCategories(): Promise<Map<string, Category>> {
   if (categoriesCache) {
@@ -16,28 +19,18 @@ export async function getCategories(): Promise<Map<string, Category>> {
   }
 
   try {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('*');
-
-    if (error) {
-      // Supabase non configuré, renvoyer une map vide sans erreur
-      return new Map();
-    }
-
-    categoriesCache = new Map(
-      (data || []).map(cat => [cat.id, cat])
-    );
-
+    const data = await gstockGet<any[]>('/api/categories');
+    categoriesCache = new Map((data || []).map((cat) => [cat.id, cat as Category]));
     return categoriesCache;
   } catch (error) {
-    // Supabase non configuré, renvoyer une map vide sans erreur
+    // gStock indisponible → map vide sans bloquer l'app
+    console.warn('Categories indisponibles (gStock):', error);
     return new Map();
   }
 }
 
 /**
- * Récupère une catégorie par son ID
+ * Récupère une catégorie par son ID.
  */
 export async function getCategoryById(id: string): Promise<Category | null> {
   const categories = await getCategories();
@@ -45,7 +38,7 @@ export async function getCategoryById(id: string): Promise<Category | null> {
 }
 
 /**
- * Récupère toutes les zones de stockage depuis Supabase
+ * Récupère toutes les zones de stockage depuis gStock.
  */
 export async function getStorageZones(): Promise<Map<string, StorageZone>> {
   if (storageZonesCache) {
@@ -53,29 +46,17 @@ export async function getStorageZones(): Promise<Map<string, StorageZone>> {
   }
 
   try {
-    const { data, error } = await supabase
-      .from('storage_zones')
-      .select('*');
-
-    if (error) {
-      // La table storage_zones n'existe peut-être pas encore
-      console.warn('Storage zones table not found or error:', error);
-      return new Map();
-    }
-
-    storageZonesCache = new Map(
-      (data || []).map(zone => [zone.id, zone])
-    );
-
+    const data = await gstockGet<any[]>('/api/storage-zones');
+    storageZonesCache = new Map((data || []).map((zone) => [zone.id, zone as StorageZone]));
     return storageZonesCache;
   } catch (error) {
-    console.warn('Error fetching storage zones:', error);
+    console.warn('Zones de stockage indisponibles (gStock):', error);
     return new Map();
   }
 }
 
 /**
- * Récupère une zone de stockage par son ID
+ * Récupère une zone de stockage par son ID.
  */
 export async function getStorageZoneById(id: string): Promise<StorageZone | null> {
   const zones = await getStorageZones();

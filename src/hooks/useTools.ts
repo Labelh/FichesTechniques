@@ -2,13 +2,11 @@ import { useState, useEffect } from 'react';
 import { fetchConsumables } from '@/services/consumablesService';
 import { getStorageZones } from '@/services/supabaseService';
 import { base64ToBlob } from '@/lib/utils';
-import { supabase } from '@/lib/supabase';
+import { gstockUploadUrl } from '@/lib/gstock';
 import type { Tool, Consumable, Image } from '@/types';
 
-const STORAGE_BUCKET = 'product-photos';
-
 /**
- * Vérifie si une valeur est un chemin Storage (vs base64 ou URL)
+ * Vérifie si une valeur est un chemin de stockage (vs base64 ou URL)
  */
 function isStoragePath(value: string | null | undefined): boolean {
   if (!value) return false;
@@ -16,7 +14,7 @@ function isStoragePath(value: string | null | undefined): boolean {
 }
 
 /**
- * Obtient l'URL publique d'une photo depuis Supabase Storage
+ * Obtient l'URL publique d'une photo depuis le gStock Shadow
  */
 function getProductPhotoUrl(filePath: string | null | undefined): string | null {
   if (!filePath) return null;
@@ -26,9 +24,8 @@ function getProductPhotoUrl(filePath: string | null | undefined): string | null 
     return filePath;
   }
 
-  // Si c'est un chemin Storage, construire l'URL publique
-  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(filePath);
-  return data?.publicUrl || null;
+  // Sinon, chemin de stockage gStock → URL publique
+  return gstockUploadUrl(filePath) || null;
 }
 
 /**
