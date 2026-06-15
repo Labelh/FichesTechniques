@@ -56,8 +56,6 @@ jobs:
           provenance: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           build-args: |
             VITE_FIREBASE_API_KEY=AIzaSyDmnjA7AFMiLEyzYYD1m1Tg1UAioh-Xxjg
             VITE_FIREBASE_AUTH_DOMAIN=fichestechniques-cd97c.firebaseapp.com
