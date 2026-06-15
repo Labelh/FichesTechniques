@@ -6,7 +6,10 @@
   "private": true,
   "scripts": {
     "export": "node export-firestore.mjs",
-    "download": "node download-images.mjs"
+    "download": "node download-images.mjs",
+    "rewrite-urls": "node rewrite-image-urls.mjs",
+    "rewrite-urls:apply": "node rewrite-image-urls.mjs --apply",
+    "verify-urls": "node rewrite-image-urls.mjs --verify"
   },
   "dependencies": {
     "firebase-admin": "^12.0.0"

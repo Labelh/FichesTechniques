@@ -11,9 +11,10 @@ interface ImageUploaderProps {
   images: AnnotatedImage[];
   onImagesChange: (images: AnnotatedImage[]) => void;
   onEditImage?: (imageId: string) => void;
+  reference: string;
 }
 
-export default function ImageUploader({ images, onImagesChange, onEditImage }: ImageUploaderProps) {
+export default function ImageUploader({ images, onImagesChange, onEditImage, reference }: ImageUploaderProps) {
   const [uploading, setUploading] = useState(false);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
@@ -30,10 +31,8 @@ export default function ImageUploader({ images, onImagesChange, onEditImage }: I
         }
 
         try {
-          // Upload l'image vers ImgBB
-          console.log(`Uploading ${file.name} to ImgBB...`);
-          const imageUrl = await uploadImageToHost(file);
-          console.log(`Image uploaded successfully: ${imageUrl}`);
+          // Upload l'image dans le Référentiel Néode
+          const imageUrl = await uploadImageToHost(file, reference);
 
           // Créer l'objet Image avec l'URL
           newImages.push({
@@ -49,7 +48,7 @@ export default function ImageUploader({ images, onImagesChange, onEditImage }: I
               thumbnail: file, // Utiliser le fichier original comme miniature
               createdAt: new Date(),
               updatedAt: new Date(),
-              url: imageUrl, // URL hébergée sur ImgBB
+              url: imageUrl, // URL hébergée sur le Référentiel Néode
             },
             annotations: [],
             description: '',
@@ -70,7 +69,7 @@ export default function ImageUploader({ images, onImagesChange, onEditImage }: I
     } finally {
       setUploading(false);
     }
-  }, [images, onImagesChange]);
+  }, [images, onImagesChange, reference]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,

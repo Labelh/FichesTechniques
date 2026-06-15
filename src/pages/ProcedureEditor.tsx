@@ -239,7 +239,7 @@ export default function ProcedureEditor() {
       }
 
       try {
-        const imageUrl = await uploadImageToHost(file);
+        const imageUrl = await uploadImageToHost(file, reference);
 
         const img = new Image();
         const url = URL.createObjectURL(file);
@@ -375,7 +375,7 @@ export default function ProcedureEditor() {
       reader.readAsDataURL(file);
 
       toast.info('Upload de l\'image en cours...');
-      const imageUrl = await uploadImageToHost(file);
+      const imageUrl = await uploadImageToHost(file, reference, 'cover');
 
       setCoverImage(imageUrl);
       setCoverImagePreview(imageUrl);
@@ -609,7 +609,7 @@ export default function ProcedureEditor() {
                           Image de couverture
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          {coverImage ? 'Hébergée sur ImgBB' : 'Upload en cours...'}
+                          {coverImage ? 'Hébergée sur le Référentiel Néode' : 'Upload en cours...'}
                         </p>
                       </div>
                       <Button
@@ -880,6 +880,7 @@ export default function ProcedureEditor() {
                       phase={phase}
                       index={index}
                       procedureId={id!}
+                      reference={reference}
                       totalPhases={existingProcedure.phases.length}
                       allPhases={existingProcedure.phases}
                       onDelete={handleDeletePhase}

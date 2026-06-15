@@ -19,6 +19,7 @@ interface PhaseItemProps {
   phase: Phase;
   index: number;
   procedureId: string;
+  reference: string;
   totalPhases: number;
   allPhases?: Phase[];
   onDelete: (phaseId: string) => void;
@@ -27,7 +28,7 @@ interface PhaseItemProps {
   initialExpandStepIndex?: number;
 }
 
-export default function PhaseItem({ phase, index, procedureId, totalPhases, allPhases, onDelete, onMoveImageToOtherPhase, initiallyExpanded, initialExpandStepIndex }: PhaseItemProps) {
+export default function PhaseItem({ phase, index, procedureId, reference, totalPhases, allPhases, onDelete, onMoveImageToOtherPhase, initiallyExpanded, initialExpandStepIndex }: PhaseItemProps) {
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded ?? false);
   const phaseRef = useRef<HTMLDivElement>(null);
   const [title, setTitle] = useState(phase.title);
@@ -660,6 +661,7 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, allP
                       key={step.id}
                       step={step}
                       index={idx}
+                      reference={reference}
                       initiallyExpanded={initialExpandStepIndex !== undefined && initialExpandStepIndex === idx}
                       totalSteps={steps.length}
                       allSteps={steps}
@@ -824,6 +826,7 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, allP
 interface SubStepItemProps {
   step: SubStep;
   index: number;
+  reference: string;
   totalSteps: number;
   allSteps: SubStep[];
   allPhases?: Phase[];
@@ -850,6 +853,7 @@ interface SubStepItemProps {
 function SubStepItem({
   step,
   index,
+  reference,
   totalSteps,
   allSteps,
   allPhases,
@@ -1019,9 +1023,7 @@ function SubStepItem({
       }
 
       try {
-        console.log(`Uploading ${file.name} to ImgBB...`);
-        const imageUrl = await uploadImageToHost(file);
-        console.log(`Image uploaded successfully: ${imageUrl}`);
+        const imageUrl = await uploadImageToHost(file, reference);
 
         const img = new Image();
         const url = URL.createObjectURL(file);
