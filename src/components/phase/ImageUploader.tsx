@@ -31,7 +31,7 @@ export default function ImageUploader({ images, onImagesChange, onEditImage, ref
         }
 
         try {
-          // Upload l'image dans le Référentiel Néode
+          // Upload l'image dans le Référentiel Shadow
           const imageUrl = await uploadImageToHost(file, reference);
 
           // Créer l'objet Image avec l'URL
@@ -48,7 +48,7 @@ export default function ImageUploader({ images, onImagesChange, onEditImage, ref
               thumbnail: file, // Utiliser le fichier original comme miniature
               createdAt: new Date(),
               updatedAt: new Date(),
-              url: imageUrl, // URL hébergée sur le Référentiel Néode
+              url: imageUrl, // URL hébergée sur le Référentiel Shadow
             },
             annotations: [],
             description: '',

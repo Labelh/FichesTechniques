@@ -1,5 +1,5 @@
 /**
- * Service d'hébergement d'images via le Référentiel Néode (VPS Shadow).
+ * Service d'hébergement d'images via le Référentiel Shadow (store du VPS).
  *
  * Remplace ImgBB. Le store est adressé par référence article.
  *   - Upload : POST {ORIGIN}/referentiel/upload
@@ -118,7 +118,7 @@ interface ReferentielUploadResponse {
 }
 
 /**
- * Upload une image dans le Référentiel Néode et retourne l'URL absolue à stocker.
+ * Upload une image dans le Référentiel Shadow et retourne l'URL absolue à stocker.
  *
  * @param file  fichier image
  * @param ref   référence de l'article (champ `reference` de la procédure)

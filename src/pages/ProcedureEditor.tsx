@@ -609,7 +609,7 @@ export default function ProcedureEditor() {
                           Image de couverture
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          {coverImage ? 'Hébergée sur le Référentiel Néode' : 'Upload en cours...'}
+                          {coverImage ? 'Hébergée sur le Référentiel Shadow' : 'Upload en cours...'}
                         </p>
                       </div>
                       <Button
