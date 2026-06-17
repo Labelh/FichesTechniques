@@ -58,6 +58,85 @@ async function fetchToolImages() {
   }
 }
 
+// ── TimeTonic : documents d'un article (fallback quand pas de FT native) ─────
+// Un seul champ TT (TT_DOC_FIELD) porte la liste des PJ, séparées par ", ".
+// On les expose en onglets côté Atelier (1 onglet/document, nommé par le fichier).
+const TT_API = 'https://timetonic.com/live/api.php'
+const TT_OAUTHKEY = process.env.TT_OAUTHKEY || ''
+const TT_USER = process.env.TT_USER || 'pr19'          // o_u / u_c
+const TT_BOOK = process.env.TT_BOOK || 'ajust_82'      // b_c
+const TT_ARTICLES_CAT = process.env.TT_ARTICLES_CAT || '285326'
+const TT_DOC_FIELD = process.env.TT_DOC_FIELD || '3597682'   // champ "pièces jointes"
+const TT_REF_FIELD = process.env.TT_REF_FIELD || '3597691'   // champ réf article propre
+// Liste blanche du proxy : on ne streame QUE des fichiers TT (pas d'open proxy).
+const TT_DOC_RE = /^https:\/\/timetonic\.com\/live\/dbi\/odn\//
+
+async function ttSesskey() {
+  const qs = new URLSearchParams({ req: 'createSesskey', o_u: TT_USER, u_c: TT_USER, oauthkey: TT_OAUTHKEY })
+  const r = await fetch(`${TT_API}?${qs}`)
+  const j = await r.json()
+  if (!j?.sesskey) throw new Error(`session: ${j?.errorMsg || j?.status || 'inconnue'}`)
+  return j.sesskey
+}
+
+// Champ PJ TT -> [{name, url}]. Format observé : URLs http séparées par ", " (ou tableau JSON).
+// On exclut le FT .html (rendu nativement par l'onglet « Fiche Technique ») et tout ce qui
+// n'est pas un fichier TT (liste blanche).
+function parseTtDocs(raw) {
+  if (!raw || raw === 'null') return []
+  let list = []
+  if (typeof raw === 'string') {
+    if (raw.trim().startsWith('[')) {
+      try { list = JSON.parse(raw).map((d) => ({ url: d.url, name: d.name })) } catch { list = [] }
+    } else {
+      list = raw.split(', ').filter((u) => u.startsWith('http'))
+        .map((u) => ({ url: u, name: decodeURIComponent(u.split('/').pop() || '') }))
+    }
+  }
+  return list
+    .filter((d) => d.url && TT_DOC_RE.test(d.url))
+    .filter((d) => !/\.html?(\?|$)/i.test(d.name || d.url))
+    .map((d) => ({ name: d.name || 'document', url: d.url }))
+}
+
+// Map réf article -> [{name, url}] depuis la table Articles TT. Résilient : un échec
+// (TT down / oauthkey absente) renvoie des maps vides → l'Atelier n'affiche pas d'onglet doc.
+async function fetchTtDocs() {
+  if (!TT_OAUTHKEY) { console.warn('[ft-api] TT_OAUTHKEY absente → fallback docs désactivé'); return { byExact: {}, byNorm: {} } }
+  try {
+    const sess = await ttSesskey()
+    const byExact = {}, byNorm = {}
+    let off = 0
+    while (true) {
+      const qs = new URLSearchParams({
+        req: 'getTableValues', o_u: TT_USER, u_c: TT_USER, sesskey: sess, b_c: TT_BOOK,
+        catId: TT_ARTICLES_CAT, offset: String(off), maxRows: '500', format: 'diff_ready_rows',
+      })
+      const r = await fetch(`${TT_API}?${qs}`)
+      const j = await r.json()
+      const rows = j?.tableValues?.rows || {}
+      const entries = Object.entries(rows)
+      if (!entries.length) break
+      for (const [, f] of entries) {
+        const ref = String(f[TT_REF_FIELD] || '').trim()
+        if (!ref) continue
+        const docs = parseTtDocs(f[TT_DOC_FIELD])
+        if (!docs.length) continue
+        const ex = stripPunct(ref), nm = normRef(ref)
+        if (ex && !byExact[ex]) byExact[ex] = docs
+        if (nm && !byNorm[nm]) byNorm[nm] = docs
+      }
+      off += entries.length
+      if (entries.length < 500) break
+    }
+    console.log(`[ft-api] docs TT: ${Object.keys(byExact).length} articles avec PJ`)
+    return { byExact, byNorm }
+  } catch (e) {
+    console.warn('[ft-api] docs TT indisponibles:', e?.message || e)
+    return { byExact: {}, byNorm: {} }
+  }
+}
+
 // ── Firestore (admin = ignore les security rules, lecture serveur) ───────────
 const serviceAccount = JSON.parse(fs.readFileSync(SA_PATH, 'utf8'))
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount) })
@@ -144,11 +223,12 @@ async function buildCache() {
   building = (async () => {
     console.log('[ft-api] rebuild du cache…')
     // 1 lecture groupée Firestore : procédures "completed" + toutes les phases.
-    // Les images d'outils viennent de GStock (HTTP, hors quota Firestore).
-    const [procSnap, phaseSnap, toolImg] = await Promise.all([
+    // Images d'outils (GStock) et documents fallback (TimeTonic) en parallèle, hors quota Firestore.
+    const [procSnap, phaseSnap, toolImg, ttDocs] = await Promise.all([
       db.collection('procedures').where('status', '==', 'completed').get(),
       db.collection('phases').get(),
       fetchToolImages(),
+      fetchTtDocs(),
     ])
 
     const phasesByProc = new Map()
@@ -183,7 +263,7 @@ async function buildCache() {
       count++
     })
 
-    cache = { builtAt: Date.now(), count, byExact, byNorm }
+    cache = { builtAt: Date.now(), count, byExact, byNorm, ttExact: ttDocs.byExact, ttNorm: ttDocs.byNorm }
     await saveDiskCache()
     console.log(`[ft-api] cache rebâti: ${count} fiches completed`)
     return cache
@@ -213,13 +293,19 @@ function lookup(ref) {
   return cache.byExact[stripPunct(ref)] || cache.byNorm[normRef(ref)] || null
 }
 
+function lookupDocs(ref) {
+  return cache.ttExact?.[stripPunct(ref)] || cache.ttNorm?.[normRef(ref)] || null
+}
+
 // ── Auth SSO (HS256 inline, même secret que les lecteurs Atelier n8n) ────────
 function verifySso(req) {
   if (!REQUIRE_AUTH) return true
   const h = req.get('authorization') || ''
   const m = h.match(/^Bearer\s+(.+)$/i)
-  if (!m || !SSO_SECRET) return false
-  const parts = m[1].split('.')
+  // Token en query toléré pour les <iframe>/<embed> (ne peuvent pas poser d'en-tête Authorization).
+  const raw = (m && m[1]) || (typeof req.query.token === 'string' ? req.query.token : '')
+  if (!raw || !SSO_SECRET) return false
+  const parts = raw.split('.')
   if (parts.length !== 3) return false
   const [h64, p64, s64] = parts
   const expected = crypto.createHmac('sha256', SSO_SECRET).update(`${h64}.${p64}`).digest('base64url')
@@ -289,6 +375,43 @@ app.get(`${BASE}/articles`, (req, res) => {
     reference: e.reference, title: e.title, phases: e.phases.map((p) => p.phaseNumber ?? p.order),
   }))
   res.json({ count: rows.length, builtAt: cache.builtAt, rows })
+})
+
+// Liste des documents TT d'un article (fallback). Renvoie un index, pas l'URL brute :
+// le streaming passe par /document?ref=&i= (proxy same-origin, framable).
+app.get(`${BASE}/documents`, (req, res) => {
+  if (!verifySso(req)) return res.sendStatus(401)
+  maybeRefresh()
+  const ref = String(req.query.ref || '')
+  if (!ref) return res.status(400).json({ error: 'ref required' })
+  const docs = lookupDocs(ref) || []
+  res.json({ ref, count: docs.length, documents: docs.map((d, i) => ({ i, name: d.name })) })
+})
+
+// Proxy de streaming d'un document TT : récupère le fichier côté serveur et le ressert
+// en `inline` same-origin (TT renvoie X-Frame-Options SAMEORIGIN + Content-Disposition
+// attachment → non embarquable / non affichable directement depuis l'Atelier).
+app.get(`${BASE}/document`, async (req, res) => {
+  if (!verifySso(req)) return res.sendStatus(401)
+  const docs = lookupDocs(String(req.query.ref || ''))
+  const i = parseInt(req.query.i, 10)
+  const doc = docs && Number.isInteger(i) ? docs[i] : null
+  if (!doc) return res.sendStatus(404)
+  if (!TT_DOC_RE.test(doc.url)) return res.sendStatus(400) // garde-fou liste blanche
+  try {
+    const up = await fetch(doc.url)
+    if (!up.ok) return res.sendStatus(502)
+    const buf = Buffer.from(await up.arrayBuffer())
+    const safeName = (doc.name || 'document').replace(/[\r\n"]/g, '')
+    res.set('Content-Type', up.headers.get('content-type') || 'application/octet-stream')
+    res.set('Content-Disposition', `inline; filename="${safeName}"`)
+    res.set('Cache-Control', 'private, max-age=300')
+    // Pas de X-Frame-Options : le proxy est sur la même origine que l'Atelier → embarquable.
+    res.send(buf)
+  } catch (e) {
+    console.warn('[ft-api] proxy document échec:', e?.message || e)
+    res.sendStatus(502)
+  }
 })
 
 app.post(`${BASE}/refresh`, async (req, res) => {
