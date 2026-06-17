@@ -28,6 +28,35 @@ const REQUIRE_AUTH = String(process.env.REQUIRE_AUTH ?? 'true') !== 'false'
 const REFRESH_TOKEN = process.env.REFRESH_TOKEN || ''
 // TTL long par défaut (6 h) : on minimise les lectures Firestore (quota Spark partagé avec l'app FT).
 const CACHE_TTL_MS = Number(process.env.CACHE_TTL_MS || 6 * 3600 * 1000)
+// GStock (même VPS) : source des outils/consommables. StepTool.id == id produit GStock.
+const GSTOCK_API = (process.env.GSTOCK_API || 'https://gstock.shadow.ajust82.fr').replace(/\/$/, '')
+
+// products/abc.jpg -> {GSTOCK}/uploads/products/abc.jpg ; URL/base64 -> tel quel.
+function gstockUploadUrl(p) {
+  if (!p) return null
+  if (p.startsWith('http') || p.startsWith('data:')) return p
+  return `${GSTOCK_API}/uploads/${p.replace(/^\//, '')}`
+}
+
+// Map id produit -> { url, location } depuis l'API publique GStock. Résilient : un échec
+// (GStock down) renvoie une map vide → les outils s'affichent sans image, le rebuild continue.
+async function fetchToolImages() {
+  try {
+    const res = await fetch(`${GSTOCK_API}/api/products`, { headers: { Accept: 'application/json' } })
+    if (!res.ok) throw new Error(`gstock ${res.status}`)
+    const rows = await res.json()
+    const map = new Map()
+    for (const p of Array.isArray(rows) ? rows : []) {
+      const url = gstockUploadUrl(p.photo || p.photo_url || p.image_url)
+      if (url || p.location) map.set(p.id, { url, location: p.location || null })
+    }
+    console.log(`[ft-api] images outils GStock: ${map.size} produits`)
+    return map
+  } catch (e) {
+    console.warn('[ft-api] GStock indisponible, outils sans image:', e?.message || e)
+    return new Map()
+  }
+}
 
 // ── Firestore (admin = ignore les security rules, lecture serveur) ───────────
 const serviceAccount = JSON.parse(fs.readFileSync(SA_PATH, 'utf8'))
@@ -114,18 +143,13 @@ async function buildCache() {
   if (building) return building
   building = (async () => {
     console.log('[ft-api] rebuild du cache…')
-    // 1 lecture groupée : procédures "completed" + toutes les phases + outils (groupés en mémoire).
-    const procSnap = await db.collection('procedures').where('status', '==', 'completed').get()
-    const phaseSnap = await db.collection('phases').get()
-    const toolSnap = await db.collection('tools').get()
-
-    // Map outil -> image/emplacement, pour enrichir les StepTool (cf. mapPhase).
-    const toolImg = new Map()
-    toolSnap.forEach((d) => {
-      const t = d.data()
-      const url = t?.image?.url || t?.imageUrl || null
-      if (url || t?.location) toolImg.set(d.id, { url, location: t?.location || null })
-    })
+    // 1 lecture groupée Firestore : procédures "completed" + toutes les phases.
+    // Les images d'outils viennent de GStock (HTTP, hors quota Firestore).
+    const [procSnap, phaseSnap, toolImg] = await Promise.all([
+      db.collection('procedures').where('status', '==', 'completed').get(),
+      db.collection('phases').get(),
+      fetchToolImages(),
+    ])
 
     const phasesByProc = new Map()
     phaseSnap.forEach((d) => {
