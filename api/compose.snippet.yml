@@ -1,0 +1,42 @@
+# À fusionner dans /opt/neode/docker-compose.yml sur le VPS Shadow.
+# Route en PathPrefix(/ft-api) sur l'host EXISTANT shadow.ajust82.fr :
+#   -> même origine que l'Atelier (shadow.ajust82.fr/apps/atelier), pas de CORS, le token SSO passe.
+#
+# Prérequis sur le VPS :
+#   1. Déposer la clé service Firebase :  /opt/neode/secrets/ft-serviceAccount.json   (chmod 600)
+#   2. /opt/neode/.env doit contenir SSO_TOKEN_SECRET (déjà présent pour neode-app/Atelier)
+#      + FT_API_REFRESH_TOKEN=<secret> (pour le bouton refresh / Réda)
+
+services:
+  app-ft-api:
+    image: ghcr.io/neode-cedric/app-ft-api-shadow:latest
+    container_name: app-ft-api
+    restart: unless-stopped
+    environment:
+      - CACHE_FILE=/data/ft_cache.json
+      - SSO_TOKEN_SECRET=${SSO_TOKEN_SECRET}
+      - SSO_AUDIENCE=atelier
+      - REQUIRE_AUTH=true
+      - REFRESH_TOKEN=${FT_API_REFRESH_TOKEN}
+      - CACHE_TTL_MS=21600000
+    volumes:
+      - ft_api_cache:/data
+      - /opt/neode/secrets/ft-serviceAccount.json:/app/serviceAccount.json:ro
+    networks:
+      - neode
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/ft-api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=neode
+      - "traefik.http.routers.ftapi.rule=Host(`shadow.ajust82.fr`) && PathPrefix(`/ft-api`)"
+      - traefik.http.routers.ftapi.entrypoints=websecure
+      - traefik.http.routers.ftapi.tls.certresolver=letsencrypt
+      - traefik.http.routers.ftapi.priority=200
+      - traefik.http.services.ftapi.loadbalancer.server.port=3000
+
+volumes:
+  ft_api_cache:
