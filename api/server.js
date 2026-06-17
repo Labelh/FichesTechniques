@@ -72,7 +72,10 @@ async function saveDiskCache() {
 }
 
 // Mappe une phase Firestore -> objet lecture-seule allégé pour l'Atelier.
-function mapPhase(ph) {
+// `toolImg` : Map(toolId -> { url, location }) construite depuis la collection `tools`,
+// pour résoudre l'image/emplacement de l'outil quand le StepTool ne les porte pas
+// (l'éditeur de Réda n'enrichit l'imageUrl qu'en mémoire, pas toujours persisté).
+function mapPhase(ph, toolImg = new Map()) {
   const steps = (ph.steps || []).map((s) => ({
     order: s.order ?? 0,
     title: s.title || '',
@@ -84,12 +87,15 @@ function mapPhase(ph) {
       // annotations Fabric conservées pour la V2 (rendu fidèle) ; MVP = image simple.
       annotations: Array.isArray(ai?.annotations) ? ai.annotations : [],
     })).filter((im) => im.url),
-    tools: (s.tools || []).map((t) => ({
-      name: t?.name || t?.toolName || null,
-      reference: t?.reference || t?.toolReference || null,
-      location: t?.location || t?.toolLocation || null,
-      imageUrl: t?.imageUrl || t?.toolImageUrl || null,
-    })).filter((t) => t.name || t.reference),
+    tools: (s.tools || []).map((t) => {
+      const ref = toolImg.get(t?.id) || {}
+      return {
+        name: t?.name || t?.toolName || null,
+        reference: t?.reference || t?.toolReference || null,
+        location: t?.location || t?.toolLocation || ref.location || null,
+        imageUrl: t?.imageUrl || t?.toolImageUrl || ref.url || null,
+      }
+    }).filter((t) => t.name || t.reference),
     safetyNotes: Array.isArray(s.safetyNotes) ? s.safetyNotes : [],
   }))
   return {
@@ -108,9 +114,18 @@ async function buildCache() {
   if (building) return building
   building = (async () => {
     console.log('[ft-api] rebuild du cache…')
-    // 1 lecture groupée : procédures "completed" + toutes les phases (groupées en mémoire).
+    // 1 lecture groupée : procédures "completed" + toutes les phases + outils (groupés en mémoire).
     const procSnap = await db.collection('procedures').where('status', '==', 'completed').get()
     const phaseSnap = await db.collection('phases').get()
+    const toolSnap = await db.collection('tools').get()
+
+    // Map outil -> image/emplacement, pour enrichir les StepTool (cf. mapPhase).
+    const toolImg = new Map()
+    toolSnap.forEach((d) => {
+      const t = d.data()
+      const url = t?.image?.url || t?.imageUrl || null
+      if (url || t?.location) toolImg.set(d.id, { url, location: t?.location || null })
+    })
 
     const phasesByProc = new Map()
     phaseSnap.forEach((d) => {
@@ -127,7 +142,7 @@ async function buildCache() {
       const p = d.data()
       if (!p.reference) return
       const phases = (phasesByProc.get(d.id) || [])
-        .map(mapPhase)
+        .map((ph) => mapPhase(ph, toolImg))
         .sort((a, b) => (a.order || 0) - (b.order || 0))
       const entry = {
         id: d.id,
