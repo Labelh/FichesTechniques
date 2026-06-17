@@ -202,6 +202,7 @@ function mapPhase(ph, toolImg = new Map()) {
         reference: t?.reference || t?.toolReference || null,
         location: t?.location || t?.toolLocation || ref.location || null,
         imageUrl: t?.imageUrl || t?.toolImageUrl || ref.url || null,
+        color: t?.color || t?.toolColor || null, // repère visuel (texte desc ↔ boîte outil)
       }
     }).filter((t) => t.name || t.reference),
     safetyNotes: Array.isArray(s.safetyNotes) ? s.safetyNotes : [],
