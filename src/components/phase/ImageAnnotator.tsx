@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Save, Undo, Redo, Pencil, ArrowRight, Circle, Square, Minus, Type, Palette, ZoomIn, ZoomOut, Scan, Trash2, Move } from 'lucide-react';
+import { X, Save, Undo, Redo, Pencil, ArrowRight, Circle, Square, Minus, Type, Palette, ZoomIn, ZoomOut, Scan, Trash2, Move, RotateCw } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import type { AnnotatedImage, Annotation, Tool } from '@/types';
 import { AnnotationType } from '@/types';
@@ -41,6 +41,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
   const [moveMode, setMoveMode] = useState(false);
   const [selectedAnnotation, setSelectedAnnotation] = useState<string | null>(null);
   const [hoveredAnnotation, setHoveredAnnotation] = useState<string | null>(null);
+  const [rotation, setRotation] = useState(0);
 
   // État de dessin (non React pour performance)
   const drawing = useRef({
@@ -240,18 +241,19 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     }
   }, [annotatedImage.image.url]);
 
-  // Redimensionner le canvas une fois que l'image et le canvas sont prêts
+  // Redimensionner le canvas selon la rotation
   useEffect(() => {
     if (!loaded || !canvasRef.current || !imageObjRef.current) return;
 
     const canvas = canvasRef.current;
     const img = imageObjRef.current;
+    const isRotated90or270 = rotation % 180 !== 0;
 
-    canvas.width = img.width;
-    canvas.height = img.height;
+    canvas.width = isRotated90or270 ? img.height : img.width;
+    canvas.height = isRotated90or270 ? img.width : img.height;
 
     redrawCanvas();
-  }, [loaded]);
+  }, [loaded, rotation]);
 
   // Calculer le gradient à une position pour le suivi d'arête
   const getEdgeGradient = (imageData: ImageData, x: number, y: number): { dx: number; dy: number; magnitude: number } => {
@@ -352,8 +354,12 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     // Effacer
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Dessiner l'image
-    ctx.drawImage(img, 0, 0);
+    // Dessiner l'image avec rotation
+    ctx.save();
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.drawImage(img, -img.width / 2, -img.height / 2);
+    ctx.restore();
 
     // Dessiner les annotations
     annotations.forEach(ann => {
@@ -505,7 +511,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
   // Redessiner quand les annotations changent ou les effets
   useEffect(() => {
     if (loaded) redrawCanvas();
-  }, [annotations, loaded, selectedAnnotation, strokeWidth, strokeOpacity]);
+  }, [annotations, loaded, selectedAnnotation, strokeWidth, strokeOpacity, rotation]);
 
   // Convertir coordonnées écran → canvas
   const getCanvasPoint = (e: MouseEvent): Point => {
@@ -704,6 +710,32 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     return () => container.removeEventListener('wheel', onWheel);
   }, []);
 
+  const handleRotate = () => {
+    const img = imageObjRef.current;
+    if (!img) return;
+
+    const prevRotation = rotation;
+    const newRotation = (rotation + 90) % 360;
+    setRotation(newRotation);
+
+    const isRotated90or270 = prevRotation % 180 !== 0;
+    const canvasH = isRotated90or270 ? img.width : img.height;
+
+    const rotatedAnnotations = annotations.map(ann => ({
+      ...ann,
+      points: ann.points?.map(p => ({
+        x: canvasH - p.y,
+        y: p.x,
+      })),
+    }));
+
+    setAnnotations(rotatedAnnotations);
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(rotatedAnnotations);
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+  };
+
   // Raccourcis clavier
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -729,6 +761,9 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
           setHistoryIndex(historyIndex + 1);
           setAnnotations([...history[historyIndex + 1]]);
         }
+      } else if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        handleRotate();
       } else if ((e.key === 'Delete' || e.key === 'Backspace') && selectedAnnotation) {
         e.preventDefault();
         const newAnnotations = annotations.filter(a => a.id !== selectedAnnotation);
@@ -743,7 +778,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [historyIndex, history, onCancel, selectedAnnotation, annotations]);
+  }, [historyIndex, history, onCancel, selectedAnnotation, annotations, rotation]);
 
   const handleSave = () => {
     onSave(annotations, description);
@@ -946,6 +981,13 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
             title="Déplacer forme"
           >
             <Move className="h-5 w-5" />
+          </button>
+          <button
+            onClick={handleRotate}
+            className="p-3 rounded transition-colors bg-black text-gray-400 hover:bg-[#1a1a1a] border border-[#323232]"
+            title="Pivoter 90° (R)"
+          >
+            <RotateCw className="h-5 w-5" />
           </button>
           {selectedAnnotation && (
             <button
