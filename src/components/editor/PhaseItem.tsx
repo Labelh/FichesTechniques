@@ -442,7 +442,7 @@ export default function PhaseItem({ phase, index, procedureId, reference, totalP
     }
   };
 
-  const handleSaveStepAnnotations = async (stepId: string, imageId: string, annotations: Annotation[], description: string) => {
+  const handleSaveStepAnnotations = async (stepId: string, imageId: string, annotations: Annotation[], description: string, rotation: number = 0) => {
     console.log('=== handleSaveStepAnnotations ===');
     console.log('Step ID:', stepId);
     console.log('Image ID:', imageId);
@@ -455,7 +455,7 @@ export default function PhaseItem({ phase, index, procedureId, reference, totalP
 
       const updatedImages = (s.images || []).map(img =>
         img.imageId === imageId
-          ? { ...img, annotations, description }
+          ? { ...img, annotations, description, rotation }
           : img
       );
 
@@ -681,7 +681,7 @@ export default function PhaseItem({ phase, index, procedureId, reference, totalP
                       onRemoveTool={(toolId) => removeStepTool(step.id, toolId)}
                       onMoveUp={() => moveStepUp(step.id)}
                       onMoveDown={() => moveStepDown(step.id)}
-                      onSaveAnnotations={(imageId, annotations, description) => handleSaveStepAnnotations(step.id, imageId, annotations, description)}
+                      onSaveAnnotations={(imageId, annotations, description, rotation) => handleSaveStepAnnotations(step.id, imageId, annotations, description, rotation)}
                       onSaveAsTemplate={async () => {
                         const templateName = prompt('Nom du template de sous-étape:', step.title || 'Mon template');
                         if (!templateName) return;
@@ -845,7 +845,7 @@ interface SubStepItemProps {
   onRemoveTool: (toolId: string) => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
-  onSaveAnnotations: (imageId: string, annotations: Annotation[], description: string) => Promise<void>;
+  onSaveAnnotations: (imageId: string, annotations: Annotation[], description: string, rotation: number) => Promise<void>;
   onSaveAsTemplate: () => void;
   initiallyExpanded?: boolean;
 }
@@ -1060,11 +1060,11 @@ function SubStepItem({
     }
   };
 
-  const handleSaveAnnotations = async (annotations: Annotation[], description: string) => {
+  const handleSaveAnnotations = async (annotations: Annotation[], description: string, rotation: number) => {
     if (!imageToAnnotate) return;
 
     // Sauvegarder directement dans Firestore via le callback parent
-    await onSaveAnnotations(imageToAnnotate.imageId, annotations, description);
+    await onSaveAnnotations(imageToAnnotate.imageId, annotations, description, rotation);
 
     // Fermer le modal d'annotation
     setImageToAnnotate(null);

@@ -8,7 +8,7 @@ import { AnnotationType } from '@/types';
 interface ImageAnnotatorProps {
   annotatedImage: AnnotatedImage;
   tools?: Tool[];
-  onSave: (annotations: Annotation[], description: string) => void;
+  onSave: (annotations: Annotation[], description: string, rotation: number) => void;
   onCancel: () => void;
 }
 
@@ -41,7 +41,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
   const [moveMode, setMoveMode] = useState(false);
   const [selectedAnnotation, setSelectedAnnotation] = useState<string | null>(null);
   const [hoveredAnnotation, setHoveredAnnotation] = useState<string | null>(null);
-  const [rotation, setRotation] = useState(0);
+  const [rotation, setRotation] = useState(annotatedImage.rotation || 0);
 
   // État de dessin (non React pour performance)
   const drawing = useRef({
@@ -781,7 +781,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
   }, [historyIndex, history, onCancel, selectedAnnotation, annotations, rotation]);
 
   const handleSave = () => {
-    onSave(annotations, description);
+    onSave(annotations, description, rotation);
   };
 
   if (!loaded) {

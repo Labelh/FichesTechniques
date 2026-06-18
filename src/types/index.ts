@@ -90,6 +90,7 @@ export interface AnnotatedImage {
   image: Image;
   annotations: Annotation[];
   description?: string;
+  rotation?: number;
 }
 
 export interface Video {

@@ -102,8 +102,9 @@ function drawAnnotation(ctx: CanvasRenderingContext2D, ann: Annotation) {
  * Rend une image avec ses annotations et retourne une URL blob
  */
 export async function renderAnnotatedImage(annotatedImage: AnnotatedImage): Promise<string> {
-  // Si pas d'annotations, retourner l'URL originale
-  if (!annotatedImage.annotations || annotatedImage.annotations.length === 0) {
+  const hasAnnotations = annotatedImage.annotations && annotatedImage.annotations.length > 0;
+  const hasRotation = (annotatedImage.rotation || 0) !== 0;
+  if (!hasAnnotations && !hasRotation) {
     return annotatedImage.image.url || '';
   }
 
@@ -112,10 +113,12 @@ export async function renderAnnotatedImage(annotatedImage: AnnotatedImage): Prom
 
     img.onload = () => {
       try {
-        // Créer un canvas aux dimensions de l'image
+        const rotation = annotatedImage.rotation || 0;
+        const isRotated90or270 = rotation % 180 !== 0;
+
         const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
+        canvas.width = isRotated90or270 ? img.height : img.width;
+        canvas.height = isRotated90or270 ? img.width : img.height;
 
         const ctx = canvas.getContext('2d');
         if (!ctx) {
@@ -123,8 +126,12 @@ export async function renderAnnotatedImage(annotatedImage: AnnotatedImage): Prom
           return;
         }
 
-        // Dessiner l'image de base
-        ctx.drawImage(img, 0, 0);
+        // Dessiner l'image avec rotation
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate((rotation * Math.PI) / 180);
+        ctx.drawImage(img, -img.width / 2, -img.height / 2);
+        ctx.restore();
 
         // Dessiner toutes les annotations
         annotatedImage.annotations.forEach(ann => drawAnnotation(ctx, ann));
@@ -179,9 +186,16 @@ export async function renderAnnotatedImageToBase64(annotatedImage: AnnotatedImag
 
     img.onload = () => {
       try {
+        const rotation = annotatedImage.rotation || 0;
+        const isRotated90or270 = rotation % 180 !== 0;
+
+        // Dimensions de l'image source après rotation
+        let srcW = isRotated90or270 ? img.height : img.width;
+        let srcH = isRotated90or270 ? img.width : img.height;
+
         // Calcul des dimensions avec limite de résolution
-        let w = img.width;
-        let h = img.height;
+        let w = srcW;
+        let h = srcH;
         if (Math.max(w, h) > MAX_EXPORT_PX) {
           const ratio = MAX_EXPORT_PX / Math.max(w, h);
           w = Math.round(w * ratio);
@@ -195,13 +209,19 @@ export async function renderAnnotatedImageToBase64(annotatedImage: AnnotatedImag
         const ctx = canvas.getContext('2d');
         if (!ctx) { reject(new Error('Could not get canvas context')); return; }
 
-        ctx.drawImage(img, 0, 0, w, h);
+        // Dessiner l'image avec rotation
+        ctx.save();
+        ctx.translate(w / 2, h / 2);
+        ctx.rotate((rotation * Math.PI) / 180);
+        const drawW = isRotated90or270 ? h : w;
+        const drawH = isRotated90or270 ? w : h;
+        ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
+        ctx.restore();
 
         // Dessiner les annotations uniquement si présentes
         if (annotatedImage.annotations && annotatedImage.annotations.length > 0) {
-          // Les annotations sont en coordonnées de l'image originale — adapter le scale
-          const scaleX = w / img.width;
-          const scaleY = h / img.height;
+          const scaleX = w / srcW;
+          const scaleY = h / srcH;
           ctx.save();
           ctx.scale(scaleX, scaleY);
           annotatedImage.annotations.forEach(ann => drawAnnotation(ctx, ann));
@@ -229,13 +249,14 @@ export async function renderAllAnnotatedImages(
   const urlMap = new Map<string, string>();
 
   for (const img of images) {
-    if (img.annotations && img.annotations.length > 0) {
+    const hasAnnotations = img.annotations && img.annotations.length > 0;
+    const hasRotation = (img.rotation || 0) !== 0;
+    if (hasAnnotations || hasRotation) {
       try {
         const renderedUrl = await renderAnnotatedImage(img);
         urlMap.set(img.imageId, renderedUrl);
       } catch (error) {
         console.error(`Failed to render annotations for image ${img.imageId}:`, error);
-        // En cas d'erreur, utiliser l'URL originale
         if (img.image.url) {
           urlMap.set(img.imageId, img.image.url);
         }
@@ -275,9 +296,10 @@ export async function renderAllAnnotatedImagesToBase64(
   for (const img of images) {
     try {
       const hasAnnotations = img.annotations && img.annotations.length > 0;
+      const hasRotation = (img.rotation || 0) !== 0;
 
-      if (hasAnnotations) {
-        // Image avec annotations : rendu canvas → JPEG compressé
+      if (hasAnnotations || hasRotation) {
+        // Image avec annotations ou rotation : rendu canvas → JPEG compressé
         const renderedUrl = await renderAnnotatedImageToBase64(img);
         urlMap.set(img.imageId, renderedUrl);
       } else if (img.image.url) {

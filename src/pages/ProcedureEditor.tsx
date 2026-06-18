@@ -290,7 +290,7 @@ export default function ProcedureEditor() {
     ));
   };
 
-  const handleSaveDefectAnnotations = (annotations: Annotation[], description: string) => {
+  const handleSaveDefectAnnotations = (annotations: Annotation[], description: string, rotation: number) => {
     if (!imageToAnnotate) return;
 
     setDefects(defects.map(d =>
@@ -299,7 +299,7 @@ export default function ProcedureEditor() {
             ...d,
             images: (d.images || []).map(img =>
               img.imageId === imageToAnnotate.image.imageId
-                ? { ...img, annotations, description }
+                ? { ...img, annotations, description, rotation }
                 : img
             )
           }
