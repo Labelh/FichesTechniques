@@ -5,13 +5,11 @@ import {
   Wrench
 } from 'lucide-react';
 import { fetchConsumables } from '@/services/consumablesService';
-import { supabase } from '@/lib/supabase';
+import { gstockUploadUrl } from '@/lib/gstock';
 import { Consumable } from '../types';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { toast } from 'sonner';
-
-const STORAGE_BUCKET = 'product-photos';
 
 function isStoragePath(value: string | null | undefined): boolean {
   if (!value) return false;
@@ -23,8 +21,7 @@ function getProductPhotoUrl(filePath: string | null | undefined): string | null 
   if (filePath.startsWith('http') || filePath.startsWith('data:')) {
     return filePath;
   }
-  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(filePath);
-  return data?.publicUrl || null;
+  return gstockUploadUrl(filePath) || null;
 }
 
 export default function ToolsLibrary() {
@@ -273,7 +270,7 @@ export default function ToolsLibrary() {
                 {selectedItem.reference && (
                   <div>
                     <label className="text-xs text-gray-400 uppercase tracking-wide">Référence</label>
-                    <p className="text-sm font-medium mt-1" style={{ color: 'rgb(249, 55, 5)' }}>
+                    <p className="text-sm font-medium mt-1" style={{ color: 'rgb(255,102,0)' }}>
                       {selectedItem.reference}
                     </p>
                   </div>

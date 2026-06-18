@@ -45,3 +45,7 @@ backup/
 # Scripts — dépendances locales
 scripts/node_modules/
 scripts/package-lock.json
+
+# ft-api sub-project
+api/data
+api/.env

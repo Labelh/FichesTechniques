@@ -2,10 +2,8 @@ import { useState, useMemo, useEffect } from 'react';
 import { Search, X, Wrench, Package, MapPin, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { supabase } from '@/lib/supabase';
+import { gstockUploadUrl } from '@/lib/gstock';
 import type { Tool, Consumable } from '@/types';
-
-const STORAGE_BUCKET = 'product-photos';
 
 function isStoragePath(value: string | null | undefined): boolean {
   if (!value) return false;
@@ -17,8 +15,7 @@ function getProductPhotoUrl(filePath: string | null | undefined): string | null 
   if (filePath.startsWith('http') || filePath.startsWith('data:')) {
     return filePath;
   }
-  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(filePath);
-  return data?.publicUrl || null;
+  return gstockUploadUrl(filePath) || null;
 }
 
 interface ToolSelectorProps {
@@ -101,7 +98,7 @@ export default function ToolSelector({ availableTools, availableConsumables, onS
     { name: 'Jaune', value: '#f59e0b' },
     { name: 'Violet', value: '#8b5cf6' },
     { name: 'Rose', value: '#ec4899' },
-    { name: 'Orange', value: 'rgb(249, 55, 5)' },
+    { name: 'Orange', value: 'rgb(255,102,0)' },
   ];
 
   const getItemImage = (item: ToolOrConsumable) => {
@@ -282,7 +279,7 @@ export default function ToolSelector({ availableTools, availableConsumables, onS
                   {selectedItem.reference && (
                     <div>
                       <label className="text-xs text-gray-400 uppercase tracking-wide">Référence</label>
-                      <p className="text-sm font-medium mt-1" style={{ color: 'rgb(249, 55, 5)' }}>
+                      <p className="text-sm font-medium mt-1" style={{ color: 'rgb(255,102,0)' }}>
                         {selectedItem.reference}
                       </p>
                     </div>

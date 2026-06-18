@@ -21,30 +21,23 @@ export function useProcedures(filters?: SearchFilters, sort?: SortOption) {
     // Note: Firestore a des limitations sur les requêtes complexes
     // On appliquera certains filtres côté client
 
-    // Écouter les changements en temps réel des procédures
-    const unsubscribeProcedures = onSnapshot(q, async (snapshot) => {
-      let results = snapshot.docs.map(doc =>
-        convertTimestamps<Procedure>({
-          id: doc.id,
-          ...doc.data(),
-        })
-      );
+    // Deux listeners INDÉPENDANTS (procédures + phases) recombinés à chaque émission.
+    // ⚠️ Ne jamais imbriquer le listener phases dans le callback procédures :
+    // cela recrée un abonnement à chaque changement (fuite + amplification massive
+    // des lectures Firestore → saturation du quota).
+    let procsRaw: Procedure[] = [];
+    let phasesRaw: any[] = [];
+    let gotProcs = false;
+    let gotPhases = false;
 
-      // Charger toutes les phases en une seule requête
-      const phasesQuery = query(collection(db, 'phases'));
-      const phasesSnapshot = await onSnapshot(phasesQuery, (phasesSnap) => {
-        const allPhases = phasesSnap.docs.map(doc =>
-          convertTimestamps<any>({
-            id: doc.id,
-            ...doc.data(),
-          })
-        );
+    const process = () => {
+      if (!gotProcs || !gotPhases) return;
 
-        // Associer les phases aux procédures
-        results = results.map(proc => ({
-          ...proc,
-          phases: allPhases.filter((phase: any) => phase.procedureId === proc.id).sort((a: any, b: any) => a.order - b.order)
-        }));
+      // Associer les phases aux procédures
+      let results = procsRaw.map(proc => ({
+        ...proc,
+        phases: phasesRaw.filter((phase: any) => phase.procedureId === proc.id).sort((a: any, b: any) => a.order - b.order)
+      }));
 
         // Appliquer les filtres côté client
         if (filters?.status && filters.status.length > 0) {
@@ -156,17 +149,33 @@ export function useProcedures(filters?: SearchFilters, sort?: SortOption) {
           });
         }
 
-        setProcedures(results);
-        setLoading(false);
-      });
+      setProcedures(results);
+      setLoading(false);
+    };
 
-      return () => phasesSnapshot();
+    const unsubscribeProcedures = onSnapshot(q, (snapshot) => {
+      procsRaw = snapshot.docs.map(doc =>
+        convertTimestamps<Procedure>({ id: doc.id, ...doc.data() })
+      );
+      gotProcs = true;
+      process();
     }, (error) => {
       console.error('Error fetching procedures:', error);
       setLoading(false);
     });
 
-    return () => unsubscribeProcedures();
+    const unsubscribePhases = onSnapshot(query(collection(db, 'phases')), (phasesSnap) => {
+      phasesRaw = phasesSnap.docs.map(doc =>
+        convertTimestamps<any>({ id: doc.id, ...doc.data() })
+      );
+      gotPhases = true;
+      process();
+    }, (error) => {
+      console.error('Error fetching phases:', error);
+      setLoading(false);
+    });
+
+    return () => { unsubscribeProcedures(); unsubscribePhases(); };
   }, [filters?.status, filters?.categories, filters?.tags, filters?.priority, filters?.difficulty, filters?.query, sort]);
 
   return loading ? undefined : procedures;
@@ -185,44 +194,41 @@ export function useProcedure(id?: string): Procedure | undefined {
       return;
     }
 
-    // Écouter les changements de la procédure
+    // Deux listeners indépendants (doc procédure + ses phases), recombinés.
+    // (Pas de listener phases imbriqué dans le callback procédure : fuite + lectures.)
     const procedureRef = doc(db, 'procedures', id);
-    const unsubscribeProcedure = onSnapshot(procedureRef, async (docSnap) => {
-      if (!docSnap.exists()) {
-        setProcedure(undefined);
-        return;
-      }
+    const phasesQuery = query(
+      collection(db, 'phases'),
+      where('procedureId', '==', id),
+      firestoreOrderBy('order', 'asc')
+    );
 
-      const procedureData = convertTimestamps<Procedure>({
-        id: docSnap.id,
-        ...docSnap.data(),
-      });
+    let procData: Procedure | undefined;
+    let phases: any[] = [];
+    let gotProc = false;
 
-      // Récupérer les phases associées
-      const phasesQuery = query(
-        collection(db, 'phases'),
-        where('procedureId', '==', id),
-        firestoreOrderBy('order', 'asc')
-      );
+    const emit = () => {
+      if (!gotProc) return;
+      if (!procData) { setProcedure(undefined); return; }
+      setProcedure({ ...procData, phases: phases as any });
+    };
 
-      const unsubscribePhases = onSnapshot(phasesQuery, (phasesSnap) => {
-        const phases = phasesSnap.docs.map(doc =>
-          convertTimestamps<any>({
-            id: doc.id,
-            ...doc.data(),
-          })
-        );
-
-        setProcedure({
-          ...procedureData,
-          phases: phases as any,
-        });
-      });
-
-      return () => unsubscribePhases();
+    const unsubscribeProcedure = onSnapshot(procedureRef, (docSnap) => {
+      procData = docSnap.exists()
+        ? convertTimestamps<Procedure>({ id: docSnap.id, ...docSnap.data() })
+        : undefined;
+      gotProc = true;
+      emit();
     });
 
-    return () => unsubscribeProcedure();
+    const unsubscribePhases = onSnapshot(phasesQuery, (phasesSnap) => {
+      phases = phasesSnap.docs.map(doc =>
+        convertTimestamps<any>({ id: doc.id, ...doc.data() })
+      );
+      emit();
+    });
+
+    return () => { unsubscribeProcedure(); unsubscribePhases(); };
   }, [id]);
 
   return procedure;

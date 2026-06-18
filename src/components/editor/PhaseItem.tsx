@@ -19,6 +19,7 @@ interface PhaseItemProps {
   phase: Phase;
   index: number;
   procedureId: string;
+  reference: string;
   totalPhases: number;
   allPhases?: Phase[];
   onDelete: (phaseId: string) => void;
@@ -27,7 +28,7 @@ interface PhaseItemProps {
   initialExpandStepIndex?: number;
 }
 
-export default function PhaseItem({ phase, index, procedureId, totalPhases, allPhases, onDelete, onMoveImageToOtherPhase, initiallyExpanded, initialExpandStepIndex }: PhaseItemProps) {
+export default function PhaseItem({ phase, index, procedureId, reference, totalPhases, allPhases, onDelete, onMoveImageToOtherPhase, initiallyExpanded, initialExpandStepIndex }: PhaseItemProps) {
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded ?? false);
   const phaseRef = useRef<HTMLDivElement>(null);
   const [title, setTitle] = useState(phase.title);
@@ -660,6 +661,7 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, allP
                       key={step.id}
                       step={step}
                       index={idx}
+                      reference={reference}
                       initiallyExpanded={initialExpandStepIndex !== undefined && initialExpandStepIndex === idx}
                       totalSteps={steps.length}
                       allSteps={steps}
@@ -824,6 +826,7 @@ export default function PhaseItem({ phase, index, procedureId, totalPhases, allP
 interface SubStepItemProps {
   step: SubStep;
   index: number;
+  reference: string;
   totalSteps: number;
   allSteps: SubStep[];
   allPhases?: Phase[];
@@ -850,6 +853,7 @@ interface SubStepItemProps {
 function SubStepItem({
   step,
   index,
+  reference,
   totalSteps,
   allSteps,
   allPhases,
@@ -899,7 +903,7 @@ function SubStepItem({
 
   const textColors = [
     { name: 'Rouge', value: '#ef4444' },
-    { name: 'Orange', value: 'rgb(249, 55, 5)' },
+    { name: 'Orange', value: 'rgb(255,102,0)' },
     { name: 'Jaune', value: '#f59e0b' },
     { name: 'Vert', value: '#10b981' },
     { name: 'Bleu', value: '#3b82f6' },
@@ -1019,9 +1023,7 @@ function SubStepItem({
       }
 
       try {
-        console.log(`Uploading ${file.name} to ImgBB...`);
-        const imageUrl = await uploadImageToHost(file);
-        console.log(`Image uploaded successfully: ${imageUrl}`);
+        const imageUrl = await uploadImageToHost(file, reference);
 
         const img = new Image();
         const url = URL.createObjectURL(file);
@@ -1642,7 +1644,7 @@ function SubStepItem({
             <label className="block text-xs font-medium text-gray-400 mb-2">
               Vidéos ({step.videos?.length || 0})
             </label>
-            <div className="flex flex-wrap gap-3 mb-2">
+            <div className="flex flex-col gap-2 mb-2">
               {(step.videos || []).map((video) => {
                 const hasFullPath = video.url.includes('\\') || video.url.includes('/');
                 return (
@@ -1781,7 +1783,7 @@ function SubStepItem({
             <label className="block text-xs font-medium text-gray-400 mb-2">
               Documents ({step.documents?.length || 0})
             </label>
-            <div className="flex flex-wrap gap-3 mb-2">
+            <div className="flex flex-col gap-2 mb-2">
               {(step.documents || []).map((doc) => {
                 const hasFullPath = doc.url.includes('\\') || doc.url.includes('/');
                 return (

@@ -1,0 +1,14 @@
+{
+  "name": "app-ft-api-shadow",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "API lecture des fiches techniques Ajust'82 (Firestore app FT) — sert la page Opérateur de l'Atelier. Cache snapshot persistant pour protéger le quota Firestore Spark.",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "firebase-admin": "^12.7.0"
+  }
+}

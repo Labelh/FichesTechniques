@@ -1,51 +1,36 @@
 /**
- * Service d'hébergement d'images via ImgBB API
- * ImgBB offre un hébergement gratuit permanent pour les images
- * API Key gratuite: https://api.imgbb.com/
+ * Service d'hébergement d'images via le Référentiel Shadow (store du VPS).
+ *
+ * Remplace ImgBB. Le store est adressé par référence article.
+ *   - Upload : POST {ORIGIN}/referentiel/upload
+ *       en-tête  : X-Upload-Token: <token>
+ *       corps    : multipart/form-data → file (binaire), ref (réf article),
+ *                  kind=cover (uniquement pour la couverture), name (optionnel)
+ *       réponse  : { ok, ref, name, url } — url RELATIVE (/referentiel/articles/{ref}/{nom})
+ *   - Lecture : GET {ORIGIN}/referentiel/articles/{ref}/{fichier}?w=NNN (CORS ouvert)
+ *
+ * L'URL absolue à stocker = ORIGIN + url.
  */
 
-// Clé API ImgBB (gratuite, sans authentification requise)
-// Pour obtenir votre propre clé: https://api.imgbb.com/
-// Voir IMGBB_SETUP.md pour les instructions
-const IMGBB_API_KEY = import.meta.env.VITE_IMGBB_API_KEY || '';
+const REFERENTIEL_ORIGIN = (import.meta.env.VITE_REFERENTIEL_ORIGIN || 'https://shadow.ajust82.fr').replace(/\/$/, '');
+const UPLOAD_TOKEN = import.meta.env.VITE_REFERENTIEL_UPLOAD_TOKEN || '';
 
-interface ImgBBResponse {
-  data: {
-    id: string;
-    title: string;
-    url_viewer: string;
-    url: string;
-    display_url: string;
-    width: number;
-    height: number;
-    size: number;
-    time: number;
-    expiration: number;
-    image: {
-      filename: string;
-      name: string;
-      mime: string;
-      extension: string;
-      url: string;
-    };
-    thumb: {
-      filename: string;
-      name: string;
-      mime: string;
-      extension: string;
-      url: string;
-    };
-    medium?: {
-      filename: string;
-      name: string;
-      mime: string;
-      extension: string;
-      url: string;
-    };
-    delete_url: string;
-  };
-  success: boolean;
-  status: number;
+/**
+ * Assainit une référence article de la même façon que le serveur
+ * ([^A-Za-z0-9._-] → _). À appliquer si on reconstruit une URL de lecture
+ * côté front à partir d'une référence.
+ */
+export function sanitizeRef(ref: string): string {
+  return (ref || '').replace(/[^A-Za-z0-9._-]/g, '_');
+}
+
+/**
+ * Construit une URL de lecture absolue vers le référentiel.
+ * @param width largeur de redimensionnement optionnelle (param `w`)
+ */
+export function referentielImageUrl(ref: string, filename: string, width?: number): string {
+  const base = `${REFERENTIEL_ORIGIN}/referentiel/articles/${sanitizeRef(ref)}/${filename}`;
+  return width ? `${base}?w=${width}` : base;
 }
 
 /**
@@ -103,7 +88,6 @@ async function compressImage(file: File, maxSizeMB: number = 2): Promise<Blob> {
       for (let q = 0.9; q >= 0.5; q -= 0.1) {
         blob = await tryCompress(q);
         if (blob && blob.size <= targetSize) {
-          console.log(`Image compressée: ${(file.size / 1024 / 1024).toFixed(2)}MB → ${(blob.size / 1024 / 1024).toFixed(2)}MB (qualité: ${Math.round(q * 100)}%)`);
           break;
         }
       }
@@ -126,117 +110,67 @@ async function compressImage(file: File, maxSizeMB: number = 2): Promise<Blob> {
   });
 }
 
+interface ReferentielUploadResponse {
+  ok: boolean;
+  ref: string;
+  name: string;
+  url: string; // relative : /referentiel/articles/{ref}/{nom}
+}
+
 /**
- * Convertit un File ou Blob en base64
+ * Upload une image dans le Référentiel Shadow et retourne l'URL absolue à stocker.
+ *
+ * @param file  fichier image
+ * @param ref   référence de l'article (champ `reference` de la procédure)
+ * @param kind  'cover' pour la couverture (range en cover.{ext}) ; sinon laisser vide
  */
-function fileToBase64(file: File | Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      if (typeof reader.result === 'string') {
-        // Retirer le préfixe "data:image/...;base64,"
-        const base64 = reader.result.split(',')[1];
-        resolve(base64);
-      } else {
-        reject(new Error('Could not read file'));
-      }
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+export async function uploadImageToHost(file: File, ref: string, kind?: 'cover'): Promise<string> {
+  if (!ref || !ref.trim()) {
+    throw new Error("Référence article manquante : renseigne la référence avant d'ajouter des images.");
+  }
+
+  // Vérifier la taille (max 15 MB)
+  if (file.size > 15 * 1024 * 1024) {
+    throw new Error('Image trop volumineuse (max 15 MB)');
+  }
+
+  // Compresser au-delà de 1 MB
+  let imageToUpload: File | Blob = file;
+  if (file.size > 1 * 1024 * 1024) {
+    imageToUpload = await compressImage(file, 1.5);
+  }
+
+  const formData = new FormData();
+  formData.append('file', imageToUpload, file.name);
+  formData.append('ref', ref.trim());
+  formData.append('name', file.name);
+  if (kind === 'cover') {
+    formData.append('kind', 'cover');
+  }
+
+  const headers: Record<string, string> = {};
+  if (UPLOAD_TOKEN) {
+    headers['X-Upload-Token'] = UPLOAD_TOKEN;
+  }
+
+  const response = await fetch(`${REFERENTIEL_ORIGIN}/referentiel/upload`, {
+    method: 'POST',
+    headers,
+    body: formData,
   });
-}
 
-/**
- * Upload une image vers ImgBB et retourne l'URL
- */
-export async function uploadImageToHost(file: File): Promise<string> {
-  try {
-    // Vérifier que la clé API est configurée
-    if (!IMGBB_API_KEY || IMGBB_API_KEY === 'your_api_key_here') {
-      throw new Error('ImgBB API key not configured. See IMGBB_SETUP.md');
-    }
-
-    // Vérifier la taille (max 32 MB pour ImgBB, mais on limite à 15 MB)
-    if (file.size > 15 * 1024 * 1024) {
-      throw new Error('Image trop volumineuse (max 15 MB)');
-    }
-
-    // Compresser l'image si nécessaire (seuil abaissé à 1MB pour optimiser davantage)
-    let imageToUpload: File | Blob = file;
-    if (file.size > 1 * 1024 * 1024) {
-      console.log('Compression de l\'image en cours...');
-      imageToUpload = await compressImage(file, 1.5);
-    }
-
-    // Convertir en base64
-    const base64Image = await fileToBase64(imageToUpload);
-
-    // Créer le FormData pour l'API
-    const formData = new FormData();
-    formData.append('key', IMGBB_API_KEY);
-    formData.append('image', base64Image);
-    formData.append('name', file.name);
-    formData.append('expiration', '0'); // 0 = stockage permanent
-
-    // Upload vers ImgBB
-    const response = await fetch('https://api.imgbb.com/1/upload', {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('ImgBB API error:', errorText);
-      throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
-    }
-
-    const data: ImgBBResponse = await response.json();
-
-    if (!data.success) {
-      throw new Error('Upload failed: ImgBB returned error');
-    }
-
-    // Retourner l'URL directe de l'image (plus stable que display_url)
-    return data.data.image.url;
-  } catch (error) {
-    console.error('Error uploading image to ImgBB:', error);
-    throw error;
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => '');
+    throw new Error(`Upload échoué: ${response.status} ${response.statusText}${errorText ? ` — ${errorText}` : ''}`);
   }
-}
 
-/**
- * Upload une image depuis une URL base64
- */
-export async function uploadBase64ToHost(base64Data: string, filename: string = 'image.jpg'): Promise<string> {
-  try {
-    // Retirer le préfixe si présent
-    const base64Clean = base64Data.includes(',') ? base64Data.split(',')[1] : base64Data;
-
-    const formData = new FormData();
-    formData.append('key', IMGBB_API_KEY);
-    formData.append('image', base64Clean);
-    formData.append('name', filename);
-
-    const response = await fetch('https://api.imgbb.com/1/upload', {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Upload failed: ${response.status}`);
-    }
-
-    const data: ImgBBResponse = await response.json();
-
-    if (!data.success) {
-      throw new Error('Upload failed: ImgBB returned error');
-    }
-
-    return data.data.display_url;
-  } catch (error) {
-    console.error('Error uploading base64 to ImgBB:', error);
-    throw error;
+  const data: ReferentielUploadResponse = await response.json();
+  if (!data || !data.ok || !data.url) {
+    throw new Error('Upload échoué: réponse invalide du référentiel');
   }
+
+  // url renvoyée relative → préfixer par l'origine
+  return data.url.startsWith('http') ? data.url : `${REFERENTIEL_ORIGIN}${data.url}`;
 }
 
 /**

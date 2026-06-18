@@ -1,0 +1,19 @@
+#!/bin/sh
+# Garde-fou JOURNAL.md : si du code applicatif (src/ ou backend/) est modifié,
+# une entrée dans JOURNAL.md est attendue (sauf changement purement interne).
+staged=$(git diff --cached --name-only)
+code=$(printf '%s\n' "$staged" | grep -E '^(src|backend)/' || true)
+journal=$(printf '%s\n' "$staged" | grep -E '^JOURNAL\.md$' || true)
+
+if [ -n "$code" ] && [ -z "$journal" ]; then
+  echo "" >&2
+  echo "  JOURNAL.md non modifie alors que du code applicatif change." >&2
+  echo "" >&2
+  echo "  -> Changement VISIBLE par l'utilisateur ? Ajoute une entree datee dans" >&2
+  echo "     JOURNAL.md (langage simple, sans jargon) puis recommite." >&2
+  echo "  -> Changement purement INTERNE (refactor, CI, infra) ?" >&2
+  echo "     Contourne avec :  git commit --no-verify" >&2
+  echo "" >&2
+  exit 1
+fi
+exit 0

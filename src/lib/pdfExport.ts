@@ -68,7 +68,7 @@ export function exportProceduresToPDF(procedures: Procedure[]): void {
       cellPadding: 3,
     },
     headStyles: {
-      fillColor: [249, 55, 5], // Couleur primaire
+      fillColor: [255,102,0], // Couleur primaire
       textColor: 255,
       fontStyle: 'bold',
     },
