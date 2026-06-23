@@ -2,6 +2,10 @@
 
 Ce document liste, en langage simple, les évolutions apportées à votre application de Fiches Techniques. La modification la plus récente est en haut.
 
+## 23 juin 2026
+
+- **Nom obligatoire dans les demandes de modification.** Lorsque vous envoyez une demande de modification depuis une fiche, le champ « Votre nom » est désormais obligatoire. Un message vous le rappelle si vous oubliez de le remplir.
+
 ## 16 juin 2026
 
 - **Images hébergées chez vous.** Les images de vos fiches (couvertures, défauts, photos d'étapes) sont désormais stockées sur votre propre serveur, et non plus chez un service d'images externe. Les images existantes comme les nouvelles y sont. Rien ne change pour vous à l'usage : vous ajoutez vos images comme avant.

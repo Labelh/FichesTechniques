@@ -2508,6 +2508,7 @@ export async function generateHTML(
             if (!phase)   { alert('Veuillez sélectionner une phase.'); return; }
             if (!element) { alert("Veuillez sélectionner l'élément à modifier."); return; }
             if (!comment) { alert('Veuillez décrire la modification souhaitée.'); return; }
+            if (!document.getElementById('verif-requester').value.trim()) { alert('Veuillez indiquer votre nom.'); return; }
             var phaseObj  = VERIF_PHASES[parseInt(phase)];
             var stepIdx   = document.getElementById('verif-step').value;
             var stepLabel = stepIdx !== '' ? (phaseObj.steps[parseInt(stepIdx)] ? phaseObj.steps[parseInt(stepIdx)].title : '') : '';
@@ -2608,7 +2609,7 @@ export async function generateHTML(
                     <textarea id="verif-comment" placeholder="Décrivez précisément ce qui doit être modifié…"></textarea>
                 </div>
                 <div class="verif-field">
-                    <label>Votre nom <span style="font-weight:400;text-transform:none;">(optionnel)</span></label>
+                    <label>Votre nom *</label>
                     <input type="text" id="verif-requester" placeholder="Prénom Nom">
                 </div>
             </div>
