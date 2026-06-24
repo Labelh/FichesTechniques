@@ -1,7 +1,11 @@
-import { useState } from 'react';
-import { BarChart3, Plus, Trash2, CheckCircle2, Circle } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { BarChart3, Plus, Trash2, CheckCircle2, Circle, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { useForecastArticles } from '@/hooks/useForecastArticles';
+
+type FtFilter = 'all' | 'done' | 'todo';
+type SortKey = 'reference' | 'quantity' | 'timePerPiece' | 'charge' | 'ft';
+type SortDir = 'asc' | 'desc';
 
 export default function ForecastArticles() {
   const { articles, loading, stats, isFtDone, addArticle, removeArticle, toggleFtDone } =
@@ -11,6 +15,53 @@ export default function ForecastArticles() {
   const [quantity, setQuantity] = useState('');
   const [timePerPiece, setTimePerPiece] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  const [ftFilter, setFtFilter] = useState<FtFilter>('all');
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      if (sortDir === 'asc') setSortDir('desc');
+      else { setSortKey(null); setSortDir('asc'); }
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  };
+
+  const filteredAndSorted = useMemo(() => {
+    let list = articles;
+
+    if (ftFilter === 'done') list = list.filter((a) => isFtDone(a));
+    else if (ftFilter === 'todo') list = list.filter((a) => !isFtDone(a));
+
+    if (!sortKey) return list;
+
+    const sorted = [...list].sort((a, b) => {
+      let cmp = 0;
+      switch (sortKey) {
+        case 'reference':
+          cmp = a.reference.localeCompare(b.reference, 'fr');
+          break;
+        case 'quantity':
+          cmp = a.quantity - b.quantity;
+          break;
+        case 'timePerPiece':
+          cmp = a.timePerPiece - b.timePerPiece;
+          break;
+        case 'charge':
+          cmp = a.quantity * a.timePerPiece - b.quantity * b.timePerPiece;
+          break;
+        case 'ft':
+          cmp = (isFtDone(a) ? 1 : 0) - (isFtDone(b) ? 1 : 0);
+          break;
+      }
+      return cmp;
+    });
+
+    return sortDir === 'desc' ? sorted.reverse() : sorted;
+  }, [articles, ftFilter, sortKey, sortDir, isFtDone]);
 
   const handleAdd = async () => {
     const ref = reference.trim();
@@ -40,6 +91,27 @@ export default function ForecastArticles() {
     }
   };
 
+  const SortHeader = ({ label, column, align = 'left' }: { label: string; column: SortKey; align?: 'left' | 'right' | 'center' }) => {
+    const active = sortKey === column;
+    return (
+      <th
+        className={`px-4 py-3 text-xs font-medium cursor-pointer select-none hover:text-gray-300 transition-colors ${
+          align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : 'text-left'
+        } ${active ? 'text-white' : 'text-gray-500'}`}
+        onClick={() => handleSort(column)}
+      >
+        <span className="inline-flex items-center gap-1">
+          {label}
+          {active ? (
+            sortDir === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />
+          ) : (
+            <ArrowUpDown size={12} className="opacity-40" />
+          )}
+        </span>
+      </th>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -48,18 +120,6 @@ export default function ForecastArticles() {
         <p className="text-sm text-gray-500 mt-0.5">
           Suivi de la complétion des fiches techniques
         </p>
-      </div>
-
-      {/* 4 Metric Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <MetricCard label="Fiches totales" value={stats.total} />
-        <MetricCard label="Fiches faites" value={stats.done} color="text-green-400" />
-        <MetricCard label="Fiches restantes" value={stats.remaining} color="text-orange-400" />
-        <MetricCard
-          label="Couverture charge"
-          value={`${stats.coveragePercent}%`}
-          subtitle={`${formatCharge(stats.coveredCharge)} / ${formatCharge(stats.totalCharge)} h`}
-        />
       </div>
 
       {/* Add Form */}
@@ -109,6 +169,33 @@ export default function ForecastArticles() {
         </div>
       </div>
 
+      {/* Filter Bar */}
+      {!loading && articles.length > 0 && (
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-500 mr-1">Filtre :</span>
+          {([
+            ['all', 'Toutes'],
+            ['done', 'Faites'],
+            ['todo', 'À faire'],
+          ] as [FtFilter, string][]).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setFtFilter(key)}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                ftFilter === key
+                  ? 'bg-primary text-white'
+                  : 'bg-[#1c1c1c] text-gray-400 border border-[#303030] hover:text-white'
+              }`}
+            >
+              {label}
+              {key === 'done' && ` (${stats.done})`}
+              {key === 'todo' && ` (${stats.remaining})`}
+              {key === 'all' && ` (${stats.total})`}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Loading */}
       {loading && (
         <div className="flex flex-col items-center justify-center py-20 gap-3 text-gray-600">
@@ -133,25 +220,24 @@ export default function ForecastArticles() {
       )}
 
       {/* Table */}
-      {!loading && articles.length > 0 && (
+      {!loading && filteredAndSorted.length > 0 && (
         <div className="bg-[#1c1c1c] rounded-xl border border-[#272727] overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[#272727]">
-                <th className="text-left px-4 py-3 text-xs text-gray-500 font-medium">Référence</th>
-                <th className="text-right px-4 py-3 text-xs text-gray-500 font-medium">Quantité</th>
-                <th className="text-right px-4 py-3 text-xs text-gray-500 font-medium">Temps/pièce</th>
-                <th className="text-right px-4 py-3 text-xs text-gray-500 font-medium">Charge</th>
-                <th className="text-center px-4 py-3 text-xs text-gray-500 font-medium">FT</th>
+                <SortHeader label="Référence" column="reference" />
+                <SortHeader label="Quantité" column="quantity" align="right" />
+                <SortHeader label="Temps/pièce" column="timePerPiece" align="right" />
+                <SortHeader label="Charge" column="charge" align="right" />
+                <SortHeader label="FT" column="ft" align="center" />
                 <th className="w-10" />
               </tr>
             </thead>
             <tbody>
-              {articles.map((a) => {
+              {filteredAndSorted.map((a) => {
                 const done = isFtDone(a);
                 const charge = a.quantity * a.timePerPiece;
                 const isConfirming = confirmDeleteId === a.id;
-                const isForced = a.ftDone !== null;
 
                 return (
                   <tr key={a.id} className="border-b border-[#222] last:border-b-0 hover:bg-[#222] transition-colors">
@@ -168,7 +254,7 @@ export default function ForecastArticles() {
                         onClick={() => toggleFtDone(a)}
                         className="inline-flex items-center gap-1.5 group"
                         title={
-                          isForced
+                          a.ftDone !== null
                             ? 'Statut forcé manuellement — cliquez pour changer'
                             : 'Détecté automatiquement — cliquez pour forcer'
                         }
@@ -183,11 +269,6 @@ export default function ForecastArticles() {
                         >
                           {done ? 'Faite' : 'À faire'}
                         </span>
-                        {isForced && (
-                          <span className="text-[10px] text-gray-600 ml-0.5" title="Forcé manuellement">
-                            ✎
-                          </span>
-                        )}
                       </button>
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -222,26 +303,13 @@ export default function ForecastArticles() {
           </table>
         </div>
       )}
-    </div>
-  );
-}
 
-function MetricCard({
-  label,
-  value,
-  color,
-  subtitle,
-}: {
-  label: string;
-  value: string | number;
-  color?: string;
-  subtitle?: string;
-}) {
-  return (
-    <div className="bg-[#1c1c1c] rounded-xl border border-[#272727] p-4">
-      <p className="text-xs text-gray-500 mb-1">{label}</p>
-      <p className={`text-2xl font-bold ${color || 'text-white'}`}>{value}</p>
-      {subtitle && <p className="text-[11px] text-gray-600 mt-1">{subtitle}</p>}
+      {/* Empty filter result */}
+      {!loading && articles.length > 0 && filteredAndSorted.length === 0 && (
+        <div className="text-center py-12 text-gray-500 text-sm">
+          Aucun article ne correspond au filtre sélectionné.
+        </div>
+      )}
     </div>
   );
 }

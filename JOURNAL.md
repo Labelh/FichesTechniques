@@ -4,7 +4,9 @@ Ce document liste, en langage simple, les évolutions apportées à votre applic
 
 ## 24 juin 2026
 
-- **Nouvel onglet « Prévisionnelles ».** Un nouvel onglet est disponible dans le menu à gauche. Il permet de suivre l'avancement de la rédaction de vos fiches techniques : quatre indicateurs affichent le nombre de fiches totales, faites, restantes et le pourcentage de charge couverte. Vous pouvez ajouter manuellement les références d'articles (avec quantité et temps), et l'application détecte automatiquement si une fiche existe déjà pour chaque référence. Vous pouvez aussi forcer le statut à la main.
+- **Indicateurs déplacés sur le tableau de bord.** Les quatre cadres (fiches totales, faites, restantes, couverture charge) sont désormais visibles directement sur le tableau de bord, au-dessus de la liste de vos procédures.
+- **Filtres et tri dans l'onglet Prévisionnelles.** Vous pouvez maintenant filtrer la liste par statut (Toutes, Faites, À faire) et trier chaque colonne (référence, quantité, temps, charge, statut) en cliquant sur l'en-tête.
+- **Nouvel onglet « Prévisionnelles ».** Un nouvel onglet est disponible dans le menu à gauche. Il permet de suivre l'avancement de la rédaction de vos fiches techniques. Vous pouvez ajouter manuellement les références d'articles (avec quantité et temps), et l'application détecte automatiquement si une fiche existe déjà pour chaque référence. Vous pouvez aussi forcer le statut à la main.
 
 ## 23 juin 2026
 

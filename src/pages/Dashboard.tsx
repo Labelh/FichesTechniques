@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Filter, SortAsc, FileText, Plus, Download } from 'lucide-react';
 import { useProcedures } from '@/hooks/useProcedures';
+import { useForecastArticles } from '@/hooks/useForecastArticles';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useAppStore } from '@/store/useAppStore';
 import { Input } from '@/components/ui/Input';
@@ -11,6 +12,10 @@ import FilterPanel from '@/components/dashboard/FilterPanel';
 import { exportProceduresToPDF } from '@/lib/pdfExport';
 import { toast } from 'sonner';
 
+function formatCharge(h: number): string {
+  return h.toLocaleString('fr-FR', { maximumFractionDigits: 1 });
+}
+
 export default function Dashboard() {
   const {
     searchQuery,
@@ -18,6 +23,8 @@ export default function Dashboard() {
     searchFilters,
     sortOption,
   } = useAppStore();
+
+  const { stats: forecastStats } = useForecastArticles();
 
   const [showFilters, setShowFilters] = useState(false);
 
@@ -74,6 +81,29 @@ export default function Dashboard() {
               Nouvelle Procédure
             </Button>
           </Link>
+        </div>
+      </div>
+
+      {/* Forecast Metric Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+        <div className="bg-[#1c1c1c] rounded-xl border border-[#272727] p-4">
+          <p className="text-xs text-gray-500 mb-1">Fiches totales</p>
+          <p className="text-2xl font-bold text-white">{forecastStats.total}</p>
+        </div>
+        <div className="bg-[#1c1c1c] rounded-xl border border-[#272727] p-4">
+          <p className="text-xs text-gray-500 mb-1">Fiches faites</p>
+          <p className="text-2xl font-bold text-green-400">{forecastStats.done}</p>
+        </div>
+        <div className="bg-[#1c1c1c] rounded-xl border border-[#272727] p-4">
+          <p className="text-xs text-gray-500 mb-1">Fiches restantes</p>
+          <p className="text-2xl font-bold text-orange-400">{forecastStats.remaining}</p>
+        </div>
+        <div className="bg-[#1c1c1c] rounded-xl border border-[#272727] p-4">
+          <p className="text-xs text-gray-500 mb-1">Couverture charge</p>
+          <p className="text-2xl font-bold text-white">{forecastStats.coveragePercent}%</p>
+          <p className="text-[11px] text-gray-600 mt-1">
+            {formatCharge(forecastStats.coveredCharge)} / {formatCharge(forecastStats.totalCharge)} h
+          </p>
         </div>
       </div>
 
