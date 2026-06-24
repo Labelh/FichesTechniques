@@ -32,17 +32,26 @@ export interface ForecastStats {
   coveragePercent: number;
 }
 
+function normalizeRef(ref: string): string {
+  return ref.trim().toLowerCase().split(/\s*\/\s*/)[0].trim();
+}
+
 export function useForecastArticles() {
   const [articles, setArticles] = useState<ForecastArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const procedures = useProcedures();
 
-  const procedureRefs = useMemo(
-    () => new Set(
-      (procedures || []).map((p) => p.reference?.trim().toLowerCase()).filter(Boolean)
-    ),
-    [procedures]
-  );
+  const procedureRefSet = useMemo(() => {
+    const exact = new Set<string>();
+    const normalized = new Set<string>();
+    for (const p of procedures || []) {
+      const ref = p.reference?.trim().toLowerCase();
+      if (!ref) continue;
+      exact.add(ref);
+      normalized.add(normalizeRef(ref));
+    }
+    return { exact, normalized };
+  }, [procedures]);
 
   useEffect(() => {
     const q = query(
@@ -67,12 +76,21 @@ export function useForecastArticles() {
     return unsub;
   }, []);
 
+  const matchesProcedure = useCallback(
+    (ref: string): boolean => {
+      const lower = ref.trim().toLowerCase();
+      if (procedureRefSet.exact.has(lower)) return true;
+      return procedureRefSet.normalized.has(normalizeRef(lower));
+    },
+    [procedureRefSet]
+  );
+
   const isFtDone = useCallback(
     (article: ForecastArticle): boolean => {
       if (article.ftDone === true || article.ftDone === false) return article.ftDone;
-      return procedureRefs.has(article.reference.trim().toLowerCase());
+      return matchesProcedure(article.reference);
     },
-    [procedureRefs]
+    [matchesProcedure]
   );
 
   const stats: ForecastStats = (() => {
@@ -112,7 +130,7 @@ export function useForecastArticles() {
   };
 
   const toggleFtDone = async (article: ForecastArticle) => {
-    const autoDetected = procedureRefs.has(article.reference.trim().toLowerCase());
+    const autoDetected = matchesProcedure(article.reference);
     let newValue: boolean | null;
     if (article.ftDone === null) {
       newValue = !autoDetected;
