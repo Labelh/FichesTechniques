@@ -41,6 +41,7 @@ export const collections = {
   substepTemplates: 'substepTemplates',
   preferences: 'preferences',
   history: 'history',
+  forecastArticles: 'forecast_articles',
 } as const;
 
 // ==========================================

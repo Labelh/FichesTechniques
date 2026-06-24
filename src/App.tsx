@@ -12,6 +12,7 @@ const ProcedureEditor = lazy(() => import('./pages/ProcedureEditor'));
 const ToolsLibrary = lazy(() => import('./pages/ToolsLibrary'));
 const Templates = lazy(() => import('./pages/Templates'));
 const VerificationRequests = lazy(() => import('./pages/VerificationRequests'));
+const ForecastArticles = lazy(() => import('./pages/ForecastArticles'));
 
 function App() {
   // Activer le mode sombre par défaut et initialiser Firestore
@@ -42,6 +43,7 @@ function App() {
           <Route path="tools" element={<ToolsLibrary />} />
           <Route path="templates" element={<Templates />} />
           <Route path="verification-requests" element={<VerificationRequests />} />
+          <Route path="previsionnel" element={<ForecastArticles />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

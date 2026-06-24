@@ -2,6 +2,10 @@
 
 Ce document liste, en langage simple, les évolutions apportées à votre application de Fiches Techniques. La modification la plus récente est en haut.
 
+## 24 juin 2026
+
+- **Nouvel onglet « Prévisionnelles ».** Un nouvel onglet est disponible dans le menu à gauche. Il permet de suivre l'avancement de la rédaction de vos fiches techniques : quatre indicateurs affichent le nombre de fiches totales, faites, restantes et le pourcentage de charge couverte. Vous pouvez ajouter manuellement les références d'articles (avec quantité et temps), et l'application détecte automatiquement si une fiche existe déjà pour chaque référence. Vous pouvez aussi forcer le statut à la main.
+
 ## 23 juin 2026
 
 - **Nom obligatoire dans les demandes de modification.** Lorsque vous envoyez une demande de modification depuis une fiche, le champ « Votre nom » est désormais obligatoire. Un message vous le rappelle si vous oubliez de le remplir.

@@ -6,6 +6,7 @@ import {
   Package,
   Menu,
   MessageSquareDiff,
+  BarChart3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useAppStore } from '@/store/useAppStore';
@@ -35,6 +36,11 @@ export default function Sidebar() {
       name: 'Templates',
       href: '/templates',
       icon: FolderKanban,
+    },
+    {
+      name: 'Prévisionnelles',
+      href: '/previsionnel',
+      icon: BarChart3,
     },
     {
       name: 'Demandes de modification',
