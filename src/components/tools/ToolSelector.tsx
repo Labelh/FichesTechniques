@@ -99,6 +99,11 @@ export default function ToolSelector({ availableTools, availableConsumables, onS
     { name: 'Violet', value: '#8b5cf6' },
     { name: 'Rose', value: '#ec4899' },
     { name: 'Orange', value: 'rgb(255,102,0)' },
+    { name: 'Lime', value: '#84cc16' },
+    { name: 'Teal', value: '#0d9488' },
+    { name: 'Indigo', value: '#6366f1' },
+    { name: 'Ambre', value: '#d97706' },
+    { name: 'Corail', value: '#f43f5e' },
   ];
 
   const getItemImage = (item: ToolOrConsumable) => {

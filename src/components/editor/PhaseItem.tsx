@@ -894,6 +894,7 @@ function SubStepItem({
   const [videoUrl, setVideoUrl] = useState('');
   const [videoTitle, setVideoTitle] = useState('');
   const [editingVideoPathId, setEditingVideoPathId] = useState<string | null>(null);
+  const [editingToolColorId, setEditingToolColorId] = useState<string | null>(null);
   const [editingVideoPathValue, setEditingVideoPathValue] = useState('');
   const [editingDocPathId, setEditingDocPathId] = useState<string | null>(null);
   const [editingDocPathValue, setEditingDocPathValue] = useState('');
@@ -907,13 +908,33 @@ function SubStepItem({
 
   const textColors = [
     { name: 'Rouge', value: '#ef4444' },
+    { name: 'Corail', value: '#f43f5e' },
     { name: 'Orange', value: 'rgb(255,102,0)' },
+    { name: 'Ambre', value: '#d97706' },
     { name: 'Jaune', value: '#f59e0b' },
+    { name: 'Lime', value: '#84cc16' },
     { name: 'Vert', value: '#10b981' },
+    { name: 'Teal', value: '#0d9488' },
     { name: 'Bleu', value: '#3b82f6' },
+    { name: 'Indigo', value: '#6366f1' },
     { name: 'Violet', value: '#8b5cf6' },
     { name: 'Rose', value: '#ec4899' },
     { name: 'Blanc', value: '#ffffff' },
+  ];
+
+  const toolColorPresets = [
+    { name: 'Vert', value: '#10b981' },
+    { name: 'Bleu', value: '#3b82f6' },
+    { name: 'Rouge', value: '#ef4444' },
+    { name: 'Corail', value: '#f43f5e' },
+    { name: 'Jaune', value: '#f59e0b' },
+    { name: 'Ambre', value: '#d97706' },
+    { name: 'Violet', value: '#8b5cf6' },
+    { name: 'Rose', value: '#ec4899' },
+    { name: 'Orange', value: 'rgb(255,102,0)' },
+    { name: 'Lime', value: '#84cc16' },
+    { name: 'Teal', value: '#0d9488' },
+    { name: 'Indigo', value: '#6366f1' },
   ];
 
   const emojis = [
@@ -1620,56 +1641,76 @@ function SubStepItem({
               Outils requis ({(step.tools?.length || 0) + (step.toolId && step.toolName ? 1 : 0)})
             </label>
             <div className="space-y-2">
-              {/* Afficher les outils du nouveau format */}
-              {(step.tools || []).map((tool) => (
-                <div
-                  key={tool.id}
-                  className="p-3 bg-background-elevated rounded border border-[#2a2a2a]"
-                  style={{ borderLeft: `4px solid ${tool.color || '#10b981'}` }}
-                >
-                  <div className="flex items-start gap-3">
-                    {/* Image de l'outil */}
-                    {tool.imageUrl ? (
-                      <img
-                        src={tool.imageUrl}
-                        alt={tool.name}
-                        className="h-16 w-16 object-cover rounded border border-[#323232] flex-shrink-0"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <div className="h-16 w-16 bg-background-elevated rounded border border-[#323232] flex items-center justify-center flex-shrink-0">
-                        <Wrench className="h-6 w-6 text-text-muted" />
-                      </div>
-                    )}
+              {/* Outils nouveau format — grille horizontale */}
+              {(step.tools || []).length > 0 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {(step.tools || []).map((tool) => (
+                    <div
+                      key={tool.id}
+                      className="group relative flex flex-col items-center p-2 pb-3 bg-background-elevated rounded-lg border border-[#2a2a2a] overflow-visible"
+                      style={{ borderTop: `3px solid ${tool.color || '#10b981'}` }}
+                    >
+                      {/* Bouton supprimer */}
+                      <button
+                        onClick={() => onRemoveTool(tool.id)}
+                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-red-500/80 hover:bg-red-500 text-white rounded p-0.5 z-10"
+                        title="Supprimer"
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </button>
 
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-white mb-1">{tool.name}</div>
-                      {tool.reference && (
-                        <div className="text-xs text-gray-400 mb-1">
-                          {tool.reference}
+                      {/* Image */}
+                      {tool.imageUrl ? (
+                        <img
+                          src={tool.imageUrl}
+                          alt={tool.name}
+                          className="h-14 w-14 object-cover rounded mb-1.5 border border-[#323232]"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        />
+                      ) : (
+                        <div className="h-14 w-14 rounded bg-[#2a2a2a] border border-[#323232] flex items-center justify-center mb-1.5">
+                          <Wrench className="h-5 w-5 text-gray-500" />
                         </div>
                       )}
-                      {tool.location && (
-                        <div className="text-xs text-gray-400">
-                          {tool.location}
+
+                      {/* Nom */}
+                      <div className="text-xs font-medium text-white text-center w-full truncate leading-tight">{tool.name}</div>
+                      {tool.reference && (
+                        <div className="text-[10px] text-gray-500 text-center w-full truncate">{tool.reference}</div>
+                      )}
+
+                      {/* Pastille couleur cliquable */}
+                      <button
+                        onClick={() => setEditingToolColorId(editingToolColorId === tool.id ? null : tool.id)}
+                        className="mt-1.5 w-4 h-4 rounded-full border-2 border-[#444] hover:border-white transition-colors flex-shrink-0"
+                        style={{ backgroundColor: tool.color || '#10b981' }}
+                        title="Changer la couleur"
+                      />
+
+                      {/* Picker de couleur inline */}
+                      {editingToolColorId === tool.id && (
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-[#1a1a1a] border border-[#323232] rounded-lg p-2 z-50 shadow-xl"
+                          style={{ width: '136px' }}>
+                          <div className="flex flex-wrap gap-1.5 justify-center">
+                            {toolColorPresets.map((c) => (
+                              <button
+                                key={c.value}
+                                onClick={() => {
+                                  onUpdate({ tools: (step.tools || []).map(t => t.id === tool.id ? { ...t, color: c.value } : t) });
+                                  setEditingToolColorId(null);
+                                }}
+                                className={`w-5 h-5 rounded-full border-2 transition-all hover:scale-110 ${tool.color === c.value ? 'border-white' : 'border-transparent'}`}
+                                style={{ backgroundColor: c.value }}
+                                title={c.name}
+                              />
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>
-
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onRemoveTool(tool.id)}
-                      className="flex-shrink-0"
-                      title="Supprimer cet outil"
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
+                  ))}
                 </div>
-              ))}
+              )}
 
               {/* Afficher l'ancien format pour compatibilité */}
               {step.toolId && step.toolName && (
