@@ -395,7 +395,7 @@ export default function PhaseItem({ phase, index, procedureId, reference, totalP
     const oldIndex = steps.findIndex(s => s.id === active.id);
     const newIndex = steps.findIndex(s => s.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
-    setSteps(arrayMove(steps, oldIndex, newIndex).map((s, idx) => ({ ...s, order: idx })));
+    setSteps(arrayMove(steps, oldIndex, newIndex).map((s: SubStep, idx: number) => ({ ...s, order: idx })));
   };
 
   const handleMoveStepToPhase = (step: SubStep, targetPhaseId: string) => {

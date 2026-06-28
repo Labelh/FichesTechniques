@@ -27,7 +27,7 @@ export default function PhaseSummary({ phases }: PhaseSummaryProps) {
         entries.forEach((ratio, id) => {
           if (ratio > bestRatio) { bestRatio = ratio; best = id; }
         });
-        if (best) setActivePhaseId(best.replace('phase-', ''));
+        if (best) setActivePhaseId((best as string).replace('phase-', ''));
       },
       { threshold: [0, 0.1, 0.5, 1], rootMargin: '-60px 0px -40% 0px' }
     );
