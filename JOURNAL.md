@@ -4,6 +4,9 @@ Ce document liste, en langage simple, les évolutions apportées à votre applic
 
 ## 28 juin 2026
 
+- **Catégories pour les phrases type.** Lors de l'enregistrement d'une phrase, vous pouvez choisir une catégorie (Ébavurage, Consigne, Astuce, Contrôle) pour la retrouver plus facilement. Dans la bibliothèque de phrases et dans la page Templates, des boutons de filtre par catégorie sont disponibles.
+- **Modification complète des phrases type depuis la page Templates.** Le bouton "Modifier" sur chaque phrase ouvre une fenêtre permettant de changer le libellé, la catégorie et le contenu de la phrase.
+
 - **Phrases type dans les descriptions.** Dans la barre d'outils de rédaction, deux nouveaux boutons sont disponibles : l'un pour enregistrer un extrait de texte sélectionné comme phrase réutilisable (avec un libellé pour la retrouver facilement), l'autre pour ouvrir votre bibliothèque de phrases type et l'insérer en un clic à l'endroit voulu dans la description.
 
 - **Ajout de documents et vidéos par glisser-déposer.** Lors de la rédaction d'une fiche, vous pouvez maintenant glisser un fichier depuis l'explorateur Windows directement sur la zone prévue pour l'ajouter — pour les vidéos, les documents et les images.
