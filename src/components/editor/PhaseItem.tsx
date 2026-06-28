@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { updatePhase, movePhaseUp, movePhaseDown } from '@/services/procedureService';
-import { createPhaseTemplate, createSubStepTemplateFromStep, getAllSubStepTemplates, deleteSubStepTemplate, incrementSubStepTemplateUsage, savePhraseTemplate, getAllPhraseTemplates, deletePhraseTemplate } from '@/services/templateService';
+import { createPhaseTemplate, createSubStepTemplateFromStep, getAllSubStepTemplates, deleteSubStepTemplate, incrementSubStepTemplateUsage, savePhraseTemplate, getAllPhraseTemplates, deletePhraseTemplate, updatePhraseTemplateLabel } from '@/services/templateService';
 import type { PhraseTemplate } from '@/types';
 import { uploadImageToHost } from '@/services/imageHostingService';
 import { useTools } from '@/hooks/useTools';
@@ -920,6 +920,8 @@ function SubStepItem({
   const [phraseTemplates, setPhraseTemplates] = useState<PhraseTemplate[]>([]);
   const [pendingPhraseText, setPendingPhraseText] = useState('');
   const [pendingPhraseLabel, setPendingPhraseLabel] = useState('');
+  const [editingPhraseId, setEditingPhraseId] = useState<string | null>(null);
+  const [editingPhraseLabel, setEditingPhraseLabel] = useState('');
   const videoFileInputRef = useRef<HTMLInputElement>(null);
 
   const textColors = [
@@ -1502,10 +1504,15 @@ function SubStepItem({
                   type="button"
                   onClick={() => {
                     const sel = window.getSelection();
-                    const text = sel?.toString().trim() || '';
-                    if (!text) { toast.error('Sélectionnez du texte à enregistrer'); return; }
-                    setPendingPhraseText(text);
-                    setPendingPhraseLabel(text.slice(0, 40));
+                    if (!sel || sel.rangeCount === 0 || sel.toString().trim() === '') {
+                      toast.error('Sélectionnez du texte à enregistrer'); return;
+                    }
+                    const range = sel.getRangeAt(0);
+                    const div = document.createElement('div');
+                    div.appendChild(range.cloneContents());
+                    const html = div.innerHTML;
+                    setPendingPhraseText(html);
+                    setPendingPhraseLabel(sel.toString().trim().slice(0, 40));
                     setShowSavePhraseModal(true);
                   }}
                   className="p-1.5 hover:bg-[#323232] rounded text-gray-400 hover:text-amber-400 transition"
@@ -2232,7 +2239,7 @@ function SubStepItem({
             <div className="p-4 space-y-3">
               <div>
                 <label className="text-xs text-gray-400 mb-1 block">Texte sélectionné</label>
-                <p className="text-sm text-gray-300 bg-[#0f0f0f] rounded-lg p-3 border border-[#2a2a2a] max-h-24 overflow-y-auto whitespace-pre-wrap">{pendingPhraseText}</p>
+                <div className="text-sm text-gray-300 bg-[#0f0f0f] rounded-lg p-3 border border-[#2a2a2a] max-h-24 overflow-y-auto" dangerouslySetInnerHTML={{ __html: pendingPhraseText }} />
               </div>
               <div>
                 <label className="text-xs text-gray-400 mb-1 block">Libellé (nom court pour retrouver la phrase)</label>
@@ -2290,44 +2297,69 @@ function SubStepItem({
                   Sélectionnez du texte dans la description et cliquez sur l'icône signet.
                 </p>
               ) : phraseTemplates.map((phrase) => (
-                <div key={phrase.id} className="group flex items-start gap-2 p-3 bg-[#0f0f0f] rounded-lg border border-[#2a2a2a] hover:border-blue-400/40 transition-colors">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-blue-300 mb-1">{phrase.label}</p>
-                    <p className="text-xs text-gray-400 line-clamp-2 whitespace-pre-wrap">{phrase.text}</p>
-                  </div>
-                  <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => {
+                <div
+                  key={phrase.id}
+                  className="group flex items-start gap-2 p-3 bg-[#0f0f0f] rounded-lg border border-[#2a2a2a] hover:border-blue-400/40 transition-colors cursor-pointer"
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest('[data-phrase-action]')) return;
+                    if (descriptionRef.current) {
+                      descriptionRef.current.focus();
+                      document.execCommand('insertHTML', false, phrase.text);
+                      setTimeout(() => {
                         if (descriptionRef.current) {
-                          descriptionRef.current.focus();
-                          document.execCommand('insertHTML', false, phrase.text.replace(/\n/g, '<br>'));
-                          setTimeout(() => {
-                            if (descriptionRef.current) {
-                              const html = descriptionRef.current.innerHTML;
-                              setLocalDescription(html);
-                              onUpdate({ description: html });
-                            }
-                          }, 10);
+                          const html = descriptionRef.current.innerHTML;
+                          setLocalDescription(html);
+                          onUpdate({ description: html });
                         }
-                        setShowPhraseLibrary(false);
-                      }}
-                      className="px-2 py-1 text-[10px] bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/40 transition"
-                      title="Insérer dans la description"
-                    >
-                      Insérer
-                    </button>
-                    <button
-                      onClick={async () => {
-                        await deletePhraseTemplate(phrase.id);
-                        setPhraseTemplates(prev => prev.filter(p => p.id !== phrase.id));
-                        toast.success('Phrase supprimée');
-                      }}
-                      className="p-1 text-gray-600 hover:text-red-400 rounded transition"
-                      title="Supprimer"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
+                      }, 10);
+                    }
+                    setShowPhraseLibrary(false);
+                  }}
+                >
+                  <div className="flex-1 min-w-0">
+                    {editingPhraseId === phrase.id ? (
+                      <input
+                        data-phrase-action
+                        autoFocus
+                        value={editingPhraseLabel}
+                        onChange={(e) => setEditingPhraseLabel(e.target.value)}
+                        onBlur={async () => {
+                          if (editingPhraseLabel.trim()) {
+                            await updatePhraseTemplateLabel(phrase.id, editingPhraseLabel.trim());
+                            setPhraseTemplates(prev => prev.map(p => p.id === phrase.id ? { ...p, label: editingPhraseLabel.trim() } : p));
+                          }
+                          setEditingPhraseId(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                          if (e.key === 'Escape') setEditingPhraseId(null);
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full text-xs font-medium text-blue-300 bg-[#1a1a1a] border border-blue-400/50 rounded px-1 py-0.5 mb-1 outline-none"
+                      />
+                    ) : (
+                      <p
+                        data-phrase-action
+                        className="text-xs font-medium text-blue-300 mb-1 hover:underline cursor-text"
+                        title="Cliquer pour modifier le libellé"
+                        onClick={(e) => { e.stopPropagation(); setEditingPhraseId(phrase.id); setEditingPhraseLabel(phrase.label); }}
+                      >{phrase.label}</p>
+                    )}
+                    <div className="text-xs text-gray-400 line-clamp-2" dangerouslySetInnerHTML={{ __html: phrase.text }} />
                   </div>
+                  <button
+                    data-phrase-action
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      await deletePhraseTemplate(phrase.id);
+                      setPhraseTemplates(prev => prev.filter(p => p.id !== phrase.id));
+                      toast.success('Phrase supprimée');
+                    }}
+                    className="p-1 text-gray-600 hover:text-red-400 rounded transition flex-shrink-0 opacity-0 group-hover:opacity-100"
+                    title="Supprimer"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
                 </div>
               ))}
             </div>

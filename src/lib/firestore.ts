@@ -694,3 +694,7 @@ export async function getAllPhraseTemplates() {
 export async function deletePhraseTemplate(id: string): Promise<void> {
   await deleteDoc(doc(db, collections.phraseTemplates, id));
 }
+
+export async function updatePhraseTemplate(id: string, label: string): Promise<void> {
+  await updateDoc(doc(db, collections.phraseTemplates, id), { label, updatedAt: serverTimestamp() });
+}

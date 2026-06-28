@@ -10,6 +10,7 @@ import {
   createPhraseTemplate as createPhraseTemplateFirestore,
   getAllPhraseTemplates as getAllPhraseTemplatesFirestore,
   deletePhraseTemplate as deletePhraseTemplateFirestore,
+  updatePhraseTemplate as updatePhraseTemplateFirestore,
 } from '@/lib/firestore';
 import { addPhase } from '@/services/procedureService';
 import type { ProcedureTemplate, Phase, SubStep, SubStepTemplate } from '@/types';
@@ -225,4 +226,8 @@ export async function getAllPhraseTemplates() {
 
 export async function deletePhraseTemplate(id: string): Promise<void> {
   return deletePhraseTemplateFirestore(id);
+}
+
+export async function updatePhraseTemplateLabel(id: string, label: string): Promise<void> {
+  return updatePhraseTemplateFirestore(id, label);
 }
