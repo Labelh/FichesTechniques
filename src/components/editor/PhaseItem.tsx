@@ -1111,8 +1111,7 @@ function SubStepItem({
 
   const applyVideoFile = (file: File) => {
     const basePath = localStorage.getItem(NAS_VIDEO_BASE_KEY) || '';
-    const fullPath = basePath ? basePath + file.name : file.name;
-    setVideoUrl(fullPath);
+    setVideoUrl(basePath ? basePath + file.name : '');
     if (!videoTitle.trim()) {
       setVideoTitle(file.name.replace(/\.[^/.]+$/, ''));
     }
@@ -1166,8 +1165,7 @@ function SubStepItem({
 
   const applyDocumentFile = (file: File) => {
     const basePath = localStorage.getItem(NAS_DOCUMENT_BASE_KEY) || '';
-    const fullPath = basePath ? basePath + file.name : file.name;
-    setDocumentUrl(fullPath);
+    setDocumentUrl(basePath ? basePath + file.name : '');
     if (!documentTitle.trim()) {
       setDocumentTitle(file.name.replace(/\.[^/.]+$/, ''));
     }
