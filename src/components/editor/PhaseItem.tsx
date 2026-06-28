@@ -889,6 +889,12 @@ function SubStepItem({
   const documentFileInputRef = useRef<HTMLInputElement>(null);
   const [videoUrl, setVideoUrl] = useState('');
   const [videoTitle, setVideoTitle] = useState('');
+  const [videoDragOver, setVideoDragOver] = useState(false);
+  const [documentDragOver, setDocumentDragOver] = useState(false);
+  const [editingVideoPathId, setEditingVideoPathId] = useState<string | null>(null);
+  const [editingVideoPathValue, setEditingVideoPathValue] = useState('');
+  const [editingDocPathId, setEditingDocPathId] = useState<string | null>(null);
+  const [editingDocPathValue, setEditingDocPathValue] = useState('');
   const descriptionRef = useRef<HTMLDivElement>(null);
   const [showColorPalette, setShowColorPalette] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -1101,44 +1107,27 @@ function SubStepItem({
     videoFileInputRef.current?.click();
   };
 
+  const applyVideoFile = (file: File) => {
+    const basePath = localStorage.getItem(NAS_VIDEO_BASE_KEY) || '';
+    const fullPath = basePath ? basePath + file.name : file.name;
+    setVideoUrl(fullPath);
+    if (!videoTitle.trim()) {
+      setVideoTitle(file.name.replace(/\.[^/.]+$/, ''));
+    }
+  };
+
   const handleVideoFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      // Récupérer le chemin complet depuis l'input file
-      const basePath = localStorage.getItem(NAS_VIDEO_BASE_KEY) || '';
+    if (file) applyVideoFile(file);
+    if (videoFileInputRef.current) videoFileInputRef.current.value = '';
+  };
 
-      let fullPath: string;
-      if (basePath) {
-        // Utiliser le chemin de base mémorisé + nom du fichier (priorité au chemin NAS)
-        fullPath = basePath + file.name;
-      } else {
-        // Pas de chemin de base : demander à l'utilisateur
-        const folderPath = prompt(
-          'Le navigateur ne fournit pas le chemin complet du fichier.\n\n' +
-          'Entrez le chemin du dossier contenant la vidéo :\n' +
-          '(ex: Y:\\AJUST \'82\\SYSTEME QUALITE\\...\\Vidéo\\)'
-        );
-        if (folderPath) {
-          // S'assurer que le chemin finit par un séparateur
-          const sep = folderPath.endsWith('\\') || folderPath.endsWith('/') ? '' : '\\';
-          const cleanPath = folderPath + sep;
-          localStorage.setItem(NAS_VIDEO_BASE_KEY, cleanPath);
-          fullPath = cleanPath + file.name;
-        } else {
-          // L'utilisateur a annulé
-          if (videoFileInputRef.current) videoFileInputRef.current.value = '';
-          return;
-        }
-      }
-
-      setVideoUrl(fullPath);
-      if (!videoTitle.trim()) {
-        const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
-        setVideoTitle(nameWithoutExt);
-      }
-    }
-    if (videoFileInputRef.current) {
-      videoFileInputRef.current.value = '';
+  const handleVideoDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setVideoDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('video/')) {
+      applyVideoFile(file);
     }
   };
 
@@ -1173,42 +1162,27 @@ function SubStepItem({
     documentFileInputRef.current?.click();
   };
 
+  const applyDocumentFile = (file: File) => {
+    const basePath = localStorage.getItem(NAS_DOCUMENT_BASE_KEY) || '';
+    const fullPath = basePath ? basePath + file.name : file.name;
+    setDocumentUrl(fullPath);
+    if (!documentTitle.trim()) {
+      setDocumentTitle(file.name.replace(/\.[^/.]+$/, ''));
+    }
+  };
+
   const handleDocumentFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    if (file) applyDocumentFile(file);
+    if (documentFileInputRef.current) documentFileInputRef.current.value = '';
+  };
+
+  const handleDocumentDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDocumentDragOver(false);
+    const file = e.dataTransfer.files?.[0];
     if (file) {
-      // Récupérer le chemin complet depuis l'input file
-      const basePath = localStorage.getItem(NAS_DOCUMENT_BASE_KEY) || '';
-
-      let fullPath: string;
-      if (basePath) {
-        // Utiliser le chemin de base mémorisé + nom du fichier (priorité au chemin NAS)
-        fullPath = basePath + file.name;
-      } else {
-        // Pas de chemin de base : demander à l'utilisateur
-        const folderPath = prompt(
-          'Le navigateur ne fournit pas le chemin complet du fichier.\n\n' +
-          'Entrez le chemin du dossier contenant le document :\n' +
-          '(ex: Y:\\AJUST \'82\\SYSTEME QUALITE\\...\\Documents\\)'
-        );
-        if (folderPath) {
-          const sep = folderPath.endsWith('\\') || folderPath.endsWith('/') ? '' : '\\';
-          const cleanPath = folderPath + sep;
-          localStorage.setItem(NAS_DOCUMENT_BASE_KEY, cleanPath);
-          fullPath = cleanPath + file.name;
-        } else {
-          if (documentFileInputRef.current) documentFileInputRef.current.value = '';
-          return;
-        }
-      }
-
-      setDocumentUrl(fullPath);
-      if (!documentTitle.trim()) {
-        const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
-        setDocumentTitle(nameWithoutExt);
-      }
-    }
-    if (documentFileInputRef.current) {
-      documentFileInputRef.current.value = '';
+      applyDocumentFile(file);
     }
   };
 
@@ -1645,9 +1619,12 @@ function SubStepItem({
             <div className="flex flex-wrap gap-3 mb-2">
               {(step.videos || []).map((video) => {
                 const hasFullPath = video.url.includes('\\') || video.url.includes('/');
+                const isEditingPath = editingVideoPathId === video.id;
                 return (
-                <div key={video.id} className="relative group flex items-center gap-2 p-2 bg-background-elevated rounded border border-[#323232]">
-                  <VideoIcon className="h-5 w-5 text-text-muted flex-shrink-0" />
+                <div key={video.id} className="group flex items-start gap-2 p-2 bg-background-elevated rounded-lg border border-[#323232] hover:border-[#444] transition-colors">
+                  <div className="flex-shrink-0 w-8 h-8 rounded bg-[#1a1a2e] flex items-center justify-center mt-0.5">
+                    <VideoIcon className="h-4 w-4 text-blue-400" />
+                  </div>
                   <div className="flex-1 min-w-0">
                     <input
                       className="text-sm font-medium text-white bg-transparent border-none outline-none w-full hover:bg-[#2a2a2a] focus:bg-[#2a2a2a] rounded px-1 -mx-1 truncate"
@@ -1660,33 +1637,42 @@ function SubStepItem({
                       }}
                       title="Cliquer pour modifier le titre"
                     />
-                    <div
-                      className={`text-xs truncate cursor-pointer hover:underline ${hasFullPath ? 'text-gray-500' : 'text-orange-400'}`}
-                      title={hasFullPath ? video.url : 'Chemin incomplet ! Cliquez pour corriger.'}
-                      onClick={() => {
-                        const newPath = prompt(
-                          'Chemin complet de la vidéo :',
-                          video.url
-                        );
-                        if (newPath && newPath !== video.url) {
-                          // Mémoriser le dossier parent
-                          const lastSep = Math.max(newPath.lastIndexOf('\\'), newPath.lastIndexOf('/'));
-                          if (lastSep > 0) {
-                            localStorage.setItem(NAS_VIDEO_BASE_KEY, newPath.substring(0, lastSep + 1));
+                    {isEditingPath ? (
+                      <input
+                        autoFocus
+                        className="text-xs text-white bg-[#1a1a1a] border border-primary rounded px-2 py-0.5 w-full mt-0.5 outline-none"
+                        value={editingVideoPathValue}
+                        onChange={(e) => setEditingVideoPathValue(e.target.value)}
+                        onBlur={() => {
+                          const newPath = editingVideoPathValue.trim();
+                          if (newPath && newPath !== video.url) {
+                            const lastSep = Math.max(newPath.lastIndexOf('\\'), newPath.lastIndexOf('/'));
+                            if (lastSep > 0) localStorage.setItem(NAS_VIDEO_BASE_KEY, newPath.substring(0, lastSep + 1));
+                            onUpdate({ videos: (step.videos || []).map(v => v.id === video.id ? { ...v, url: newPath } : v) });
                           }
-                          const updatedVideos = (step.videos || []).map(v =>
-                            v.id === video.id ? { ...v, url: newPath } : v
-                          );
-                          onUpdate({ videos: updatedVideos });
-                        }
-                      }}
-                    >
-                      {hasFullPath ? video.url : `⚠ ${video.url} (chemin incomplet)`}
-                    </div>
+                          setEditingVideoPathId(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                          if (e.key === 'Escape') setEditingVideoPathId(null);
+                        }}
+                      />
+                    ) : (
+                      <div
+                        className={`text-xs truncate cursor-pointer rounded px-1 -mx-1 py-0.5 hover:bg-[#2a2a2a] transition-colors ${hasFullPath ? 'text-gray-500' : 'text-orange-400'}`}
+                        title={hasFullPath ? 'Cliquer pour modifier le chemin' : 'Chemin incomplet — cliquer pour corriger'}
+                        onClick={() => {
+                          setEditingVideoPathId(video.id);
+                          setEditingVideoPathValue(video.url);
+                        }}
+                      >
+                        {hasFullPath ? video.url : `⚠ ${video.url} (chemin incomplet)`}
+                      </div>
+                    )}
                   </div>
                   <button
                     onClick={() => onRemoveVideo(video.id)}
-                    className="bg-red-500 text-white rounded p-1 hover:bg-red-600 flex-shrink-0"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity bg-red-500/80 hover:bg-red-500 text-white rounded p-1 flex-shrink-0 mt-0.5"
                     title="Supprimer la vidéo"
                   >
                     <X className="h-3 w-3" />
@@ -1696,43 +1682,24 @@ function SubStepItem({
               })}
             </div>
             {showVideoInput ? (
-              <div className="space-y-2">
-                <Input
-                  type="text"
-                  value={videoTitle}
-                  onChange={(e) => setVideoTitle(e.target.value)}
-                  placeholder="Titre de la vidéo"
-                  className="text-xs"
-                />
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onClick={handleVideoFileSelect}
-                    className="flex-shrink-0"
-                    title="Sélectionner un fichier vidéo"
-                  >
-                    <VideoIcon className="h-4 w-4" />
-                  </Button>
-                  <Input
-                    type="text"
-                    value={videoUrl}
-                    onChange={(e) => setVideoUrl(e.target.value)}
-                    placeholder="Chemin d'accès NAS (ex: \\NAS\Videos\procedure.mp4)"
-                    className="text-xs flex-1"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleAddVideo();
-                      } else if (e.key === 'Escape') {
-                        setShowVideoInput(false);
-                        setVideoUrl('');
-                        setVideoTitle('');
-                      }
-                    }}
-                  />
+              <div className="space-y-2 p-3 bg-background-elevated rounded-lg border border-[#323232]">
+                {/* Zone drag & drop */}
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setVideoDragOver(true); }}
+                  onDragLeave={() => setVideoDragOver(false)}
+                  onDrop={handleVideoDrop}
+                  onClick={handleVideoFileSelect}
+                  className={`flex flex-col items-center justify-center gap-1.5 border-2 border-dashed rounded-lg p-4 cursor-pointer transition-all ${
+                    videoDragOver
+                      ? 'border-blue-400 bg-blue-400/10 scale-[1.01]'
+                      : 'border-[#3a3a3a] hover:border-blue-400/50 hover:bg-[#1a1a2e]/30'
+                  }`}
+                >
+                  <VideoIcon className={`h-6 w-6 ${videoDragOver ? 'text-blue-400' : 'text-gray-500'}`} />
+                  <p className="text-xs text-gray-400 text-center">
+                    {videoDragOver ? 'Relâchez pour sélectionner' : 'Glissez une vidéo ici ou cliquez pour parcourir'}
+                  </p>
                 </div>
-                {/* Input file caché pour le fallback */}
                 <input
                   ref={videoFileInputRef}
                   type="file"
@@ -1740,27 +1707,27 @@ function SubStepItem({
                   onChange={handleVideoFileInputChange}
                   className="hidden"
                 />
+                <Input
+                  type="text"
+                  value={videoTitle}
+                  onChange={(e) => setVideoTitle(e.target.value)}
+                  placeholder="Titre de la vidéo"
+                  className="text-xs"
+                />
+                <Input
+                  type="text"
+                  value={videoUrl}
+                  onChange={(e) => setVideoUrl(e.target.value)}
+                  placeholder={`Chemin d'accès NAS${localStorage.getItem(NAS_VIDEO_BASE_KEY) ? ` (dossier mémorisé : ${localStorage.getItem(NAS_VIDEO_BASE_KEY)})` : ' (ex: \\\\NAS\\Videos\\procedure.mp4)'}`}
+                  className="text-xs"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleAddVideo();
+                    else if (e.key === 'Escape') { setShowVideoInput(false); setVideoUrl(''); setVideoTitle(''); }
+                  }}
+                />
                 <div className="flex gap-2">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={handleAddVideo}
-                    className="text-xs"
-                  >
-                    Ajouter
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => {
-                      setShowVideoInput(false);
-                      setVideoUrl('');
-                      setVideoTitle('');
-                    }}
-                    className="text-xs"
-                  >
-                    Annuler
-                  </Button>
+                  <Button variant="default" size="sm" onClick={handleAddVideo} className="text-xs">Ajouter</Button>
+                  <Button variant="secondary" size="sm" onClick={() => { setShowVideoInput(false); setVideoUrl(''); setVideoTitle(''); }} className="text-xs">Annuler</Button>
                 </div>
               </div>
             ) : (
@@ -1784,9 +1751,12 @@ function SubStepItem({
             <div className="flex flex-wrap gap-3 mb-2">
               {(step.documents || []).map((doc) => {
                 const hasFullPath = doc.url.includes('\\') || doc.url.includes('/');
+                const isEditingPath = editingDocPathId === doc.id;
                 return (
-                <div key={doc.id} className="relative group flex items-center gap-2 p-2 bg-background-elevated rounded border border-[#323232]">
-                  <FileText className="h-5 w-5 text-red-500 flex-shrink-0" />
+                <div key={doc.id} className="group flex items-start gap-2 p-2 bg-background-elevated rounded-lg border border-[#323232] hover:border-[#444] transition-colors">
+                  <div className="flex-shrink-0 w-8 h-8 rounded bg-[#2a0a0a] flex items-center justify-center mt-0.5">
+                    <FileText className="h-4 w-4 text-red-400" />
+                  </div>
                   <div className="flex-1 min-w-0">
                     <input
                       className="text-sm font-medium text-white bg-transparent border-none outline-none w-full hover:bg-[#2a2a2a] focus:bg-[#2a2a2a] rounded px-1 -mx-1 truncate"
@@ -1799,32 +1769,42 @@ function SubStepItem({
                       }}
                       title="Cliquer pour modifier le titre"
                     />
-                    <div
-                      className={`text-xs truncate cursor-pointer hover:underline ${hasFullPath ? 'text-gray-500' : 'text-orange-400'}`}
-                      title={hasFullPath ? doc.url : 'Chemin incomplet ! Cliquez pour corriger.'}
-                      onClick={() => {
-                        const newPath = prompt(
-                          'Chemin complet du document :',
-                          doc.url
-                        );
-                        if (newPath && newPath !== doc.url) {
-                          const lastSep = Math.max(newPath.lastIndexOf('\\'), newPath.lastIndexOf('/'));
-                          if (lastSep > 0) {
-                            localStorage.setItem(NAS_DOCUMENT_BASE_KEY, newPath.substring(0, lastSep + 1));
+                    {isEditingPath ? (
+                      <input
+                        autoFocus
+                        className="text-xs text-white bg-[#1a1a1a] border border-primary rounded px-2 py-0.5 w-full mt-0.5 outline-none"
+                        value={editingDocPathValue}
+                        onChange={(e) => setEditingDocPathValue(e.target.value)}
+                        onBlur={() => {
+                          const newPath = editingDocPathValue.trim();
+                          if (newPath && newPath !== doc.url) {
+                            const lastSep = Math.max(newPath.lastIndexOf('\\'), newPath.lastIndexOf('/'));
+                            if (lastSep > 0) localStorage.setItem(NAS_DOCUMENT_BASE_KEY, newPath.substring(0, lastSep + 1));
+                            onUpdate({ documents: (step.documents || []).map(d => d.id === doc.id ? { ...d, url: newPath } : d) });
                           }
-                          const updatedDocs = (step.documents || []).map(d =>
-                            d.id === doc.id ? { ...d, url: newPath } : d
-                          );
-                          onUpdate({ documents: updatedDocs });
-                        }
-                      }}
-                    >
-                      {hasFullPath ? doc.url : `⚠ ${doc.url} (chemin incomplet)`}
-                    </div>
+                          setEditingDocPathId(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                          if (e.key === 'Escape') setEditingDocPathId(null);
+                        }}
+                      />
+                    ) : (
+                      <div
+                        className={`text-xs truncate cursor-pointer rounded px-1 -mx-1 py-0.5 hover:bg-[#2a2a2a] transition-colors ${hasFullPath ? 'text-gray-500' : 'text-orange-400'}`}
+                        title={hasFullPath ? 'Cliquer pour modifier le chemin' : 'Chemin incomplet — cliquer pour corriger'}
+                        onClick={() => {
+                          setEditingDocPathId(doc.id);
+                          setEditingDocPathValue(doc.url);
+                        }}
+                      >
+                        {hasFullPath ? doc.url : `⚠ ${doc.url} (chemin incomplet)`}
+                      </div>
+                    )}
                   </div>
                   <button
                     onClick={() => onRemoveDocument(doc.id)}
-                    className="bg-red-500 text-white rounded p-1 hover:bg-red-600 flex-shrink-0"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity bg-red-500/80 hover:bg-red-500 text-white rounded p-1 flex-shrink-0 mt-0.5"
                     title="Supprimer le document"
                   >
                     <X className="h-3 w-3" />
@@ -1834,7 +1814,31 @@ function SubStepItem({
               })}
             </div>
             {showDocumentInput ? (
-              <div className="space-y-2">
+              <div className="space-y-2 p-3 bg-background-elevated rounded-lg border border-[#323232]">
+                {/* Zone drag & drop */}
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setDocumentDragOver(true); }}
+                  onDragLeave={() => setDocumentDragOver(false)}
+                  onDrop={handleDocumentDrop}
+                  onClick={handleDocumentFileSelect}
+                  className={`flex flex-col items-center justify-center gap-1.5 border-2 border-dashed rounded-lg p-4 cursor-pointer transition-all ${
+                    documentDragOver
+                      ? 'border-red-400 bg-red-400/10 scale-[1.01]'
+                      : 'border-[#3a3a3a] hover:border-red-400/50 hover:bg-[#2a0a0a]/30'
+                  }`}
+                >
+                  <FileText className={`h-6 w-6 ${documentDragOver ? 'text-red-400' : 'text-gray-500'}`} />
+                  <p className="text-xs text-gray-400 text-center">
+                    {documentDragOver ? 'Relâchez pour sélectionner' : 'Glissez un document ici ou cliquez pour parcourir'}
+                  </p>
+                </div>
+                <input
+                  ref={documentFileInputRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                  onChange={handleDocumentFileInputChange}
+                  className="hidden"
+                />
                 <Input
                   type="text"
                   value={documentTitle}
@@ -1842,62 +1846,20 @@ function SubStepItem({
                   placeholder="Titre du document"
                   className="text-xs"
                 />
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onClick={handleDocumentFileSelect}
-                    className="flex-shrink-0"
-                    title="Sélectionner un fichier PDF"
-                  >
-                    <FileText className="h-4 w-4" />
-                  </Button>
-                  <Input
-                    type="text"
-                    value={documentUrl}
-                    onChange={(e) => setDocumentUrl(e.target.value)}
-                    placeholder="Chemin d'accès (ex: \\NAS\Documents\fichier.pdf)"
-                    className="text-xs flex-1"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleAddDocument();
-                      } else if (e.key === 'Escape') {
-                        setShowDocumentInput(false);
-                        setDocumentUrl('');
-                        setDocumentTitle('');
-                      }
-                    }}
-                  />
-                </div>
-                <input
-                  ref={documentFileInputRef}
-                  type="file"
-                  accept=".pdf"
-                  onChange={handleDocumentFileInputChange}
-                  className="hidden"
+                <Input
+                  type="text"
+                  value={documentUrl}
+                  onChange={(e) => setDocumentUrl(e.target.value)}
+                  placeholder={`Chemin d'accès NAS${localStorage.getItem(NAS_DOCUMENT_BASE_KEY) ? ` (dossier mémorisé : ${localStorage.getItem(NAS_DOCUMENT_BASE_KEY)})` : ' (ex: \\\\NAS\\Documents\\fichier.pdf)'}`}
+                  className="text-xs"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleAddDocument();
+                    else if (e.key === 'Escape') { setShowDocumentInput(false); setDocumentUrl(''); setDocumentTitle(''); }
+                  }}
                 />
                 <div className="flex gap-2">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={handleAddDocument}
-                    className="text-xs"
-                  >
-                    Ajouter
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => {
-                      setShowDocumentInput(false);
-                      setDocumentUrl('');
-                      setDocumentTitle('');
-                    }}
-                    className="text-xs"
-                  >
-                    Annuler
-                  </Button>
+                  <Button variant="default" size="sm" onClick={handleAddDocument} className="text-xs">Ajouter</Button>
+                  <Button variant="secondary" size="sm" onClick={() => { setShowDocumentInput(false); setDocumentUrl(''); setDocumentTitle(''); }} className="text-xs">Annuler</Button>
                 </div>
               </div>
             ) : (
