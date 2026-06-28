@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
-import { ArrowLeft, Plus, Image as ImageIcon, X, Download, AlertTriangle, Pencil, CheckCircle, ChevronDown, ChevronUp, Trash2, FileText, Layers, GitBranch, Shield, Tag, History } from 'lucide-react';
+import { ArrowLeft, Plus, Image as ImageIcon, X, Download, AlertTriangle, Pencil, CheckCircle, ChevronDown, ChevronUp, Trash2, FileText, Layers, GitBranch, Shield, Tag, UserCheck } from 'lucide-react';
 import { useProcedure } from '@/hooks/useProcedures';
 import { useTools } from '@/hooks/useTools';
 import { createProcedure, updateProcedure, addPhase, deletePhase, updatePhase } from '@/services/procedureService';
 import { uploadImageToHost } from '@/services/imageHostingService';
-import { logActivity, getActivityLog, type ActivityEntry } from '@/lib/firestore';
 import PhaseSummary from '@/components/editor/PhaseSummary';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -39,9 +38,11 @@ export default function ProcedureEditor() {
   const [showAllVersions, setShowAllVersions] = useState(false);
   const [showDefects, setShowDefects] = useState(true);
   const [showVersionForm, setShowVersionForm] = useState(false);
-  const [activityLog, setActivityLog] = useState<ActivityEntry[]>([]);
-  const [showActivityLog, setShowActivityLog] = useState(false);
-  const [activityLoading, setActivityLoading] = useState(false);
+  const [signataires, setSignataires] = useState<{
+    redacteur?: { nom: string; date?: string };
+    verificateur?: { nom: string; date?: string };
+    approbateur?: { nom: string; date?: string };
+  }>({});
   const [newVersionType, setNewVersionType] = useState<'major' | 'minor'>('minor');
   const [newVersionDescription, setNewVersionDescription] = useState('');
   const [status, setStatus] = useState<'en_cours' | 'verification' | 'relecture' | 'mise_a_jour_timetonic' | 'completed'>('en_cours');
@@ -53,6 +54,7 @@ export default function ProcedureEditor() {
       setReference(existingProcedure.reference || '');
       setDesignation(existingProcedure.designation || existingProcedure.title || '');
       setDefects(existingProcedure.defects || []);
+      setSignataires(existingProcedure.signataires || {});
       setVersionString(existingProcedure.versionString || '1.0');
       setChangelog(existingProcedure.changelog || []);
       const s = existingProcedure.status as string;
@@ -103,6 +105,7 @@ export default function ProcedureEditor() {
           description: '',
           coverImage: coverImage || undefined,
           defects: defects,
+          signataires: signataires,
           versionString: versionString,
           changelog: changelog,
           status: status as any,
@@ -358,21 +361,9 @@ export default function ProcedureEditor() {
         updatePhase(id, fromPhaseId, { steps: newFromSteps }),
         updatePhase(id, toPhaseId, { steps: newToSteps }),
       ]);
-      logActivity(id, 'move_step', `Sous-étape "${step.title || ''}" déplacée vers "${toPhase.title || ''}"`);
       toast.success('Sous-étape déplacée');
     } catch {
       toast.error('Erreur lors du déplacement');
-    }
-  };
-
-  const handleLoadActivity = async () => {
-    if (!id) return;
-    setActivityLoading(true);
-    try {
-      const log = await getActivityLog(id);
-      setActivityLog(log);
-    } finally {
-      setActivityLoading(false);
     }
   };
 
@@ -932,52 +923,58 @@ export default function ProcedureEditor() {
           </Card>
         )}
 
-        {/* Historique des modifications */}
+        {/* Rédaction & Validation */}
         {id && (
           <Card>
             <CardContent className="pt-0">
-              <div className="flex items-center justify-between px-1 py-4 border-b border-[#1e1e1e]">
+              <div className="px-1 py-4 mb-4 border-b border-[#1e1e1e]">
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                    <History className="h-4 w-4 text-blue-400" />
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-violet-500/10 border border-violet-500/20">
+                    <UserCheck className="h-4 w-4 text-violet-400" />
                   </div>
-                  <button
-                    onClick={() => {
-                      if (!showActivityLog) handleLoadActivity();
-                      setShowActivityLog(v => !v);
-                    }}
-                    className="flex items-center gap-2 hover:text-primary transition-colors"
-                  >
-                    <span className="text-base font-bold">Historique des modifications</span>
-                    {showActivityLog ? <ChevronUp className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
-                  </button>
+                  <div>
+                    <h2 className="text-base font-bold leading-none">Rédaction & Validation</h2>
+                    <p className="text-xs text-gray-500 mt-0.5">Personnes impliquées dans la rédaction et la validation</p>
+                  </div>
                 </div>
               </div>
-              {showActivityLog && (
-                <div className="mt-4">
-                  {activityLoading ? (
-                    <p className="text-gray-500 text-sm text-center py-6">Chargement…</p>
-                  ) : activityLog.length === 0 ? (
-                    <p className="text-gray-500 text-sm text-center py-6">Aucune modification enregistrée.</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {activityLog.map(entry => (
-                        <div key={entry.id} className="flex items-start gap-3 px-1 py-2 border-b border-[#1e1e1e] last:border-0">
-                          <span className="flex-shrink-0 w-2 h-2 rounded-full bg-primary mt-1.5" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm text-gray-300">{entry.detail || entry.action}</p>
-                            <p className="text-xs text-gray-600 mt-0.5">
-                              {entry.timestamp instanceof Date
-                                ? entry.timestamp.toLocaleString('fr-FR')
-                                : ''}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
+
+              <div className="space-y-4">
+                {(
+                  [
+                    { key: 'redacteur', label: 'Rédigé par', color: 'blue' },
+                    { key: 'verificateur', label: 'Vérifié par', color: 'amber' },
+                    { key: 'approbateur', label: 'Approuvé par', color: 'green' },
+                  ] as const
+                ).map(({ key, label, color }) => {
+                  const entry = signataires[key] || { nom: '', date: '' };
+                  const colorMap = {
+                    blue: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
+                    amber: 'bg-amber-500/10 border-amber-500/20 text-amber-400',
+                    green: 'bg-green-500/10 border-green-500/20 text-green-400',
+                  };
+                  return (
+                    <div key={key} className="flex items-center gap-3">
+                      <span className={`flex-shrink-0 text-xs font-medium px-2 py-1 rounded-md border ${colorMap[color]} w-28 text-center`}>
+                        {label}
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="Nom"
+                        value={entry.nom}
+                        onChange={e => setSignataires(prev => ({ ...prev, [key]: { ...prev[key], nom: e.target.value } }))}
+                        className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#444] transition-colors"
+                      />
+                      <input
+                        type="date"
+                        value={entry.date || ''}
+                        onChange={e => setSignataires(prev => ({ ...prev, [key]: { ...prev[key], date: e.target.value } }))}
+                        className="w-36 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-[#444] transition-colors"
+                      />
                     </div>
-                  )}
-                </div>
-              )}
+                  );
+                })}
+              </div>
             </CardContent>
           </Card>
         )}

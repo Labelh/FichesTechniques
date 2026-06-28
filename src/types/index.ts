@@ -292,6 +292,13 @@ export interface Procedure extends BaseEntity {
   relatedProcedures?: string[]; // IDs
   prerequisites?: string[]; // IDs de procédures prérequises
 
+  // Rédaction & Validation
+  signataires?: {
+    redacteur?: { nom: string; date?: string };
+    verificateur?: { nom: string; date?: string };
+    approbateur?: { nom: string; date?: string };
+  };
+
   // Versioning
   version: number;
   versionString?: string; // Format "1.0", "1.1", "2.0", etc.
