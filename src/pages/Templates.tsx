@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FolderKanban, FileText, Clock, Wrench, Search, Edit2, Layers, Copy, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { FolderKanban, FileText, Clock, Wrench, Search, Edit2, Layers, Copy, Trash2, ArrowUp, ArrowDown, BookOpen, Check } from 'lucide-react';
 import {
   getAllPhaseTemplates,
   deletePhaseTemplate,
@@ -7,13 +7,16 @@ import {
   deleteSubStepTemplate,
   duplicatePhaseTemplate,
   duplicateSubStepTemplate,
+  getAllPhraseTemplates,
+  deletePhraseTemplate,
+  updatePhraseTemplateLabel,
 } from '@/services/templateService';
 import { Input } from '@/components/ui/Input';
 import { toast } from 'sonner';
-import type { ProcedureTemplate, SubStepTemplate } from '@/types';
+import type { ProcedureTemplate, SubStepTemplate, PhraseTemplate } from '@/types';
 import TemplateEditor from '@/components/templates/TemplateEditor';
 
-type TabType = 'phases' | 'substeps';
+type TabType = 'phases' | 'substeps' | 'phrases';
 type SortKey = 'name' | 'date' | 'usage';
 
 function formatDate(date: Date | any): string {
@@ -39,9 +42,12 @@ export default function Templates() {
   const [sortAsc, setSortAsc] = useState(false);
   const [templates, setTemplates] = useState<ProcedureTemplate[]>([]);
   const [subStepTemplates, setSubStepTemplates] = useState<SubStepTemplate[]>([]);
+  const [phraseTemplates, setPhraseTemplates] = useState<PhraseTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [editingTemplate, setEditingTemplate] = useState<{ template: ProcedureTemplate | SubStepTemplate; type: 'phase' | 'substep' } | null>(null);
+  const [editingPhraseId, setEditingPhraseId] = useState<string | null>(null);
+  const [editingPhraseLabel, setEditingPhraseLabel] = useState('');
 
   useEffect(() => { fetchTemplates(); }, []);
   useEffect(() => { setSearchTerm(''); setSelectedCategory('all'); }, [activeTab]);
@@ -49,9 +55,10 @@ export default function Templates() {
   const fetchTemplates = async () => {
     setLoading(true);
     try {
-      const [phaseData, subStepData] = await Promise.all([getAllPhaseTemplates(), getAllSubStepTemplates()]);
+      const [phaseData, subStepData, phraseData] = await Promise.all([getAllPhaseTemplates(), getAllSubStepTemplates(), getAllPhraseTemplates()]);
       setTemplates(phaseData);
       setSubStepTemplates(subStepData);
+      setPhraseTemplates(phraseData as PhraseTemplate[]);
     } catch {
       toast.error('Erreur lors du chargement des templates');
     } finally {
@@ -61,7 +68,9 @@ export default function Templates() {
 
   const categories = activeTab === 'phases'
     ? ['all', ...Array.from(new Set(templates.map(t => t.category).filter(Boolean)))]
-    : ['all', ...Array.from(new Set(subStepTemplates.map(t => t.category).filter(Boolean)))];
+    : activeTab === 'substeps'
+    ? ['all', ...Array.from(new Set(subStepTemplates.map(t => t.category).filter(Boolean)))]
+    : [];
 
   function applySort<T extends { name: string; usageCount: number; createdAt?: any }>(list: T[]): T[] {
     return [...list].sort((a, b) => {
@@ -104,12 +113,31 @@ export default function Templates() {
     catch { toast.error('Erreur lors de la duplication'); }
   };
 
+  const handleDeletePhrase = async (id: string) => {
+    try { await deletePhraseTemplate(id); setPhraseTemplates(prev => prev.filter(p => p.id !== id)); toast.success('Phrase supprimée'); setConfirmDeleteId(null); }
+    catch { toast.error('Erreur lors de la suppression'); }
+  };
+
+  const handleSavePhraseLabel = async (id: string) => {
+    if (!editingPhraseLabel.trim()) return;
+    try {
+      await updatePhraseTemplateLabel(id, editingPhraseLabel.trim());
+      setPhraseTemplates(prev => prev.map(p => p.id === id ? { ...p, label: editingPhraseLabel.trim() } : p));
+      setEditingPhraseId(null);
+    } catch { toast.error('Erreur lors de la mise à jour'); }
+  };
+
   const cycleSort = (key: SortKey) => {
     if (sortBy === key) setSortAsc(v => !v);
     else { setSortBy(key); setSortAsc(true); }
   };
 
-  const currentList = activeTab === 'phases' ? filteredTemplates : filteredSubStepTemplates;
+  const filteredPhraseTemplates = phraseTemplates.filter(p =>
+    p.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.text.replace(/<[^>]*>/g, '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const currentList = activeTab === 'phases' ? filteredTemplates : activeTab === 'substeps' ? filteredSubStepTemplates : filteredPhraseTemplates;
 
   return (
     <div className="space-y-6">
@@ -133,34 +161,34 @@ export default function Templates() {
               <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
               {subStepTemplates.length} sous-étape{subStepTemplates.length !== 1 ? 's' : ''}
             </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
+              {phraseTemplates.length} phrase{phraseTemplates.length !== 1 ? 's' : ''}
+            </span>
           </div>
         )}
       </div>
 
       {/* ── Tabs ── */}
       <div className="flex gap-1 bg-[#141414] rounded-xl p-1 border border-[#252525]">
-        {(['phases', 'substeps'] as TabType[]).map(tab => {
-          const isActive = activeTab === tab;
-          const count = (tab === 'phases' ? templates : subStepTemplates).length;
-          const color = tab === 'phases' ? 'text-primary' : 'text-emerald-400';
+        {([
+          { key: 'phases' as TabType, label: 'Phases', Icon: Layers, color: 'text-primary', activeBg: 'bg-primary/20', count: templates.length },
+          { key: 'substeps' as TabType, label: 'Sous-étapes', Icon: FileText, color: 'text-emerald-400', activeBg: 'bg-emerald-500/20', count: subStepTemplates.length },
+          { key: 'phrases' as TabType, label: 'Phrases type', Icon: BookOpen, color: 'text-amber-400', activeBg: 'bg-amber-400/20', count: phraseTemplates.length },
+        ]).map(({ key, label, Icon, color, activeBg, count }) => {
+          const isActive = activeTab === key;
           return (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
+              key={key}
+              onClick={() => setActiveTab(key)}
               className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
                 isActive ? 'bg-[#2a2a2a] text-white shadow-sm' : 'text-gray-500 hover:text-gray-300 hover:bg-[#1e1e1e]'
               }`}
             >
-              {tab === 'phases'
-                ? <Layers className={`h-4 w-4 ${isActive ? color : ''}`} />
-                : <FileText className={`h-4 w-4 ${isActive ? color : ''}`} />}
-              {tab === 'phases' ? 'Phases' : 'Sous-étapes'}
+              <Icon className={`h-4 w-4 ${isActive ? color : ''}`} />
+              {label}
               {count > 0 && (
-                <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${
-                  isActive
-                    ? (tab === 'phases' ? 'bg-primary/20 text-primary' : 'bg-emerald-500/20 text-emerald-400')
-                    : 'bg-[#2a2a2a] text-gray-500'
-                }`}>
+                <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${isActive ? `${activeBg} ${color}` : 'bg-[#2a2a2a] text-gray-500'}`}>
                   {count}
                 </span>
               )}
@@ -182,22 +210,24 @@ export default function Templates() {
               className="pl-10 bg-[#1a1a1a] border-[#2a2a2a] focus:border-[#3a3a3a]"
             />
           </div>
-          <div className="flex items-center gap-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-2 py-1.5">
-            {(['name', 'date', 'usage'] as SortKey[]).map(key => (
-              <button
-                key={key}
-                onClick={() => cycleSort(key)}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
-                  sortBy === key ? 'bg-[#2e2e2e] text-white' : 'text-gray-500 hover:text-gray-300'
-                }`}
-              >
-                {key === 'name' ? 'Nom' : key === 'date' ? 'Date' : 'Usage'}
-                {sortBy === key && (sortAsc
-                  ? <ArrowUp className="h-3 w-3" />
-                  : <ArrowDown className="h-3 w-3" />)}
-              </button>
-            ))}
-          </div>
+          {activeTab !== 'phrases' && (
+            <div className="flex items-center gap-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-2 py-1.5">
+              {(['name', 'date', 'usage'] as SortKey[]).map(key => (
+                <button
+                  key={key}
+                  onClick={() => cycleSort(key)}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                    sortBy === key ? 'bg-[#2e2e2e] text-white' : 'text-gray-500 hover:text-gray-300'
+                  }`}
+                >
+                  {key === 'name' ? 'Nom' : key === 'date' ? 'Date' : 'Usage'}
+                  {sortBy === key && (sortAsc
+                    ? <ArrowUp className="h-3 w-3" />
+                    : <ArrowDown className="h-3 w-3" />)}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Category pills */}
@@ -232,17 +262,21 @@ export default function Templates() {
       {!loading && currentList.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 gap-4">
           <div className="w-16 h-16 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
-            {activeTab === 'phases'
-              ? <FolderKanban className="h-8 w-8 text-gray-600" />
-              : <FileText className="h-8 w-8 text-gray-600" />}
+            {activeTab === 'phases' ? <FolderKanban className="h-8 w-8 text-gray-600" />
+              : activeTab === 'substeps' ? <FileText className="h-8 w-8 text-gray-600" />
+              : <BookOpen className="h-8 w-8 text-gray-600" />}
           </div>
           <div className="text-center">
             <p className="text-gray-400 font-medium">
-              {searchTerm || selectedCategory !== 'all' ? 'Aucun résultat' : `Aucun template de ${activeTab === 'phases' ? 'phase' : 'sous-étape'}`}
+              {searchTerm ? 'Aucun résultat'
+                : activeTab === 'phrases' ? 'Aucune phrase type enregistrée'
+                : `Aucun template de ${activeTab === 'phases' ? 'phase' : 'sous-étape'}`}
             </p>
             <p className="text-gray-600 text-sm mt-1">
-              {searchTerm || selectedCategory !== 'all'
-                ? 'Modifiez vos filtres'
+              {searchTerm
+                ? 'Modifiez votre recherche'
+                : activeTab === 'phrases'
+                ? 'Sélectionnez du texte dans une description et cliquez sur l\'icône signet'
                 : 'Sauvegardez depuis l\'éditeur de procédure'}
             </p>
           </div>
@@ -399,6 +433,83 @@ export default function Templates() {
                           <Copy className="h-3.5 w-3.5" />
                         </button>
                         <button onClick={() => setConfirmDeleteId(template.id)} title="Supprimer"
+                          className="p-1.5 rounded-md text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* PHRASE CARDS */}
+          {activeTab === 'phrases' && filteredPhraseTemplates.map(phrase => {
+            const isConfirming = confirmDeleteId === phrase.id;
+            const isEditing = editingPhraseId === phrase.id;
+            return (
+              <div
+                key={phrase.id}
+                className="group relative bg-[#1c1c1c] rounded-xl border border-[#272727] hover:border-[#353535] transition-all duration-200 flex flex-col overflow-hidden"
+              >
+                <div className="h-0.5 w-full bg-gradient-to-r from-amber-400/60 to-amber-400/10" />
+
+                <div className="p-5 flex flex-col flex-1">
+                  {/* Label row */}
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-9 h-9 rounded-lg bg-amber-400/10 flex items-center justify-center flex-shrink-0">
+                      <BookOpen className="h-4 w-4 text-amber-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      {isEditing ? (
+                        <div className="flex items-center gap-1">
+                          <input
+                            autoFocus
+                            value={editingPhraseLabel}
+                            onChange={(e) => setEditingPhraseLabel(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSavePhraseLabel(phrase.id);
+                              if (e.key === 'Escape') setEditingPhraseId(null);
+                            }}
+                            className="flex-1 text-sm font-semibold text-white bg-[#0f0f0f] border border-amber-400/40 rounded px-2 py-0.5 outline-none"
+                          />
+                          <button onClick={() => handleSavePhraseLabel(phrase.id)} className="p-1 text-amber-400 hover:text-amber-300">
+                            <Check className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <h3 className="font-semibold text-white text-sm leading-snug line-clamp-2">{phrase.label}</h3>
+                      )}
+                      <p className="text-[10px] text-gray-600 mt-1">Créé le {formatDate(phrase.createdAt)}</p>
+                    </div>
+                  </div>
+
+                  {/* Aperçu du texte */}
+                  <div
+                    className="text-xs text-gray-400 bg-[#141414] rounded-lg p-3 border border-[#222] mb-4 line-clamp-4 leading-relaxed flex-1"
+                    dangerouslySetInnerHTML={{ __html: phrase.text }}
+                  />
+
+                  {/* Actions */}
+                  <div className="mt-auto pt-3 border-t border-[#252525]">
+                    {isConfirming ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-red-400 flex-1">Supprimer définitivement ?</span>
+                        <button onClick={() => handleDeletePhrase(phrase.id)}
+                          className="text-xs px-3 py-1 rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors">Oui</button>
+                        <button onClick={() => setConfirmDeleteId(null)}
+                          className="text-xs px-3 py-1 rounded-md bg-[#252525] text-gray-400 hover:bg-[#2e2e2e] transition-colors">Non</button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => { setEditingPhraseId(phrase.id); setEditingPhraseLabel(phrase.label); }}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs text-gray-400 hover:text-white hover:bg-[#252525] transition-colors"
+                        >
+                          <Edit2 className="h-3 w-3" />Renommer
+                        </button>
+                        <button onClick={() => setConfirmDeleteId(phrase.id)} title="Supprimer"
                           className="p-1.5 rounded-md text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-colors">
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
