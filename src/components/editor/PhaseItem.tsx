@@ -895,6 +895,16 @@ function SubStepItem({
   const [videoTitle, setVideoTitle] = useState('');
   const [editingVideoPathId, setEditingVideoPathId] = useState<string | null>(null);
   const [editingToolColorId, setEditingToolColorId] = useState<string | null>(null);
+  const imageScrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!editingToolColorId) return;
+    const close = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-tool-color-picker]')) setEditingToolColorId(null);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [editingToolColorId]);
   const [editingVideoPathValue, setEditingVideoPathValue] = useState('');
   const [editingDocPathId, setEditingDocPathId] = useState<string | null>(null);
   const [editingDocPathValue, setEditingDocPathValue] = useState('');
@@ -1500,14 +1510,28 @@ function SubStepItem({
             <label className="block text-xs font-medium text-gray-400 mb-2">
               Images ({step.images?.length || 0})
             </label>
-            <div className="flex flex-wrap gap-3 mb-2">
+            {(step.images || []).length > 0 && (
+              <div className="relative mb-2">
+                {/* Bouton gauche */}
+                <button
+                  onClick={() => imageScrollRef.current?.scrollBy({ left: -160, behavior: 'smooth' })}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 z-10 w-6 h-6 rounded-full bg-[#2a2a2a] border border-[#444] flex items-center justify-center hover:bg-[#3a3a3a] transition-colors shadow-lg"
+                >
+                  <ArrowLeft className="h-3 w-3 text-gray-300" />
+                </button>
+                {/* Frise */}
+                <div
+                  ref={imageScrollRef}
+                  className="flex gap-3 overflow-x-auto scroll-smooth pb-1"
+                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                >
               {(step.images || []).map((img, imgIndex) => (
-                <div key={img.imageId} className="flex flex-col gap-1">
+                <div key={img.imageId} className="flex flex-col gap-1 flex-shrink-0">
                   <div className="relative group">
                     <img
                       src={img.image.url || URL.createObjectURL(img.image.blob)}
                       alt={img.description || 'Image'}
-                      className="h-24 w-24 object-cover rounded border border-[#323232]"
+                      className="h-36 w-36 object-cover rounded border border-[#323232]"
                     />
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
                       <button
@@ -1606,7 +1630,16 @@ function SubStepItem({
                   </div>
                 </div>
               ))}
-            </div>
+                </div>{/* fin frise */}
+                {/* Bouton droite */}
+                <button
+                  onClick={() => imageScrollRef.current?.scrollBy({ left: 160, behavior: 'smooth' })}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-3 z-10 w-6 h-6 rounded-full bg-[#2a2a2a] border border-[#444] flex items-center justify-center hover:bg-[#3a3a3a] transition-colors shadow-lg"
+                >
+                  <ArrowRight className="h-3 w-3 text-gray-300" />
+                </button>
+              </div>
+            )}
             <div
               onClick={() => {
                 const input = document.createElement('input');
@@ -1675,6 +1708,7 @@ function SubStepItem({
                         {/* Pastille couleur + nom sur la même ligne */}
                         <div className="flex items-center gap-1.5 min-w-0">
                           <button
+                            data-tool-color-picker
                             onClick={() => setEditingToolColorId(editingToolColorId === tool.id ? null : tool.id)}
                             className="w-3 h-3 rounded-full border border-[#555] hover:border-white transition-colors flex-shrink-0"
                             style={{ backgroundColor: tool.color || '#10b981' }}
@@ -1689,7 +1723,7 @@ function SubStepItem({
 
                       {/* Picker de couleur inline */}
                       {editingToolColorId === tool.id && (
-                        <div className="absolute top-full left-0 mt-1 bg-[#1a1a1a] border border-[#323232] rounded-lg p-2 z-50 shadow-xl"
+                        <div data-tool-color-picker className="absolute top-full left-0 mt-1 bg-[#1a1a1a] border border-[#323232] rounded-lg p-2 z-50 shadow-xl"
                           style={{ width: '144px' }}>
                           <div className="flex flex-wrap gap-1.5">
                             {toolColorPresets.map((c) => (
