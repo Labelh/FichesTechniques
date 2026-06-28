@@ -1654,11 +1654,11 @@ function SubStepItem({
               Images ({step.images?.length || 0})
             </label>
             {(step.images || []).length > 0 && (
-              <div className="relative mb-2">
+              <div className="relative mb-2 px-8">
                 {/* Bouton gauche */}
                 <button
                   onClick={() => imageScrollRef.current?.scrollBy({ left: -160, behavior: 'smooth' })}
-                  className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 z-10 w-6 h-6 rounded-full bg-[#2a2a2a] border border-[#444] flex items-center justify-center hover:bg-[#3a3a3a] transition-colors shadow-lg"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-[#2a2a2a] border border-[#444] flex items-center justify-center hover:bg-[#3a3a3a] transition-colors shadow-lg"
                 >
                   <ArrowLeft className="h-3 w-3 text-gray-300" />
                 </button>
@@ -1777,7 +1777,7 @@ function SubStepItem({
                 {/* Bouton droite */}
                 <button
                   onClick={() => imageScrollRef.current?.scrollBy({ left: 160, behavior: 'smooth' })}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-3 z-10 w-6 h-6 rounded-full bg-[#2a2a2a] border border-[#444] flex items-center justify-center hover:bg-[#3a3a3a] transition-colors shadow-lg"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-[#2a2a2a] border border-[#444] flex items-center justify-center hover:bg-[#3a3a3a] transition-colors shadow-lg"
                 >
                   <ArrowRight className="h-3 w-3 text-gray-300" />
                 </button>
