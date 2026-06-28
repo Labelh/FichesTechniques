@@ -650,6 +650,62 @@ export default function ProcedureEditor() {
           </CardContent>
         </Card>
 
+        {/* Phases */}
+        {id && (
+          <Card>
+            <CardContent className="pt-0">
+              <div className="flex items-center justify-between px-1 py-4 mb-4 border-b border-[#1e1e1e]">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <Layers className="h-4 w-4 text-blue-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold leading-none">Phases</h2>
+                    {existingProcedure && existingProcedure.phases.length > 0 && (() => {
+                      const totalMin = existingProcedure.phases.reduce((sum, p) => sum + (p.estimatedTime || 0), 0);
+                      return (
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {existingProcedure.phases.length} phase{existingProcedure.phases.length > 1 ? 's' : ''} · {totalMin} min · {(totalMin / 60).toFixed(2)} h
+                        </p>
+                      );
+                    })()}
+                  </div>
+                </div>
+                <Button onClick={handleAddPhase} size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Ajouter une phase
+                </Button>
+              </div>
+
+              {existingProcedure?.phases.length === 0 ? (
+                <div className="text-center py-10">
+                  <Layers className="h-8 w-8 text-gray-700 mx-auto mb-3" />
+                  <p className="text-gray-500 text-sm">Aucune phase pour l'instant.</p>
+                  <p className="text-gray-600 text-xs mt-1">Cliquez sur "Ajouter une phase" pour commencer.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {existingProcedure?.phases.map((phase, index) => (
+                    <PhaseItem
+                      key={phase.id}
+                      phase={phase}
+                      index={index}
+                      procedureId={id!}
+                      reference={reference}
+                      totalPhases={existingProcedure.phases.length}
+                      allPhases={existingProcedure.phases}
+                      onDelete={handleDeletePhase}
+                      onMoveImageToOtherPhase={handleMoveImageToOtherPhase}
+                      initiallyExpanded={expandPhaseIndex !== undefined && index === expandPhaseIndex}
+                      initialExpandStepIndex={expandPhaseIndex !== undefined && index === expandPhaseIndex ? expandStepIndex : undefined}
+                    />
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Défauthèque */}
         {id && (
           <Card>
@@ -834,62 +890,6 @@ export default function ProcedureEditor() {
                     </div>
                   )}
                 </>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Phases */}
-        {id && (
-          <Card>
-            <CardContent className="pt-0">
-              <div className="flex items-center justify-between px-1 py-4 mb-4 border-b border-[#1e1e1e]">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                    <Layers className="h-4 w-4 text-blue-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-base font-bold leading-none">Phases</h2>
-                    {existingProcedure && existingProcedure.phases.length > 0 && (() => {
-                      const totalMin = existingProcedure.phases.reduce((sum, p) => sum + (p.estimatedTime || 0), 0);
-                      return (
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          {existingProcedure.phases.length} phase{existingProcedure.phases.length > 1 ? 's' : ''} · {totalMin} min · {(totalMin / 60).toFixed(2)} h
-                        </p>
-                      );
-                    })()}
-                  </div>
-                </div>
-                <Button onClick={handleAddPhase} size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Ajouter une phase
-                </Button>
-              </div>
-
-              {existingProcedure?.phases.length === 0 ? (
-                <div className="text-center py-10">
-                  <Layers className="h-8 w-8 text-gray-700 mx-auto mb-3" />
-                  <p className="text-gray-500 text-sm">Aucune phase pour l'instant.</p>
-                  <p className="text-gray-600 text-xs mt-1">Cliquez sur "Ajouter une phase" pour commencer.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {existingProcedure?.phases.map((phase, index) => (
-                    <PhaseItem
-                      key={phase.id}
-                      phase={phase}
-                      index={index}
-                      procedureId={id!}
-                      reference={reference}
-                      totalPhases={existingProcedure.phases.length}
-                      allPhases={existingProcedure.phases}
-                      onDelete={handleDeletePhase}
-                      onMoveImageToOtherPhase={handleMoveImageToOtherPhase}
-                      initiallyExpanded={expandPhaseIndex !== undefined && index === expandPhaseIndex}
-                      initialExpandStepIndex={expandPhaseIndex !== undefined && index === expandPhaseIndex ? expandStepIndex : undefined}
-                    />
-                  ))}
-                </div>
               )}
             </CardContent>
           </Card>
