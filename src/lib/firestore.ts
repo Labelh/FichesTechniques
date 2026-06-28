@@ -699,3 +699,37 @@ export async function deletePhraseTemplate(id: string): Promise<void> {
 export async function updatePhraseTemplate(id: string, updates: { label?: string; text?: string; category?: string }): Promise<void> {
   await updateDoc(doc(db, collections.phraseTemplates, id), { ...updates, updatedAt: serverTimestamp() });
 }
+
+// ── Historique des modifications ────────────────────────────────────────────
+
+export interface ActivityEntry {
+  id: string;
+  action: string;
+  detail?: string;
+  timestamp: Date;
+}
+
+export async function logActivity(procedureId: string, action: string, detail?: string): Promise<void> {
+  await addDoc(collection(db, 'procedures', procedureId, 'activity'), {
+    action,
+    detail: detail || null,
+    timestamp: serverTimestamp(),
+  });
+}
+
+export async function getActivityLog(procedureId: string, limitCount = 50): Promise<ActivityEntry[]> {
+  const { limit } = await import('firebase/firestore');
+  const snap = await getDocs(
+    query(
+      collection(db, 'procedures', procedureId, 'activity'),
+      orderBy('timestamp', 'desc'),
+      limit(limitCount)
+    )
+  );
+  return snap.docs.map(d => ({
+    id: d.id,
+    action: d.data().action,
+    detail: d.data().detail,
+    timestamp: d.data().timestamp?.toDate?.() ?? new Date(),
+  }));
+}

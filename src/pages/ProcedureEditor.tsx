@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
-import { ArrowLeft, Plus, Image as ImageIcon, X, Download, AlertTriangle, Pencil, CheckCircle, ChevronDown, ChevronUp, Trash2, FileText, Layers, GitBranch, Shield, Tag } from 'lucide-react';
+import { ArrowLeft, Plus, Image as ImageIcon, X, Download, AlertTriangle, Pencil, CheckCircle, ChevronDown, ChevronUp, Trash2, FileText, Layers, GitBranch, Shield, Tag, History } from 'lucide-react';
 import { useProcedure } from '@/hooks/useProcedures';
 import { useTools } from '@/hooks/useTools';
 import { createProcedure, updateProcedure, addPhase, deletePhase, updatePhase } from '@/services/procedureService';
 import { uploadImageToHost } from '@/services/imageHostingService';
+import { logActivity, getActivityLog, type ActivityEntry } from '@/lib/firestore';
+import PhaseSummary from '@/components/editor/PhaseSummary';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -13,7 +15,7 @@ import PhaseTemplateSelector from '@/components/editor/PhaseTemplateSelector';
 import ImageAnnotator from '@/components/phase/ImageAnnotator';
 import { toast } from 'sonner';
 import { generateHTML } from '@/lib/htmlGenerator';
-import type { DefectItem, AnnotatedImage, Annotation, VersionLog } from '@/types';
+import type { DefectItem, AnnotatedImage, Annotation, VersionLog, SubStep } from '@/types';
 
 export default function ProcedureEditor() {
   const { id } = useParams<{ id: string }>();
@@ -37,6 +39,9 @@ export default function ProcedureEditor() {
   const [showAllVersions, setShowAllVersions] = useState(false);
   const [showDefects, setShowDefects] = useState(true);
   const [showVersionForm, setShowVersionForm] = useState(false);
+  const [activityLog, setActivityLog] = useState<ActivityEntry[]>([]);
+  const [showActivityLog, setShowActivityLog] = useState(false);
+  const [activityLoading, setActivityLoading] = useState(false);
   const [newVersionType, setNewVersionType] = useState<'major' | 'minor'>('minor');
   const [newVersionDescription, setNewVersionDescription] = useState('');
   const [status, setStatus] = useState<'en_cours' | 'verification' | 'relecture' | 'mise_a_jour_timetonic' | 'completed'>('en_cours');
@@ -338,6 +343,36 @@ export default function ProcedureEditor() {
       toast.success('Phase supprimée');
     } catch (error) {
       toast.error('Erreur lors de la suppression');
+    }
+  };
+
+  const handleMoveStepToPhase = async (step: SubStep, fromPhaseId: string, toPhaseId: string) => {
+    if (!id || !existingProcedure) return;
+    const fromPhase = existingProcedure.phases.find(p => p.id === fromPhaseId);
+    const toPhase = existingProcedure.phases.find(p => p.id === toPhaseId);
+    if (!fromPhase || !toPhase) return;
+    const newFromSteps = (fromPhase.steps || []).filter(s => s.id !== step.id).map((s, i) => ({ ...s, order: i }));
+    const newToSteps = [...(toPhase.steps || []), { ...step, order: (toPhase.steps || []).length }];
+    try {
+      await Promise.all([
+        updatePhase(id, fromPhaseId, { steps: newFromSteps }),
+        updatePhase(id, toPhaseId, { steps: newToSteps }),
+      ]);
+      logActivity(id, 'move_step', `Sous-étape "${step.title || ''}" déplacée vers "${toPhase.title || ''}"`);
+      toast.success('Sous-étape déplacée');
+    } catch {
+      toast.error('Erreur lors du déplacement');
+    }
+  };
+
+  const handleLoadActivity = async () => {
+    if (!id) return;
+    setActivityLoading(true);
+    try {
+      const log = await getActivityLog(id);
+      setActivityLog(log);
+    } finally {
+      setActivityLoading(false);
     }
   };
 
@@ -686,19 +721,21 @@ export default function ProcedureEditor() {
               ) : (
                 <div className="space-y-3">
                   {existingProcedure?.phases.map((phase, index) => (
-                    <PhaseItem
-                      key={phase.id}
-                      phase={phase}
-                      index={index}
-                      procedureId={id!}
-                      reference={reference}
-                      totalPhases={existingProcedure.phases.length}
-                      allPhases={existingProcedure.phases}
-                      onDelete={handleDeletePhase}
-                      onMoveImageToOtherPhase={handleMoveImageToOtherPhase}
-                      initiallyExpanded={expandPhaseIndex !== undefined && index === expandPhaseIndex}
-                      initialExpandStepIndex={expandPhaseIndex !== undefined && index === expandPhaseIndex ? expandStepIndex : undefined}
-                    />
+                    <div key={phase.id} id={`phase-${phase.id}`}>
+                      <PhaseItem
+                        phase={phase}
+                        index={index}
+                        procedureId={id!}
+                        reference={reference}
+                        totalPhases={existingProcedure.phases.length}
+                        allPhases={existingProcedure.phases}
+                        onDelete={handleDeletePhase}
+                        onMoveImageToOtherPhase={handleMoveImageToOtherPhase}
+                        onMoveStepToPhase={handleMoveStepToPhase}
+                        initiallyExpanded={expandPhaseIndex !== undefined && index === expandPhaseIndex}
+                        initialExpandStepIndex={expandPhaseIndex !== undefined && index === expandPhaseIndex ? expandStepIndex : undefined}
+                      />
+                    </div>
                   ))}
                 </div>
               )}
@@ -890,6 +927,56 @@ export default function ProcedureEditor() {
                     </div>
                   )}
                 </>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Historique des modifications */}
+        {id && (
+          <Card>
+            <CardContent className="pt-0">
+              <div className="flex items-center justify-between px-1 py-4 border-b border-[#1e1e1e]">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <History className="h-4 w-4 text-blue-400" />
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (!showActivityLog) handleLoadActivity();
+                      setShowActivityLog(v => !v);
+                    }}
+                    className="flex items-center gap-2 hover:text-primary transition-colors"
+                  >
+                    <span className="text-base font-bold">Historique des modifications</span>
+                    {showActivityLog ? <ChevronUp className="h-4 w-4 text-gray-500" /> : <ChevronDown className="h-4 w-4 text-gray-500" />}
+                  </button>
+                </div>
+              </div>
+              {showActivityLog && (
+                <div className="mt-4">
+                  {activityLoading ? (
+                    <p className="text-gray-500 text-sm text-center py-6">Chargement…</p>
+                  ) : activityLog.length === 0 ? (
+                    <p className="text-gray-500 text-sm text-center py-6">Aucune modification enregistrée.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {activityLog.map(entry => (
+                        <div key={entry.id} className="flex items-start gap-3 px-1 py-2 border-b border-[#1e1e1e] last:border-0">
+                          <span className="flex-shrink-0 w-2 h-2 rounded-full bg-primary mt-1.5" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-gray-300">{entry.detail || entry.action}</p>
+                            <p className="text-xs text-gray-600 mt-0.5">
+                              {entry.timestamp instanceof Date
+                                ? entry.timestamp.toLocaleString('fr-FR')
+                                : ''}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>
@@ -1109,6 +1196,8 @@ export default function ProcedureEditor() {
           onCancel={() => setImageToAnnotate(null)}
         />
       )}
+
+      {existingProcedure && <PhaseSummary phases={existingProcedure.phases} />}
 
     </div>
   );

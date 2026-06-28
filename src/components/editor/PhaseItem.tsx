@@ -1,5 +1,20 @@
 import { useState, useEffect, useRef } from 'react';
-import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, Save, Pencil, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Video as VideoIcon, Bold, Italic, Palette, List, ListOrdered, Smile, FileText, FolderInput, BookOpen, BookmarkPlus } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, Save, Pencil, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Video as VideoIcon, Bold, Italic, Palette, List, ListOrdered, Smile, FileText, FolderInput, BookOpen, BookmarkPlus, GripVertical, MoveRight } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -26,11 +41,12 @@ interface PhaseItemProps {
   allPhases?: Phase[];
   onDelete: (phaseId: string) => void;
   onMoveImageToOtherPhase?: (image: AnnotatedImage, toPhaseId: string, toStepId: string) => void;
+  onMoveStepToPhase?: (step: SubStep, fromPhaseId: string, toPhaseId: string) => void;
   initiallyExpanded?: boolean;
   initialExpandStepIndex?: number;
 }
 
-export default function PhaseItem({ phase, index, procedureId, reference, totalPhases, allPhases, onDelete, onMoveImageToOtherPhase, initiallyExpanded, initialExpandStepIndex }: PhaseItemProps) {
+export default function PhaseItem({ phase, index, procedureId, reference, totalPhases, allPhases, onDelete, onMoveImageToOtherPhase, onMoveStepToPhase, initiallyExpanded, initialExpandStepIndex }: PhaseItemProps) {
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded ?? false);
   const phaseRef = useRef<HTMLDivElement>(null);
   const [title, setTitle] = useState(phase.title);
@@ -41,6 +57,7 @@ export default function PhaseItem({ phase, index, procedureId, reference, totalP
   const isInitialMount = useRef(true);
 
   const availableTools = useTools();
+  const dndSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
   const [showSubStepTemplateModal, setShowSubStepTemplateModal] = useState(false);
   const [subStepTemplates, setSubStepTemplates] = useState<SubStepTemplate[]>([]);
   const [subStepTemplateCategory, setSubStepTemplateCategory] = useState<string>('Tous');
@@ -372,6 +389,20 @@ export default function PhaseItem({ phase, index, procedureId, reference, totalP
     setSteps(newSteps.map((s, idx) => ({ ...s, order: idx })));
   };
 
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = steps.findIndex(s => s.id === active.id);
+    const newIndex = steps.findIndex(s => s.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    setSteps(arrayMove(steps, oldIndex, newIndex).map((s, idx) => ({ ...s, order: idx })));
+  };
+
+  const handleMoveStepToPhase = (step: SubStep, targetPhaseId: string) => {
+    setSteps(prev => prev.filter(s => s.id !== step.id).map((s, idx) => ({ ...s, order: idx })));
+    onMoveStepToPhase?.(step, phase.id, targetPhaseId);
+  };
+
   // Nettoie les valeurs undefined d'un objet (Firestore n'accepte pas undefined)
   // Exclut aussi imageUrl des outils (trop gros pour Firestore en base64)
   const cleanUndefined = (obj: any): any => {
@@ -657,6 +688,8 @@ export default function PhaseItem({ phase, index, procedureId, reference, totalP
                   Aucune sous-étape. Cliquez sur "Ajouter une sous-étape" pour commencer.
                 </p>
               ) : (
+                <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                  <SortableContext items={steps.map(s => s.id)} strategy={verticalListSortingStrategy}>
                 <div className="space-y-4">
                   {steps.map((step, idx) => (
                     <SubStepItem
@@ -683,6 +716,7 @@ export default function PhaseItem({ phase, index, procedureId, reference, totalP
                       onRemoveTool={(toolId) => removeStepTool(step.id, toolId)}
                       onMoveUp={() => moveStepUp(step.id)}
                       onMoveDown={() => moveStepDown(step.id)}
+                      onMoveToPhase={(targetPhaseId) => handleMoveStepToPhase(step, targetPhaseId)}
                       onSaveAnnotations={(imageId, annotations, description, rotation) => handleSaveStepAnnotations(step.id, imageId, annotations, description, rotation)}
                       onSaveAsTemplate={async () => {
                         const templateName = prompt('Nom du template de sous-étape:', step.title || 'Mon template');
@@ -699,6 +733,8 @@ export default function PhaseItem({ phase, index, procedureId, reference, totalP
                     />
                   ))}
                 </div>
+                  </SortableContext>
+                </DndContext>
               )}
             </div>
 
@@ -847,6 +883,7 @@ interface SubStepItemProps {
   onRemoveTool: (toolId: string) => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  onMoveToPhase: (targetPhaseId: string) => void;
   onSaveAnnotations: (imageId: string, annotations: Annotation[], description: string, rotation: number) => Promise<void>;
   onSaveAsTemplate: () => void;
   initiallyExpanded?: boolean;
@@ -874,10 +911,20 @@ function SubStepItem({
   onRemoveTool,
   onMoveUp,
   onMoveDown,
+  onMoveToPhase,
   onSaveAnnotations,
   onSaveAsTemplate,
   initiallyExpanded,
 }: SubStepItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: step.id });
+  const dragStyle = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 };
+  const [showMoveToPhaseMenu, setShowMoveToPhaseMenu] = useState(false);
+  useEffect(() => {
+    if (!showMoveToPhaseMenu) return;
+    const close = () => setShowMoveToPhaseMenu(false);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [showMoveToPhaseMenu]);
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded ?? false);
   const [imageToAnnotate, setImageToAnnotate] = useState<AnnotatedImage | null>(null);
   const [moveMenuForImage, setMoveMenuForImage] = useState<string | null>(null);
@@ -1228,13 +1275,23 @@ function SubStepItem({
   };
 
   return (
-    <div className="border border-[#323232] rounded-lg bg-background-surface">
+    <div ref={setNodeRef} style={dragStyle} className="border border-[#323232] rounded-lg bg-background-surface">
       {/* Header */}
       <div
         className="p-4 flex items-center justify-between cursor-pointer hover:bg-background-hover"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-3 flex-1">
+          {/* Drag handle */}
+          <div
+            {...attributes}
+            {...listeners}
+            onClick={(e) => e.stopPropagation()}
+            className="cursor-grab active:cursor-grabbing text-gray-600 hover:text-gray-400 p-0.5 -ml-1 flex-shrink-0"
+            title="Glisser pour réordonner"
+          >
+            <GripVertical className="h-4 w-4" />
+          </div>
           <span className="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-white text-sm font-bold">
             {index + 1}
           </span>
@@ -1272,6 +1329,42 @@ function SubStepItem({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Déplacer vers une autre phase */}
+          {allPhases && allPhases.filter(p => p.id !== currentPhaseId).length > 0 && (
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => { e.stopPropagation(); setShowMoveToPhaseMenu(v => !v); }}
+                title="Déplacer vers une autre phase"
+              >
+                <MoveRight className="h-3 w-3 text-gray-400" />
+              </Button>
+              {showMoveToPhaseMenu && (
+                <div
+                  className="absolute right-0 top-8 z-50 bg-[#1a1a1a] border border-[#323232] rounded-lg shadow-xl py-1 min-w-44"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <p className="text-[10px] text-gray-500 px-3 py-1 uppercase tracking-wider">Déplacer vers</p>
+                  {allPhases
+                    .filter(p => p.id !== currentPhaseId)
+                    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                    .map((p, i) => (
+                      <button
+                        key={p.id}
+                        onClick={() => { onMoveToPhase(p.id); setShowMoveToPhaseMenu(false); }}
+                        className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-[#252525] hover:text-white transition-colors flex items-center gap-2"
+                      >
+                        <span className="w-5 h-5 rounded bg-primary/20 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                          {p.phaseNumber ?? i + 1}
+                        </span>
+                        <span className="truncate">{p.title || `Phase ${p.phaseNumber ?? i + 1}`}</span>
+                      </button>
+                    ))}
+                </div>
+              )}
+            </div>
+          )}
           <Button
             variant="ghost"
             size="icon"
