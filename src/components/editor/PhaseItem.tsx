@@ -893,8 +893,6 @@ function SubStepItem({
   const documentFileInputRef = useRef<HTMLInputElement>(null);
   const [videoUrl, setVideoUrl] = useState('');
   const [videoTitle, setVideoTitle] = useState('');
-  const [videoDragOver, setVideoDragOver] = useState(false);
-  const [documentDragOver, setDocumentDragOver] = useState(false);
   const [editingVideoPathId, setEditingVideoPathId] = useState<string | null>(null);
   const [editingVideoPathValue, setEditingVideoPathValue] = useState('');
   const [editingDocPathId, setEditingDocPathId] = useState<string | null>(null);
@@ -1123,12 +1121,14 @@ function SubStepItem({
     if (videoFileInputRef.current) videoFileInputRef.current.value = '';
   };
 
-  const handleVideoDrop = (e: React.DragEvent) => {
+  const handleVideoPathDrop = (e: React.DragEvent<HTMLInputElement>) => {
     e.preventDefault();
-    setVideoDragOver(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith('video/')) {
-      applyVideoFile(file);
+    const path = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('text');
+    if (path.trim()) {
+      setVideoUrl(path.trim());
+      const lastSep = Math.max(path.lastIndexOf('\\'), path.lastIndexOf('/'));
+      if (lastSep > 0) localStorage.setItem(NAS_VIDEO_BASE_KEY, path.substring(0, lastSep + 1));
+      if (!videoTitle.trim()) setVideoTitle(path.substring(lastSep + 1).replace(/\.[^/.]+$/, ''));
     }
   };
 
@@ -1177,12 +1177,14 @@ function SubStepItem({
     if (documentFileInputRef.current) documentFileInputRef.current.value = '';
   };
 
-  const handleDocumentDrop = (e: React.DragEvent) => {
+  const handleDocumentPathDrop = (e: React.DragEvent<HTMLInputElement>) => {
     e.preventDefault();
-    setDocumentDragOver(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      applyDocumentFile(file);
+    const path = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('text');
+    if (path.trim()) {
+      setDocumentUrl(path.trim());
+      const lastSep = Math.max(path.lastIndexOf('\\'), path.lastIndexOf('/'));
+      if (lastSep > 0) localStorage.setItem(NAS_DOCUMENT_BASE_KEY, path.substring(0, lastSep + 1));
+      if (!documentTitle.trim()) setDocumentTitle(path.substring(lastSep + 1).replace(/\.[^/.]+$/, ''));
     }
   };
 
@@ -1611,270 +1613,6 @@ function SubStepItem({
             </div>
           </div>
 
-          {/* Vidéos */}
-          <div>
-            <label className="block text-xs font-medium text-gray-400 mb-2">
-              Vidéos ({step.videos?.length || 0})
-            </label>
-            <div className="flex flex-col gap-2 mb-2">
-              {(step.videos || []).map((video) => {
-                const hasFullPath = video.url.includes('\\') || video.url.includes('/');
-                const isEditingPath = editingVideoPathId === video.id;
-                return (
-                <div key={video.id} className="group flex items-start gap-2 p-2 bg-background-elevated rounded-lg border border-[#323232] hover:border-[#444] transition-colors">
-                  <div className="flex-shrink-0 w-8 h-8 rounded bg-[#1a1a2e] flex items-center justify-center mt-0.5">
-                    <VideoIcon className="h-4 w-4 text-blue-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <input
-                      className="text-sm font-medium text-white bg-transparent border-none outline-none w-full hover:bg-[#2a2a2a] focus:bg-[#2a2a2a] rounded px-1 -mx-1 truncate"
-                      value={video.name}
-                      onChange={(e) => {
-                        const updatedVideos = (step.videos || []).map(v =>
-                          v.id === video.id ? { ...v, name: e.target.value } : v
-                        );
-                        onUpdate({ videos: updatedVideos });
-                      }}
-                      title="Cliquer pour modifier le titre"
-                    />
-                    {isEditingPath ? (
-                      <input
-                        autoFocus
-                        className="text-xs text-white bg-[#1a1a1a] border border-primary rounded px-2 py-0.5 w-full mt-0.5 outline-none"
-                        value={editingVideoPathValue}
-                        onChange={(e) => setEditingVideoPathValue(e.target.value)}
-                        onBlur={() => {
-                          const newPath = editingVideoPathValue.trim();
-                          if (newPath && newPath !== video.url) {
-                            const lastSep = Math.max(newPath.lastIndexOf('\\'), newPath.lastIndexOf('/'));
-                            if (lastSep > 0) localStorage.setItem(NAS_VIDEO_BASE_KEY, newPath.substring(0, lastSep + 1));
-                            onUpdate({ videos: (step.videos || []).map(v => v.id === video.id ? { ...v, url: newPath } : v) });
-                          }
-                          setEditingVideoPathId(null);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-                          if (e.key === 'Escape') setEditingVideoPathId(null);
-                        }}
-                      />
-                    ) : (
-                      <div
-                        className={`text-xs truncate cursor-pointer rounded px-1 -mx-1 py-0.5 hover:bg-[#2a2a2a] transition-colors ${hasFullPath ? 'text-gray-500' : 'text-orange-400'}`}
-                        title={hasFullPath ? 'Cliquer pour modifier le chemin' : 'Chemin incomplet — cliquer pour corriger'}
-                        onClick={() => {
-                          setEditingVideoPathId(video.id);
-                          setEditingVideoPathValue(video.url);
-                        }}
-                      >
-                        {hasFullPath ? video.url : `⚠ ${video.url} (chemin incomplet)`}
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => onRemoveVideo(video.id)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity bg-red-500/80 hover:bg-red-500 text-white rounded p-1 flex-shrink-0 mt-0.5"
-                    title="Supprimer la vidéo"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-                );
-              })}
-            </div>
-            {showVideoInput ? (
-              <div className="space-y-2 p-3 bg-background-elevated rounded-lg border border-[#323232]">
-                {/* Zone drag & drop */}
-                <div
-                  onDragOver={(e) => { e.preventDefault(); setVideoDragOver(true); }}
-                  onDragLeave={() => setVideoDragOver(false)}
-                  onDrop={handleVideoDrop}
-                  onClick={handleVideoFileSelect}
-                  className={`flex flex-col items-center justify-center gap-1.5 border-2 border-dashed rounded-lg p-4 cursor-pointer transition-all ${
-                    videoDragOver
-                      ? 'border-blue-400 bg-blue-400/10 scale-[1.01]'
-                      : 'border-[#3a3a3a] hover:border-blue-400/50 hover:bg-[#1a1a2e]/30'
-                  }`}
-                >
-                  <VideoIcon className={`h-6 w-6 ${videoDragOver ? 'text-blue-400' : 'text-gray-500'}`} />
-                  <p className="text-xs text-gray-400 text-center">
-                    {videoDragOver ? 'Relâchez pour sélectionner' : 'Glissez une vidéo ici ou cliquez pour parcourir'}
-                  </p>
-                </div>
-                <input
-                  ref={videoFileInputRef}
-                  type="file"
-                  accept="video/*"
-                  onChange={handleVideoFileInputChange}
-                  className="hidden"
-                />
-                <Input
-                  type="text"
-                  value={videoTitle}
-                  onChange={(e) => setVideoTitle(e.target.value)}
-                  placeholder="Titre de la vidéo"
-                  className="text-xs"
-                />
-                <Input
-                  type="text"
-                  value={videoUrl}
-                  onChange={(e) => setVideoUrl(e.target.value)}
-                  placeholder={`Chemin d'accès NAS${localStorage.getItem(NAS_VIDEO_BASE_KEY) ? ` (dossier mémorisé : ${localStorage.getItem(NAS_VIDEO_BASE_KEY)})` : ' (ex: \\\\NAS\\Videos\\procedure.mp4)'}`}
-                  className="text-xs"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleAddVideo();
-                    else if (e.key === 'Escape') { setShowVideoInput(false); setVideoUrl(''); setVideoTitle(''); }
-                  }}
-                />
-                <div className="flex gap-2">
-                  <Button variant="default" size="sm" onClick={handleAddVideo} className="text-xs">Ajouter</Button>
-                  <Button variant="secondary" size="sm" onClick={() => { setShowVideoInput(false); setVideoUrl(''); setVideoTitle(''); }} className="text-xs">Annuler</Button>
-                </div>
-              </div>
-            ) : (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setShowVideoInput(true)}
-                className="w-full justify-start text-xs"
-              >
-                <Plus className="h-3 w-3 mr-1" />
-                Ajouter une vidéo
-              </Button>
-            )}
-          </div>
-
-          {/* Documents */}
-          <div>
-            <label className="block text-xs font-medium text-gray-400 mb-2">
-              Documents ({step.documents?.length || 0})
-            </label>
-            <div className="flex flex-col gap-2 mb-2">
-              {(step.documents || []).map((doc) => {
-                const hasFullPath = doc.url.includes('\\') || doc.url.includes('/');
-                const isEditingPath = editingDocPathId === doc.id;
-                return (
-                <div key={doc.id} className="group flex items-start gap-2 p-2 bg-background-elevated rounded-lg border border-[#323232] hover:border-[#444] transition-colors">
-                  <div className="flex-shrink-0 w-8 h-8 rounded bg-[#2a0a0a] flex items-center justify-center mt-0.5">
-                    <FileText className="h-4 w-4 text-red-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <input
-                      className="text-sm font-medium text-white bg-transparent border-none outline-none w-full hover:bg-[#2a2a2a] focus:bg-[#2a2a2a] rounded px-1 -mx-1 truncate"
-                      value={doc.name}
-                      onChange={(e) => {
-                        const updatedDocs = (step.documents || []).map(d =>
-                          d.id === doc.id ? { ...d, name: e.target.value } : d
-                        );
-                        onUpdate({ documents: updatedDocs });
-                      }}
-                      title="Cliquer pour modifier le titre"
-                    />
-                    {isEditingPath ? (
-                      <input
-                        autoFocus
-                        className="text-xs text-white bg-[#1a1a1a] border border-primary rounded px-2 py-0.5 w-full mt-0.5 outline-none"
-                        value={editingDocPathValue}
-                        onChange={(e) => setEditingDocPathValue(e.target.value)}
-                        onBlur={() => {
-                          const newPath = editingDocPathValue.trim();
-                          if (newPath && newPath !== doc.url) {
-                            const lastSep = Math.max(newPath.lastIndexOf('\\'), newPath.lastIndexOf('/'));
-                            if (lastSep > 0) localStorage.setItem(NAS_DOCUMENT_BASE_KEY, newPath.substring(0, lastSep + 1));
-                            onUpdate({ documents: (step.documents || []).map(d => d.id === doc.id ? { ...d, url: newPath } : d) });
-                          }
-                          setEditingDocPathId(null);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-                          if (e.key === 'Escape') setEditingDocPathId(null);
-                        }}
-                      />
-                    ) : (
-                      <div
-                        className={`text-xs truncate cursor-pointer rounded px-1 -mx-1 py-0.5 hover:bg-[#2a2a2a] transition-colors ${hasFullPath ? 'text-gray-500' : 'text-orange-400'}`}
-                        title={hasFullPath ? 'Cliquer pour modifier le chemin' : 'Chemin incomplet — cliquer pour corriger'}
-                        onClick={() => {
-                          setEditingDocPathId(doc.id);
-                          setEditingDocPathValue(doc.url);
-                        }}
-                      >
-                        {hasFullPath ? doc.url : `⚠ ${doc.url} (chemin incomplet)`}
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => onRemoveDocument(doc.id)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity bg-red-500/80 hover:bg-red-500 text-white rounded p-1 flex-shrink-0 mt-0.5"
-                    title="Supprimer le document"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-                );
-              })}
-            </div>
-            {showDocumentInput ? (
-              <div className="space-y-2 p-3 bg-background-elevated rounded-lg border border-[#323232]">
-                {/* Zone drag & drop */}
-                <div
-                  onDragOver={(e) => { e.preventDefault(); setDocumentDragOver(true); }}
-                  onDragLeave={() => setDocumentDragOver(false)}
-                  onDrop={handleDocumentDrop}
-                  onClick={handleDocumentFileSelect}
-                  className={`flex flex-col items-center justify-center gap-1.5 border-2 border-dashed rounded-lg p-4 cursor-pointer transition-all ${
-                    documentDragOver
-                      ? 'border-red-400 bg-red-400/10 scale-[1.01]'
-                      : 'border-[#3a3a3a] hover:border-red-400/50 hover:bg-[#2a0a0a]/30'
-                  }`}
-                >
-                  <FileText className={`h-6 w-6 ${documentDragOver ? 'text-red-400' : 'text-gray-500'}`} />
-                  <p className="text-xs text-gray-400 text-center">
-                    {documentDragOver ? 'Relâchez pour sélectionner' : 'Glissez un document ici ou cliquez pour parcourir'}
-                  </p>
-                </div>
-                <input
-                  ref={documentFileInputRef}
-                  type="file"
-                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
-                  onChange={handleDocumentFileInputChange}
-                  className="hidden"
-                />
-                <Input
-                  type="text"
-                  value={documentTitle}
-                  onChange={(e) => setDocumentTitle(e.target.value)}
-                  placeholder="Titre du document"
-                  className="text-xs"
-                />
-                <Input
-                  type="text"
-                  value={documentUrl}
-                  onChange={(e) => setDocumentUrl(e.target.value)}
-                  placeholder={`Chemin d'accès NAS${localStorage.getItem(NAS_DOCUMENT_BASE_KEY) ? ` (dossier mémorisé : ${localStorage.getItem(NAS_DOCUMENT_BASE_KEY)})` : ' (ex: \\\\NAS\\Documents\\fichier.pdf)'}`}
-                  className="text-xs"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleAddDocument();
-                    else if (e.key === 'Escape') { setShowDocumentInput(false); setDocumentUrl(''); setDocumentTitle(''); }
-                  }}
-                />
-                <div className="flex gap-2">
-                  <Button variant="default" size="sm" onClick={handleAddDocument} className="text-xs">Ajouter</Button>
-                  <Button variant="secondary" size="sm" onClick={() => { setShowDocumentInput(false); setDocumentUrl(''); setDocumentTitle(''); }} className="text-xs">Annuler</Button>
-                </div>
-              </div>
-            ) : (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setShowDocumentInput(true)}
-                className="w-full justify-start text-xs"
-              >
-                <Plus className="h-3 w-3 mr-1" />
-                Ajouter un document
-              </Button>
-            )}
-          </div>
-
           {/* Outils */}
           <div>
             <label className="block text-xs font-medium text-gray-400 mb-2">
@@ -2012,6 +1750,265 @@ function SubStepItem({
               </Button>
             </div>
           </div>
+
+          {/* Vidéos */}
+          <div>
+            <label className="block text-xs font-medium text-gray-400 mb-2">
+              Vidéos ({step.videos?.length || 0})
+            </label>
+            <div className="flex flex-col gap-2 mb-2">
+              {(step.videos || []).map((video) => {
+                const hasFullPath = video.url.includes('\\') || video.url.includes('/');
+                const isEditingPath = editingVideoPathId === video.id;
+                return (
+                <div key={video.id} className="group flex items-start gap-2 p-2 bg-background-elevated rounded-lg border border-[#323232] hover:border-[#444] transition-colors">
+                  <div className="flex-shrink-0 w-8 h-8 rounded bg-[#1a1a2e] flex items-center justify-center mt-0.5">
+                    <VideoIcon className="h-4 w-4 text-blue-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <input
+                      className="text-sm font-medium text-white bg-transparent border-none outline-none w-full hover:bg-[#2a2a2a] focus:bg-[#2a2a2a] rounded px-1 -mx-1 truncate"
+                      value={video.name}
+                      onChange={(e) => {
+                        const updatedVideos = (step.videos || []).map(v =>
+                          v.id === video.id ? { ...v, name: e.target.value } : v
+                        );
+                        onUpdate({ videos: updatedVideos });
+                      }}
+                      title="Cliquer pour modifier le titre"
+                    />
+                    {isEditingPath ? (
+                      <input
+                        autoFocus
+                        className="text-xs text-white bg-[#1a1a1a] border border-primary rounded px-2 py-0.5 w-full mt-0.5 outline-none"
+                        value={editingVideoPathValue}
+                        onChange={(e) => setEditingVideoPathValue(e.target.value)}
+                        onBlur={() => {
+                          const newPath = editingVideoPathValue.trim();
+                          if (newPath && newPath !== video.url) {
+                            const lastSep = Math.max(newPath.lastIndexOf('\\'), newPath.lastIndexOf('/'));
+                            if (lastSep > 0) localStorage.setItem(NAS_VIDEO_BASE_KEY, newPath.substring(0, lastSep + 1));
+                            onUpdate({ videos: (step.videos || []).map(v => v.id === video.id ? { ...v, url: newPath } : v) });
+                          }
+                          setEditingVideoPathId(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                          if (e.key === 'Escape') setEditingVideoPathId(null);
+                        }}
+                      />
+                    ) : (
+                      <div
+                        className={`text-xs truncate cursor-pointer rounded px-1 -mx-1 py-0.5 hover:bg-[#2a2a2a] transition-colors ${hasFullPath ? 'text-gray-500' : 'text-orange-400'}`}
+                        title={hasFullPath ? 'Cliquer pour modifier le chemin' : 'Chemin incomplet — cliquer pour corriger'}
+                        onClick={() => {
+                          setEditingVideoPathId(video.id);
+                          setEditingVideoPathValue(video.url);
+                        }}
+                      >
+                        {hasFullPath ? video.url : `⚠ ${video.url} (chemin incomplet)`}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => onRemoveVideo(video.id)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity bg-red-500/80 hover:bg-red-500 text-white rounded p-1 flex-shrink-0 mt-0.5"
+                    title="Supprimer la vidéo"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+                );
+              })}
+            </div>
+            {showVideoInput ? (
+              <div className="space-y-2 p-3 bg-background-elevated rounded-lg border border-[#323232]">
+                <input
+                  ref={videoFileInputRef}
+                  type="file"
+                  accept="video/*"
+                  onChange={handleVideoFileInputChange}
+                  className="hidden"
+                />
+                <Input
+                  type="text"
+                  value={videoTitle}
+                  onChange={(e) => setVideoTitle(e.target.value)}
+                  placeholder="Titre de la vidéo"
+                  className="text-xs"
+                />
+                <div className="flex gap-2 items-center">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleVideoFileSelect}
+                    className="flex-shrink-0"
+                    title="Parcourir les fichiers"
+                  >
+                    <VideoIcon className="h-4 w-4" />
+                  </Button>
+                  <Input
+                    type="text"
+                    value={videoUrl}
+                    onChange={(e) => setVideoUrl(e.target.value)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={handleVideoPathDrop}
+                    placeholder="Chemin d'accès — glissez un fichier depuis l'explorateur"
+                    className="text-xs flex-1"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleAddVideo();
+                      else if (e.key === 'Escape') { setShowVideoInput(false); setVideoUrl(''); setVideoTitle(''); }
+                    }}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="default" size="sm" onClick={handleAddVideo} className="text-xs">Ajouter</Button>
+                  <Button variant="secondary" size="sm" onClick={() => { setShowVideoInput(false); setVideoUrl(''); setVideoTitle(''); }} className="text-xs">Annuler</Button>
+                </div>
+              </div>
+            ) : (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowVideoInput(true)}
+                className="w-full justify-start text-xs"
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Ajouter une vidéo
+              </Button>
+            )}
+          </div>
+
+          {/* Documents */}
+          <div>
+            <label className="block text-xs font-medium text-gray-400 mb-2">
+              Documents ({step.documents?.length || 0})
+            </label>
+            <div className="flex flex-col gap-2 mb-2">
+              {(step.documents || []).map((doc) => {
+                const hasFullPath = doc.url.includes('\\') || doc.url.includes('/');
+                const isEditingPath = editingDocPathId === doc.id;
+                return (
+                <div key={doc.id} className="group flex items-start gap-2 p-2 bg-background-elevated rounded-lg border border-[#323232] hover:border-[#444] transition-colors">
+                  <div className="flex-shrink-0 w-8 h-8 rounded bg-[#2a0a0a] flex items-center justify-center mt-0.5">
+                    <FileText className="h-4 w-4 text-red-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <input
+                      className="text-sm font-medium text-white bg-transparent border-none outline-none w-full hover:bg-[#2a2a2a] focus:bg-[#2a2a2a] rounded px-1 -mx-1 truncate"
+                      value={doc.name}
+                      onChange={(e) => {
+                        const updatedDocs = (step.documents || []).map(d =>
+                          d.id === doc.id ? { ...d, name: e.target.value } : d
+                        );
+                        onUpdate({ documents: updatedDocs });
+                      }}
+                      title="Cliquer pour modifier le titre"
+                    />
+                    {isEditingPath ? (
+                      <input
+                        autoFocus
+                        className="text-xs text-white bg-[#1a1a1a] border border-primary rounded px-2 py-0.5 w-full mt-0.5 outline-none"
+                        value={editingDocPathValue}
+                        onChange={(e) => setEditingDocPathValue(e.target.value)}
+                        onBlur={() => {
+                          const newPath = editingDocPathValue.trim();
+                          if (newPath && newPath !== doc.url) {
+                            const lastSep = Math.max(newPath.lastIndexOf('\\'), newPath.lastIndexOf('/'));
+                            if (lastSep > 0) localStorage.setItem(NAS_DOCUMENT_BASE_KEY, newPath.substring(0, lastSep + 1));
+                            onUpdate({ documents: (step.documents || []).map(d => d.id === doc.id ? { ...d, url: newPath } : d) });
+                          }
+                          setEditingDocPathId(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                          if (e.key === 'Escape') setEditingDocPathId(null);
+                        }}
+                      />
+                    ) : (
+                      <div
+                        className={`text-xs truncate cursor-pointer rounded px-1 -mx-1 py-0.5 hover:bg-[#2a2a2a] transition-colors ${hasFullPath ? 'text-gray-500' : 'text-orange-400'}`}
+                        title={hasFullPath ? 'Cliquer pour modifier le chemin' : 'Chemin incomplet — cliquer pour corriger'}
+                        onClick={() => {
+                          setEditingDocPathId(doc.id);
+                          setEditingDocPathValue(doc.url);
+                        }}
+                      >
+                        {hasFullPath ? doc.url : `⚠ ${doc.url} (chemin incomplet)`}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => onRemoveDocument(doc.id)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity bg-red-500/80 hover:bg-red-500 text-white rounded p-1 flex-shrink-0 mt-0.5"
+                    title="Supprimer le document"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+                );
+              })}
+            </div>
+            {showDocumentInput ? (
+              <div className="space-y-2 p-3 bg-background-elevated rounded-lg border border-[#323232]">
+                <input
+                  ref={documentFileInputRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                  onChange={handleDocumentFileInputChange}
+                  className="hidden"
+                />
+                <Input
+                  type="text"
+                  value={documentTitle}
+                  onChange={(e) => setDocumentTitle(e.target.value)}
+                  placeholder="Titre du document"
+                  className="text-xs"
+                />
+                <div className="flex gap-2 items-center">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleDocumentFileSelect}
+                    className="flex-shrink-0"
+                    title="Parcourir les fichiers"
+                  >
+                    <FileText className="h-4 w-4" />
+                  </Button>
+                  <Input
+                    type="text"
+                    value={documentUrl}
+                    onChange={(e) => setDocumentUrl(e.target.value)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={handleDocumentPathDrop}
+                    placeholder="Chemin d'accès — glissez un fichier depuis l'explorateur"
+                    className="text-xs flex-1"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleAddDocument();
+                      else if (e.key === 'Escape') { setShowDocumentInput(false); setDocumentUrl(''); setDocumentTitle(''); }
+                    }}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="default" size="sm" onClick={handleAddDocument} className="text-xs">Ajouter</Button>
+                  <Button variant="secondary" size="sm" onClick={() => { setShowDocumentInput(false); setDocumentUrl(''); setDocumentTitle(''); }} className="text-xs">Annuler</Button>
+                </div>
+              </div>
+            ) : (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowDocumentInput(true)}
+                className="w-full justify-start text-xs"
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Ajouter un document
+              </Button>
+            )}
+          </div>
+
         </div>
       )}
 
