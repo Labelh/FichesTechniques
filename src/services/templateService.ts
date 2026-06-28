@@ -7,6 +7,9 @@ import {
   getAllSubStepTemplates as getAllSubStepTemplatesFirestore,
   deleteSubStepTemplate as deleteSubStepTemplateFirestore,
   updateSubStepTemplate as updateSubStepTemplateFirestore,
+  createPhraseTemplate as createPhraseTemplateFirestore,
+  getAllPhraseTemplates as getAllPhraseTemplatesFirestore,
+  deletePhraseTemplate as deletePhraseTemplateFirestore,
 } from '@/lib/firestore';
 import { addPhase } from '@/services/procedureService';
 import type { ProcedureTemplate, Phase, SubStep, SubStepTemplate } from '@/types';
@@ -206,4 +209,20 @@ export async function duplicateSubStepTemplate(template: SubStepTemplate): Promi
     subStep: template.subStep,
     usageCount: 0,
   });
+}
+
+// ==========================================
+// PHRASES TYPE
+// ==========================================
+
+export async function savePhraseTemplate(text: string, label: string): Promise<string> {
+  return createPhraseTemplateFirestore(text, label);
+}
+
+export async function getAllPhraseTemplates() {
+  return getAllPhraseTemplatesFirestore();
+}
+
+export async function deletePhraseTemplate(id: string): Promise<void> {
+  return deletePhraseTemplateFirestore(id);
 }

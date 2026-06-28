@@ -42,6 +42,7 @@ export const collections = {
   preferences: 'preferences',
   history: 'history',
   forecastArticles: 'forecast_articles',
+  phraseTemplates: 'phraseTemplates',
 } as const;
 
 // ==========================================
@@ -669,4 +670,27 @@ export async function initializeFirestore(): Promise<void> {
     console.error('❌ Erreur lors de l\'initialisation de Firestore:', error);
     throw error;
   }
+}
+
+// ==========================================
+// PHRASE TEMPLATES
+// ==========================================
+
+export async function createPhraseTemplate(text: string, label: string): Promise<string> {
+  const ref = await addDoc(collection(db, collections.phraseTemplates), {
+    text,
+    label,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  return ref.id;
+}
+
+export async function getAllPhraseTemplates() {
+  const snap = await getDocs(query(collection(db, collections.phraseTemplates), orderBy('createdAt', 'desc')));
+  return snap.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) })) as any[];
+}
+
+export async function deletePhraseTemplate(id: string): Promise<void> {
+  await deleteDoc(doc(db, collections.phraseTemplates, id));
 }

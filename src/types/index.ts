@@ -339,6 +339,11 @@ export interface SubStepTemplate extends BaseEntity {
   usageCount: number;
 }
 
+export interface PhraseTemplate extends BaseEntity {
+  text: string;
+  label: string;
+}
+
 export interface Category extends BaseEntity {
   name: string;
   description?: string;

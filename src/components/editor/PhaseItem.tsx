@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, Save, Pencil, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Video as VideoIcon, Bold, Italic, Palette, List, ListOrdered, Smile, FileText, FolderInput } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, Save, Pencil, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Video as VideoIcon, Bold, Italic, Palette, List, ListOrdered, Smile, FileText, FolderInput, BookOpen, BookmarkPlus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { updatePhase, movePhaseUp, movePhaseDown } from '@/services/procedureService';
-import { createPhaseTemplate, createSubStepTemplateFromStep, getAllSubStepTemplates, deleteSubStepTemplate, incrementSubStepTemplateUsage } from '@/services/templateService';
+import { createPhaseTemplate, createSubStepTemplateFromStep, getAllSubStepTemplates, deleteSubStepTemplate, incrementSubStepTemplateUsage, savePhraseTemplate, getAllPhraseTemplates, deletePhraseTemplate } from '@/services/templateService';
+import type { PhraseTemplate } from '@/types';
 import { uploadImageToHost } from '@/services/imageHostingService';
 import { useTools } from '@/hooks/useTools';
 import ImageAnnotator from '@/components/phase/ImageAnnotator';
@@ -914,6 +915,11 @@ function SubStepItem({
 
   // État pour le modal d'insertion des outils dans la description
   const [showToolInsertModal, setShowToolInsertModal] = useState(false);
+  const [showPhraseLibrary, setShowPhraseLibrary] = useState(false);
+  const [showSavePhraseModal, setShowSavePhraseModal] = useState(false);
+  const [phraseTemplates, setPhraseTemplates] = useState<PhraseTemplate[]>([]);
+  const [pendingPhraseText, setPendingPhraseText] = useState('');
+  const [pendingPhraseLabel, setPendingPhraseLabel] = useState('');
   const videoFileInputRef = useRef<HTMLInputElement>(null);
 
   const textColors = [
@@ -1486,6 +1492,40 @@ function SubStepItem({
                   {(step.tools?.length || 0) > 0 && (
                     <span className="text-xs">{step.tools?.length}</span>
                   )}
+                </button>
+
+                {/* Séparateur */}
+                <div className="w-px h-6 bg-[#323232] mx-1" />
+
+                {/* Sauvegarder la sélection comme phrase type */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const sel = window.getSelection();
+                    const text = sel?.toString().trim() || '';
+                    if (!text) { toast.error('Sélectionnez du texte à enregistrer'); return; }
+                    setPendingPhraseText(text);
+                    setPendingPhraseLabel(text.slice(0, 40));
+                    setShowSavePhraseModal(true);
+                  }}
+                  className="p-1.5 hover:bg-[#323232] rounded text-gray-400 hover:text-amber-400 transition"
+                  title="Enregistrer la sélection comme phrase type"
+                >
+                  <BookmarkPlus className="h-4 w-4" />
+                </button>
+
+                {/* Bibliothèque de phrases type */}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const phrases = await getAllPhraseTemplates();
+                    setPhraseTemplates(phrases as PhraseTemplate[]);
+                    setShowPhraseLibrary(true);
+                  }}
+                  className="p-1.5 hover:bg-[#323232] rounded text-gray-400 hover:text-blue-400 transition"
+                  title="Insérer une phrase type"
+                >
+                  <BookOpen className="h-4 w-4" />
                 </button>
               </div>
               {/* Zone de texte éditable */}
@@ -2171,6 +2211,128 @@ function SubStepItem({
               >
                 Fermer
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal — Enregistrer une phrase type */}
+      {showSavePhraseModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a1a1a] rounded-xl border border-[#323232] w-full max-w-md">
+            <div className="p-4 border-b border-[#323232] flex items-center justify-between">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <BookmarkPlus className="h-4 w-4 text-amber-400" />
+                Enregistrer une phrase type
+              </h3>
+              <Button variant="ghost" size="icon" onClick={() => setShowSavePhraseModal(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="p-4 space-y-3">
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Texte sélectionné</label>
+                <p className="text-sm text-gray-300 bg-[#0f0f0f] rounded-lg p-3 border border-[#2a2a2a] max-h-24 overflow-y-auto whitespace-pre-wrap">{pendingPhraseText}</p>
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Libellé (nom court pour retrouver la phrase)</label>
+                <Input
+                  autoFocus
+                  value={pendingPhraseLabel}
+                  onChange={(e) => setPendingPhraseLabel(e.target.value)}
+                  placeholder="Ex : Mise en sécurité standard"
+                  className="text-sm"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      savePhraseTemplate(pendingPhraseText, pendingPhraseLabel || pendingPhraseText.slice(0, 40))
+                        .then(() => { toast.success('Phrase enregistrée'); setShowSavePhraseModal(false); })
+                        .catch(() => toast.error("Erreur lors de l'enregistrement"));
+                    }
+                  }}
+                />
+              </div>
+            </div>
+            <div className="p-4 border-t border-[#323232] flex gap-2 justify-end">
+              <Button variant="secondary" size="sm" onClick={() => setShowSavePhraseModal(false)}>Annuler</Button>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => {
+                  savePhraseTemplate(pendingPhraseText, pendingPhraseLabel || pendingPhraseText.slice(0, 40))
+                    .then(() => { toast.success('Phrase enregistrée'); setShowSavePhraseModal(false); })
+                    .catch(() => toast.error("Erreur lors de l'enregistrement"));
+                }}
+              >
+                Enregistrer
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal — Bibliothèque de phrases type */}
+      {showPhraseLibrary && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a1a1a] rounded-xl border border-[#323232] w-full max-w-lg flex flex-col max-h-[70vh]">
+            <div className="p-4 border-b border-[#323232] flex items-center justify-between">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-blue-400" />
+                Phrases type
+              </h3>
+              <Button variant="ghost" size="icon" onClick={() => setShowPhraseLibrary(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              {phraseTemplates.length === 0 ? (
+                <p className="text-center text-gray-500 text-sm py-8">
+                  Aucune phrase enregistrée.<br />
+                  Sélectionnez du texte dans la description et cliquez sur l'icône signet.
+                </p>
+              ) : phraseTemplates.map((phrase) => (
+                <div key={phrase.id} className="group flex items-start gap-2 p-3 bg-[#0f0f0f] rounded-lg border border-[#2a2a2a] hover:border-blue-400/40 transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-blue-300 mb-1">{phrase.label}</p>
+                    <p className="text-xs text-gray-400 line-clamp-2 whitespace-pre-wrap">{phrase.text}</p>
+                  </div>
+                  <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => {
+                        if (descriptionRef.current) {
+                          descriptionRef.current.focus();
+                          document.execCommand('insertHTML', false, phrase.text.replace(/\n/g, '<br>'));
+                          setTimeout(() => {
+                            if (descriptionRef.current) {
+                              const html = descriptionRef.current.innerHTML;
+                              setLocalDescription(html);
+                              onUpdate({ description: html });
+                            }
+                          }, 10);
+                        }
+                        setShowPhraseLibrary(false);
+                      }}
+                      className="px-2 py-1 text-[10px] bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/40 transition"
+                      title="Insérer dans la description"
+                    >
+                      Insérer
+                    </button>
+                    <button
+                      onClick={async () => {
+                        await deletePhraseTemplate(phrase.id);
+                        setPhraseTemplates(prev => prev.filter(p => p.id !== phrase.id));
+                        toast.success('Phrase supprimée');
+                      }}
+                      className="p-1 text-gray-600 hover:text-red-400 rounded transition"
+                      title="Supprimer"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-3 border-t border-[#323232]">
+              <Button variant="secondary" size="sm" className="w-full" onClick={() => setShowPhraseLibrary(false)}>Fermer</Button>
             </div>
           </div>
         </div>

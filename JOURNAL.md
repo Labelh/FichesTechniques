@@ -4,6 +4,8 @@ Ce document liste, en langage simple, les évolutions apportées à votre applic
 
 ## 28 juin 2026
 
+- **Phrases type dans les descriptions.** Dans la barre d'outils de rédaction, deux nouveaux boutons sont disponibles : l'un pour enregistrer un extrait de texte sélectionné comme phrase réutilisable (avec un libellé pour la retrouver facilement), l'autre pour ouvrir votre bibliothèque de phrases type et l'insérer en un clic à l'endroit voulu dans la description.
+
 - **Ajout de documents et vidéos par glisser-déposer.** Lors de la rédaction d'une fiche, vous pouvez maintenant glisser un fichier depuis l'explorateur Windows directement sur la zone prévue pour l'ajouter — pour les vidéos, les documents et les images.
 - **Plus de fenêtre intrusive lors de la sélection de fichiers.** La fenêtre qui s'ouvrait pour demander un chemin d'accès ne s'affiche plus. Si un dossier a déjà été utilisé, il est mémorisé et proposé automatiquement. Sinon, le champ reste modifiable directement.
 - **Correction du mauvais chemin inséré.** Le chemin d'accès d'un fichier sélectionné correspond maintenant toujours au fichier en cours, et non au fichier précédemment ajouté.
