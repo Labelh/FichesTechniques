@@ -99,11 +99,11 @@ export default function ToolSelector({ availableTools, availableConsumables, onS
     { name: 'Violet', value: '#8b5cf6' },
     { name: 'Rose', value: '#ec4899' },
     { name: 'Orange', value: 'rgb(255,102,0)' },
-    { name: 'Lime', value: '#84cc16' },
-    { name: 'Teal', value: '#0d9488' },
-    { name: 'Indigo', value: '#6366f1' },
-    { name: 'Ambre', value: '#d97706' },
-    { name: 'Corail', value: '#f43f5e' },
+    { name: 'Cyan', value: '#06b6d4' },
+    { name: 'Blanc', value: '#ffffff' },
+    { name: 'Marron', value: '#92400e' },
+    { name: 'Gris', value: '#9ca3af' },
+    { name: 'Bordeaux', value: '#9b1c1c' },
   ];
 
   const getItemImage = (item: ToolOrConsumable) => {

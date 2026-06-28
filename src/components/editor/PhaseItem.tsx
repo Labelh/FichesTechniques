@@ -908,33 +908,33 @@ function SubStepItem({
 
   const textColors = [
     { name: 'Rouge', value: '#ef4444' },
-    { name: 'Corail', value: '#f43f5e' },
     { name: 'Orange', value: 'rgb(255,102,0)' },
-    { name: 'Ambre', value: '#d97706' },
     { name: 'Jaune', value: '#f59e0b' },
-    { name: 'Lime', value: '#84cc16' },
     { name: 'Vert', value: '#10b981' },
-    { name: 'Teal', value: '#0d9488' },
+    { name: 'Cyan', value: '#06b6d4' },
     { name: 'Bleu', value: '#3b82f6' },
-    { name: 'Indigo', value: '#6366f1' },
     { name: 'Violet', value: '#8b5cf6' },
     { name: 'Rose', value: '#ec4899' },
     { name: 'Blanc', value: '#ffffff' },
+    { name: 'Gris', value: '#9ca3af' },
+    { name: 'Marron', value: '#92400e' },
+    { name: 'Bordeaux', value: '#9b1c1c' },
+    { name: 'Noir', value: '#000000' },
   ];
 
   const toolColorPresets = [
     { name: 'Vert', value: '#10b981' },
     { name: 'Bleu', value: '#3b82f6' },
     { name: 'Rouge', value: '#ef4444' },
-    { name: 'Corail', value: '#f43f5e' },
     { name: 'Jaune', value: '#f59e0b' },
-    { name: 'Ambre', value: '#d97706' },
     { name: 'Violet', value: '#8b5cf6' },
     { name: 'Rose', value: '#ec4899' },
     { name: 'Orange', value: 'rgb(255,102,0)' },
-    { name: 'Lime', value: '#84cc16' },
-    { name: 'Teal', value: '#0d9488' },
-    { name: 'Indigo', value: '#6366f1' },
+    { name: 'Cyan', value: '#06b6d4' },
+    { name: 'Blanc', value: '#ffffff' },
+    { name: 'Marron', value: '#92400e' },
+    { name: 'Gris', value: '#9ca3af' },
+    { name: 'Bordeaux', value: '#9b1c1c' },
   ];
 
   const emojis = [
@@ -1647,7 +1647,7 @@ function SubStepItem({
                   {(step.tools || []).map((tool) => (
                     <div
                       key={tool.id}
-                      className="group relative flex flex-col items-center p-2 pb-3 bg-background-elevated rounded-lg border border-[#2a2a2a] overflow-visible"
+                      className="group relative flex flex-row items-center gap-2 p-2 bg-background-elevated rounded-lg border border-[#2a2a2a] overflow-visible"
                       style={{ borderTop: `3px solid ${tool.color || '#10b981'}` }}
                     >
                       {/* Bouton supprimer */}
@@ -1664,34 +1664,38 @@ function SubStepItem({
                         <img
                           src={tool.imageUrl}
                           alt={tool.name}
-                          className="h-14 w-14 object-cover rounded mb-1.5 border border-[#323232]"
+                          className="h-12 w-12 object-cover rounded border border-[#323232] flex-shrink-0"
                           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                         />
                       ) : (
-                        <div className="h-14 w-14 rounded bg-[#2a2a2a] border border-[#323232] flex items-center justify-center mb-1.5">
+                        <div className="h-12 w-12 rounded bg-[#2a2a2a] border border-[#323232] flex items-center justify-center flex-shrink-0">
                           <Wrench className="h-5 w-5 text-gray-500" />
                         </div>
                       )}
 
-                      {/* Nom */}
-                      <div className="text-xs font-medium text-white text-center w-full truncate leading-tight">{tool.name}</div>
-                      {tool.reference && (
-                        <div className="text-[10px] text-gray-500 text-center w-full truncate">{tool.reference}</div>
-                      )}
-
-                      {/* Pastille couleur cliquable */}
-                      <button
-                        onClick={() => setEditingToolColorId(editingToolColorId === tool.id ? null : tool.id)}
-                        className="mt-1.5 w-4 h-4 rounded-full border-2 border-[#444] hover:border-white transition-colors flex-shrink-0"
-                        style={{ backgroundColor: tool.color || '#10b981' }}
-                        title="Changer la couleur"
-                      />
+                      {/* Texte + pastille */}
+                      <div className="flex-1 min-w-0 pr-4">
+                        <div className="text-xs font-medium text-white truncate leading-tight">{tool.name}</div>
+                        {tool.reference && (
+                          <div className="text-[10px] text-gray-500 truncate">{tool.reference}</div>
+                        )}
+                        {tool.location && (
+                          <div className="text-[10px] text-gray-600 truncate">{tool.location}</div>
+                        )}
+                        {/* Pastille couleur cliquable */}
+                        <button
+                          onClick={() => setEditingToolColorId(editingToolColorId === tool.id ? null : tool.id)}
+                          className="mt-1 w-3.5 h-3.5 rounded-full border-2 border-[#444] hover:border-white transition-colors"
+                          style={{ backgroundColor: tool.color || '#10b981' }}
+                          title="Changer la couleur"
+                        />
+                      </div>
 
                       {/* Picker de couleur inline */}
                       {editingToolColorId === tool.id && (
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-[#1a1a1a] border border-[#323232] rounded-lg p-2 z-50 shadow-xl"
-                          style={{ width: '136px' }}>
-                          <div className="flex flex-wrap gap-1.5 justify-center">
+                        <div className="absolute top-full left-0 mt-1 bg-[#1a1a1a] border border-[#323232] rounded-lg p-2 z-50 shadow-xl"
+                          style={{ width: '144px' }}>
+                          <div className="flex flex-wrap gap-1.5">
                             {toolColorPresets.map((c) => (
                               <button
                                 key={c.value}
