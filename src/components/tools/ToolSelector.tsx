@@ -313,52 +313,14 @@ export default function ToolSelector({ availableTools, availableConsumables, onS
                     </div>
                   )}
 
-                  <div>
-                    <label className="text-xs text-gray-400 uppercase tracking-wide">Type</label>
-                    <p className={`text-sm mt-1 inline-block px-2 py-1 rounded ${
-                      selectedItem.type === 'tool'
-                        ? 'bg-blue-500/20 text-blue-400'
-                        : 'bg-green-500/20 text-green-400'
-                    }`}>
-                      {selectedItem.type === 'tool' ? 'Outil' : 'Consommable'}
-                    </p>
-                  </div>
-
-                  {/* Catégorie pour les outils */}
-                  {selectedItem.type === 'tool' && (selectedItem.categoryData || selectedItem.category) && (
+                  {/* Quantité pour les consommables */}
+                  {selectedItem.type === 'consumable' && (selectedItem as any).quantite && (
                     <div>
-                      <label className="text-xs text-gray-400 uppercase tracking-wide">Catégorie</label>
+                      <label className="text-xs text-gray-400 uppercase tracking-wide">Quantité disponible</label>
                       <p className="text-sm text-white mt-1">
-                        {selectedItem.categoryData?.name || selectedItem.category}
+                        {(selectedItem as any).quantite}
                       </p>
-                      {selectedItem.categoryData?.description && (
-                        <p className="text-xs text-gray-400 mt-1">
-                          {selectedItem.categoryData.description}
-                        </p>
-                      )}
                     </div>
-                  )}
-
-                  {/* Informations supplémentaires pour les consommables */}
-                  {selectedItem.type === 'consumable' && (
-                    <>
-                      {(selectedItem as any).quantite && (
-                        <div>
-                          <label className="text-xs text-gray-400 uppercase tracking-wide">Quantité disponible</label>
-                          <p className="text-sm text-white mt-1">
-                            {(selectedItem as any).quantite}
-                          </p>
-                        </div>
-                      )}
-                      {(selectedItem as any).categorie && (
-                        <div>
-                          <label className="text-xs text-gray-400 uppercase tracking-wide">Catégorie</label>
-                          <p className="text-sm text-white mt-1">
-                            {(selectedItem as any).categorie}
-                          </p>
-                        </div>
-                      )}
-                    </>
                   )}
 
                   {/* Description */}
