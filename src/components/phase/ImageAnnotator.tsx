@@ -170,7 +170,6 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     { name: 'Blanc', value: '#ffffff' },
     { name: 'Gris', value: '#9ca3af' },
     { name: 'Marron', value: '#92400e' },
-    { name: 'Bordeaux', value: '#9b1c1c' },
   ];
 
   // Lissage des points du tracé à main levée

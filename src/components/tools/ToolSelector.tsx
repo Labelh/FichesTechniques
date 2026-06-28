@@ -103,7 +103,6 @@ export default function ToolSelector({ availableTools, availableConsumables, onS
     { name: 'Blanc', value: '#ffffff' },
     { name: 'Marron', value: '#92400e' },
     { name: 'Gris', value: '#9ca3af' },
-    { name: 'Bordeaux', value: '#9b1c1c' },
   ];
 
   const getItemImage = (item: ToolOrConsumable) => {

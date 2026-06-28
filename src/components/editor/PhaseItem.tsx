@@ -918,8 +918,6 @@ function SubStepItem({
     { name: 'Blanc', value: '#ffffff' },
     { name: 'Gris', value: '#9ca3af' },
     { name: 'Marron', value: '#92400e' },
-    { name: 'Bordeaux', value: '#9b1c1c' },
-    { name: 'Noir', value: '#000000' },
   ];
 
   const toolColorPresets = [
@@ -934,7 +932,6 @@ function SubStepItem({
     { name: 'Blanc', value: '#ffffff' },
     { name: 'Marron', value: '#92400e' },
     { name: 'Gris', value: '#9ca3af' },
-    { name: 'Bordeaux', value: '#9b1c1c' },
   ];
 
   const emojis = [
@@ -1648,7 +1645,7 @@ function SubStepItem({
                     <div
                       key={tool.id}
                       className="group relative flex flex-row items-center gap-2 p-2 bg-background-elevated rounded-lg border border-[#2a2a2a] overflow-visible"
-                      style={{ borderTop: `3px solid ${tool.color || '#10b981'}` }}
+                      style={{ borderLeft: `3px solid ${tool.color || '#10b981'}` }}
                     >
                       {/* Bouton supprimer */}
                       <button
@@ -1673,22 +1670,21 @@ function SubStepItem({
                         </div>
                       )}
 
-                      {/* Texte + pastille */}
+                      {/* Texte */}
                       <div className="flex-1 min-w-0 pr-4">
-                        <div className="text-xs font-medium text-white truncate leading-tight">{tool.name}</div>
+                        {/* Pastille couleur + nom sur la même ligne */}
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <button
+                            onClick={() => setEditingToolColorId(editingToolColorId === tool.id ? null : tool.id)}
+                            className="w-3 h-3 rounded-full border border-[#555] hover:border-white transition-colors flex-shrink-0"
+                            style={{ backgroundColor: tool.color || '#10b981' }}
+                            title="Changer la couleur"
+                          />
+                          <div className="text-xs font-medium text-white truncate leading-tight">{tool.name}</div>
+                        </div>
                         {tool.reference && (
-                          <div className="text-[10px] text-gray-500 truncate">{tool.reference}</div>
+                          <div className="text-[10px] text-gray-500 truncate mt-0.5">{tool.reference}</div>
                         )}
-                        {tool.location && (
-                          <div className="text-[10px] text-gray-600 truncate">{tool.location}</div>
-                        )}
-                        {/* Pastille couleur cliquable */}
-                        <button
-                          onClick={() => setEditingToolColorId(editingToolColorId === tool.id ? null : tool.id)}
-                          className="mt-1 w-3.5 h-3.5 rounded-full border-2 border-[#444] hover:border-white transition-colors"
-                          style={{ backgroundColor: tool.color || '#10b981' }}
-                          title="Changer la couleur"
-                        />
                       </div>
 
                       {/* Picker de couleur inline */}
@@ -1784,15 +1780,15 @@ function SubStepItem({
               )}
 
               {/* Bouton pour ajouter un outil */}
-              <Button
-                variant="secondary"
-                size="sm"
+              <button
                 onClick={() => setShowToolSelector(true)}
-                className="w-full justify-start"
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-[#3a3a3a] hover:border-primary/60 hover:bg-primary/5 text-gray-400 hover:text-primary transition-all text-xs group"
               >
-                <Plus className="h-4 w-4 mr-2" />
+                <div className="w-6 h-6 rounded-md bg-[#2a2a2a] group-hover:bg-primary/20 flex items-center justify-center transition-colors flex-shrink-0">
+                  <Plus className="h-3.5 w-3.5" />
+                </div>
                 Ajouter un outil ou consommable
-              </Button>
+              </button>
             </div>
           </div>
 
@@ -1913,15 +1909,15 @@ function SubStepItem({
                 </div>
               </div>
             ) : (
-              <Button
-                variant="secondary"
-                size="sm"
+              <button
                 onClick={() => setShowVideoInput(true)}
-                className="w-full justify-start text-xs"
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-[#3a3a3a] hover:border-blue-400/60 hover:bg-blue-400/5 text-gray-400 hover:text-blue-400 transition-all text-xs group"
               >
-                <Plus className="h-3 w-3 mr-1" />
+                <div className="w-6 h-6 rounded-md bg-[#1a1a2e] group-hover:bg-blue-400/20 flex items-center justify-center transition-colors flex-shrink-0">
+                  <VideoIcon className="h-3.5 w-3.5" />
+                </div>
                 Ajouter une vidéo
-              </Button>
+              </button>
             )}
           </div>
 
@@ -2042,15 +2038,15 @@ function SubStepItem({
                 </div>
               </div>
             ) : (
-              <Button
-                variant="secondary"
-                size="sm"
+              <button
                 onClick={() => setShowDocumentInput(true)}
-                className="w-full justify-start text-xs"
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-[#3a3a3a] hover:border-red-400/60 hover:bg-red-400/5 text-gray-400 hover:text-red-400 transition-all text-xs group"
               >
-                <Plus className="h-3 w-3 mr-1" />
+                <div className="w-6 h-6 rounded-md bg-[#2a0a0a] group-hover:bg-red-400/20 flex items-center justify-center transition-colors flex-shrink-0">
+                  <FileText className="h-3.5 w-3.5" />
+                </div>
                 Ajouter un document
-              </Button>
+              </button>
             )}
           </div>
 
