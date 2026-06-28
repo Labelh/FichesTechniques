@@ -581,8 +581,8 @@ export default function ProcedureEditor() {
         <Card>
           <CardContent className="pt-0">
             <div className="flex items-center gap-3 px-1 py-4 mb-4 border-b border-[#1e1e1e]">
-              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 border border-primary/20">
-                <FileText className="h-4 w-4 text-primary" />
+              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-[#1e1e1e] border border-[#2e2e2e]">
+                <FileText className="h-4 w-4 text-gray-400" />
               </div>
               <div>
                 <h2 className="text-base font-bold leading-none">Informations générales</h2>
@@ -682,8 +682,8 @@ export default function ProcedureEditor() {
             <CardContent className="pt-0">
               <div className="flex items-center justify-between px-1 py-4 mb-4 border-b border-[#1e1e1e]">
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                    <Layers className="h-4 w-4 text-blue-400" />
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-[#1e1e1e] border border-[#2e2e2e]">
+                    <Layers className="h-4 w-4 text-gray-400" />
                   </div>
                   <div>
                     <h2 className="text-base font-bold leading-none">Phases</h2>
@@ -740,8 +740,8 @@ export default function ProcedureEditor() {
             <CardContent className="pt-0">
               <div className="flex items-center justify-between px-1 py-4 mb-4 border-b border-[#1e1e1e]">
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-red-500/10 border border-red-500/20">
-                    <Shield className="h-4 w-4 text-red-400" />
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-[#1e1e1e] border border-[#2e2e2e]">
+                    <Shield className="h-4 w-4 text-gray-400" />
                   </div>
                   <button
                     onClick={() => setShowDefects(!showDefects)}
@@ -929,8 +929,8 @@ export default function ProcedureEditor() {
             <CardContent className="pt-0">
               <div className="px-1 py-4 mb-4 border-b border-[#1e1e1e]">
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-violet-500/10 border border-violet-500/20">
-                    <UserCheck className="h-4 w-4 text-violet-400" />
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-[#1e1e1e] border border-[#2e2e2e]">
+                    <UserCheck className="h-4 w-4 text-gray-400" />
                   </div>
                   <div>
                     <h2 className="text-base font-bold leading-none">Rédaction & Validation</h2>
@@ -949,9 +949,9 @@ export default function ProcedureEditor() {
                 ).map(({ key, label, color }) => {
                   const entry = signataires[key] || { nom: '', date: '' };
                   const colorMap = {
-                    blue: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
-                    amber: 'bg-amber-500/10 border-amber-500/20 text-amber-400',
-                    green: 'bg-green-500/10 border-green-500/20 text-green-400',
+                    blue: 'bg-[#1e1e1e] border-[#2e2e2e] text-gray-300',
+                    amber: 'bg-[#1e1e1e] border-[#2e2e2e] text-gray-300',
+                    green: 'bg-[#1e1e1e] border-[#2e2e2e] text-gray-300',
                   };
                   return (
                     <div key={key} className="flex items-center gap-3">
@@ -985,8 +985,8 @@ export default function ProcedureEditor() {
             <CardContent className="pt-0">
               <div className="flex items-center justify-between px-1 py-4 mb-4 border-b border-[#1e1e1e]">
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-green-500/10 border border-green-500/20">
-                    <GitBranch className="h-4 w-4 text-green-400" />
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-[#1e1e1e] border border-[#2e2e2e]">
+                    <GitBranch className="h-4 w-4 text-gray-400" />
                   </div>
                   <div>
                     <h2 className="text-base font-bold leading-none">Versioning</h2>
