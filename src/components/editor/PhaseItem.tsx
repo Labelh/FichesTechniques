@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/Badge';
 import { updatePhase, movePhaseUp, movePhaseDown } from '@/services/procedureService';
 import { createPhaseTemplate, createSubStepTemplateFromStep, getAllSubStepTemplates, deleteSubStepTemplate, incrementSubStepTemplateUsage, savePhraseTemplate, getAllPhraseTemplates, deletePhraseTemplate, updatePhraseTemplateLabel } from '@/services/templateService';
 import type { PhraseTemplate } from '@/types';
+import { PHRASE_CATEGORIES } from '@/types';
 import { uploadImageToHost } from '@/services/imageHostingService';
 import { useTools } from '@/hooks/useTools';
 import ImageAnnotator from '@/components/phase/ImageAnnotator';
@@ -920,6 +921,8 @@ function SubStepItem({
   const [phraseTemplates, setPhraseTemplates] = useState<PhraseTemplate[]>([]);
   const [pendingPhraseText, setPendingPhraseText] = useState('');
   const [pendingPhraseLabel, setPendingPhraseLabel] = useState('');
+  const [pendingPhraseCategory, setPendingPhraseCategory] = useState('');
+  const [libraryCategory, setLibraryCategory] = useState('');
   const [editingPhraseId, setEditingPhraseId] = useState<string | null>(null);
   const [editingPhraseLabel, setEditingPhraseLabel] = useState('');
   const videoFileInputRef = useRef<HTMLInputElement>(null);
@@ -2242,21 +2245,31 @@ function SubStepItem({
                 <div className="text-sm text-gray-300 bg-[#0f0f0f] rounded-lg p-3 border border-[#2a2a2a] max-h-24 overflow-y-auto" dangerouslySetInnerHTML={{ __html: pendingPhraseText }} />
               </div>
               <div>
-                <label className="text-xs text-gray-400 mb-1 block">Libellé (nom court pour retrouver la phrase)</label>
+                <label className="text-xs text-gray-400 mb-1 block">Libellé</label>
                 <Input
                   autoFocus
                   value={pendingPhraseLabel}
                   onChange={(e) => setPendingPhraseLabel(e.target.value)}
                   placeholder="Ex : Mise en sécurité standard"
                   className="text-sm"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      savePhraseTemplate(pendingPhraseText, pendingPhraseLabel || pendingPhraseText.slice(0, 40))
-                        .then(() => { toast.success('Phrase enregistrée'); setShowSavePhraseModal(false); })
-                        .catch(() => toast.error("Erreur lors de l'enregistrement"));
-                    }
-                  }}
                 />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 mb-2 block">Catégorie</label>
+                <div className="flex flex-wrap gap-2">
+                  {PHRASE_CATEGORIES.map(cat => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setPendingPhraseCategory(pendingPhraseCategory === cat ? '' : cat)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${
+                        pendingPhraseCategory === cat
+                          ? 'border-amber-400 bg-amber-400/20 text-amber-300'
+                          : 'border-[#323232] text-gray-500 hover:border-[#444] hover:text-gray-300'
+                      }`}
+                    >{cat}</button>
+                  ))}
+                </div>
               </div>
             </div>
             <div className="p-4 border-t border-[#323232] flex gap-2 justify-end">
@@ -2265,8 +2278,8 @@ function SubStepItem({
                 variant="default"
                 size="sm"
                 onClick={() => {
-                  savePhraseTemplate(pendingPhraseText, pendingPhraseLabel || pendingPhraseText.slice(0, 40))
-                    .then(() => { toast.success('Phrase enregistrée'); setShowSavePhraseModal(false); })
+                  savePhraseTemplate(pendingPhraseText, pendingPhraseLabel || pendingPhraseText.slice(0, 40), pendingPhraseCategory || undefined)
+                    .then(() => { toast.success('Phrase enregistrée'); setShowSavePhraseModal(false); setPendingPhraseCategory(''); })
                     .catch(() => toast.error("Erreur lors de l'enregistrement"));
                 }}
               >
@@ -2290,13 +2303,29 @@ function SubStepItem({
                 <X className="h-4 w-4" />
               </Button>
             </div>
+            {/* Filtres catégorie */}
+            {phraseTemplates.some(p => p.category) && (
+              <div className="px-3 pt-3 pb-0 flex flex-wrap gap-1.5">
+                <button
+                  onClick={() => setLibraryCategory('')}
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-medium border transition-all ${!libraryCategory ? 'border-blue-400 bg-blue-400/20 text-blue-300' : 'border-[#2a2a2a] text-gray-500 hover:border-[#3a3a3a] hover:text-gray-300'}`}
+                >Toutes</button>
+                {PHRASE_CATEGORIES.filter(cat => phraseTemplates.some(p => p.category === cat)).map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setLibraryCategory(libraryCategory === cat ? '' : cat)}
+                    className={`px-2.5 py-0.5 rounded-full text-xs font-medium border transition-all ${libraryCategory === cat ? 'border-amber-400 bg-amber-400/20 text-amber-300' : 'border-[#2a2a2a] text-gray-500 hover:border-[#3a3a3a] hover:text-gray-300'}`}
+                  >{cat}</button>
+                ))}
+              </div>
+            )}
             <div className="flex-1 overflow-y-auto p-3 space-y-2">
-              {phraseTemplates.length === 0 ? (
+              {phraseTemplates.filter(p => !libraryCategory || p.category === libraryCategory).length === 0 ? (
                 <p className="text-center text-gray-500 text-sm py-8">
                   Aucune phrase enregistrée.<br />
                   Sélectionnez du texte dans la description et cliquez sur l'icône signet.
                 </p>
-              ) : phraseTemplates.map((phrase) => (
+              ) : phraseTemplates.filter(p => !libraryCategory || p.category === libraryCategory).map((phrase) => (
                 <div
                   key={phrase.id}
                   className="group flex items-start gap-2 p-3 bg-[#0f0f0f] rounded-lg border border-[#2a2a2a] hover:border-blue-400/40 transition-colors cursor-pointer"
@@ -2338,12 +2367,17 @@ function SubStepItem({
                         className="w-full text-xs font-medium text-blue-300 bg-[#1a1a1a] border border-blue-400/50 rounded px-1 py-0.5 mb-1 outline-none"
                       />
                     ) : (
-                      <p
-                        data-phrase-action
-                        className="text-xs font-medium text-blue-300 mb-1 hover:underline cursor-text"
-                        title="Cliquer pour modifier le libellé"
-                        onClick={(e) => { e.stopPropagation(); setEditingPhraseId(phrase.id); setEditingPhraseLabel(phrase.label); }}
-                      >{phrase.label}</p>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <p
+                          data-phrase-action
+                          className="text-xs font-medium text-blue-300 hover:underline cursor-text"
+                          title="Cliquer pour modifier le libellé"
+                          onClick={(e) => { e.stopPropagation(); setEditingPhraseId(phrase.id); setEditingPhraseLabel(phrase.label); }}
+                        >{phrase.label}</p>
+                        {phrase.category && (
+                          <span className="text-[10px] px-1.5 py-0 rounded-full bg-amber-400/15 text-amber-400 border border-amber-400/30">{phrase.category}</span>
+                        )}
+                      </div>
                     )}
                     <div className="text-xs text-gray-400 line-clamp-2" dangerouslySetInnerHTML={{ __html: phrase.text }} />
                   </div>

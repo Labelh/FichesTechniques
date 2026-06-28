@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { FolderKanban, FileText, Clock, Wrench, Search, Edit2, Layers, Copy, Trash2, ArrowUp, ArrowDown, BookOpen, Check } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { FolderKanban, FileText, Clock, Wrench, Search, Edit2, Layers, Copy, Trash2, ArrowUp, ArrowDown, BookOpen, Check, X } from 'lucide-react';
 import {
   getAllPhaseTemplates,
   deletePhaseTemplate,
@@ -10,10 +10,13 @@ import {
   getAllPhraseTemplates,
   deletePhraseTemplate,
   updatePhraseTemplateLabel,
+  updatePhraseTemplateFull,
 } from '@/services/templateService';
 import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 import { toast } from 'sonner';
 import type { ProcedureTemplate, SubStepTemplate, PhraseTemplate } from '@/types';
+import { PHRASE_CATEGORIES } from '@/types';
 import TemplateEditor from '@/components/templates/TemplateEditor';
 
 type TabType = 'phases' | 'substeps' | 'phrases';
@@ -48,6 +51,11 @@ export default function Templates() {
   const [editingTemplate, setEditingTemplate] = useState<{ template: ProcedureTemplate | SubStepTemplate; type: 'phase' | 'substep' } | null>(null);
   const [editingPhraseId, setEditingPhraseId] = useState<string | null>(null);
   const [editingPhraseLabel, setEditingPhraseLabel] = useState('');
+  const [phraseFilterCategory, setPhraseFilterCategory] = useState('');
+  const [editingPhraseModal, setEditingPhraseModal] = useState<PhraseTemplate | null>(null);
+  const [editModalLabel, setEditModalLabel] = useState('');
+  const [editModalCategory, setEditModalCategory] = useState('');
+  const editModalTextRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { fetchTemplates(); }, []);
   useEffect(() => { setSearchTerm(''); setSelectedCategory('all'); }, [activeTab]);
@@ -118,6 +126,33 @@ export default function Templates() {
     catch { toast.error('Erreur lors de la suppression'); }
   };
 
+  const openPhraseEditModal = (phrase: PhraseTemplate) => {
+    setEditingPhraseModal(phrase);
+    setEditModalLabel(phrase.label);
+    setEditModalCategory(phrase.category || '');
+    setTimeout(() => {
+      if (editModalTextRef.current) editModalTextRef.current.innerHTML = phrase.text;
+    }, 0);
+  };
+
+  const saveEditModal = async () => {
+    if (!editingPhraseModal) return;
+    const text = editModalTextRef.current?.innerHTML || editingPhraseModal.text;
+    try {
+      await updatePhraseTemplateFull(editingPhraseModal.id, {
+        label: editModalLabel || editingPhraseModal.label,
+        text,
+        category: editModalCategory || undefined,
+      });
+      setPhraseTemplates(prev => prev.map(p => p.id === editingPhraseModal.id
+        ? { ...p, label: editModalLabel || p.label, text, category: editModalCategory || undefined }
+        : p
+      ));
+      toast.success('Phrase mise à jour');
+      setEditingPhraseModal(null);
+    } catch { toast.error('Erreur lors de la mise à jour'); }
+  };
+
   const handleSavePhraseLabel = async (id: string) => {
     if (!editingPhraseLabel.trim()) return;
     try {
@@ -133,8 +168,9 @@ export default function Templates() {
   };
 
   const filteredPhraseTemplates = phraseTemplates.filter(p =>
-    p.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.text.replace(/<[^>]*>/g, '').toLowerCase().includes(searchTerm.toLowerCase())
+    (!phraseFilterCategory || p.category === phraseFilterCategory) &&
+    (p.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+     p.text.replace(/<[^>]*>/g, '').toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const currentList = activeTab === 'phases' ? filteredTemplates : activeTab === 'substeps' ? filteredSubStepTemplates : filteredPhraseTemplates;
@@ -230,8 +266,8 @@ export default function Templates() {
           )}
         </div>
 
-        {/* Category pills */}
-        {categories.length > 1 && (
+        {/* Category pills — phases/substeps */}
+        {activeTab !== 'phrases' && categories.length > 1 && (
           <div className="flex gap-2 flex-wrap">
             {categories.map(cat => (
               <button
@@ -245,6 +281,23 @@ export default function Templates() {
               >
                 {cat === 'all' ? 'Toutes les catégories' : cat}
               </button>
+            ))}
+          </div>
+        )}
+
+        {/* Category pills — phrases */}
+        {activeTab === 'phrases' && PHRASE_CATEGORIES.some(cat => phraseTemplates.some(p => p.category === cat)) && (
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={() => setPhraseFilterCategory('')}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-all border ${!phraseFilterCategory ? 'border-amber-400 bg-amber-400/10 text-amber-300' : 'border-[#2a2a2a] text-gray-500 hover:border-[#3a3a3a] hover:text-gray-300'}`}
+            >Toutes</button>
+            {PHRASE_CATEGORIES.filter(cat => phraseTemplates.some(p => p.category === cat)).map(cat => (
+              <button
+                key={cat}
+                onClick={() => setPhraseFilterCategory(phraseFilterCategory === cat ? '' : cat)}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-all border ${phraseFilterCategory === cat ? 'border-amber-400 bg-amber-400/10 text-amber-300' : 'border-[#2a2a2a] text-gray-500 hover:border-[#3a3a3a] hover:text-gray-300'}`}
+              >{cat}</button>
             ))}
           </div>
         )}
@@ -479,7 +532,12 @@ export default function Templates() {
                           </button>
                         </div>
                       ) : (
-                        <h3 className="font-semibold text-white text-sm leading-snug line-clamp-2">{phrase.label}</h3>
+                        <div>
+                          <h3 className="font-semibold text-white text-sm leading-snug line-clamp-2">{phrase.label}</h3>
+                          {phrase.category && (
+                            <span className="inline-block mt-1 px-2 py-0 rounded-full text-[10px] font-medium bg-amber-400/10 text-amber-400 border border-amber-400/30">{phrase.category}</span>
+                          )}
+                        </div>
                       )}
                       <p className="text-[10px] text-gray-600 mt-1">Créé le {formatDate(phrase.createdAt)}</p>
                     </div>
@@ -504,10 +562,10 @@ export default function Templates() {
                     ) : (
                       <div className="flex items-center gap-1">
                         <button
-                          onClick={() => { setEditingPhraseId(phrase.id); setEditingPhraseLabel(phrase.label); }}
+                          onClick={() => openPhraseEditModal(phrase)}
                           className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs text-gray-400 hover:text-white hover:bg-[#252525] transition-colors"
                         >
-                          <Edit2 className="h-3 w-3" />Renommer
+                          <Edit2 className="h-3 w-3" />Modifier
                         </button>
                         <button onClick={() => setConfirmDeleteId(phrase.id)} title="Supprimer"
                           className="p-1.5 rounded-md text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-colors">
@@ -532,6 +590,70 @@ export default function Templates() {
           onClose={() => setEditingTemplate(null)}
           onSave={async () => { await fetchTemplates(); setEditingTemplate(null); }}
         />
+      )}
+
+      {/* Modal — Modifier une phrase type */}
+      {editingPhraseModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a1a1a] rounded-xl border border-[#323232] w-full max-w-lg flex flex-col max-h-[85vh]">
+            <div className="p-4 border-b border-[#323232] flex items-center justify-between">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-amber-400" />
+                Modifier la phrase type
+              </h3>
+              <button onClick={() => setEditingPhraseModal(null)} className="p-1 text-gray-500 hover:text-white rounded">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {/* Libellé */}
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Libellé</label>
+                <Input
+                  value={editModalLabel}
+                  onChange={(e) => setEditModalLabel(e.target.value)}
+                  placeholder="Nom court de la phrase"
+                  className="text-sm"
+                />
+              </div>
+
+              {/* Catégorie */}
+              <div>
+                <label className="text-xs text-gray-400 mb-2 block">Catégorie</label>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setEditModalCategory('')}
+                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${!editModalCategory ? 'border-amber-400 bg-amber-400/20 text-amber-300' : 'border-[#323232] text-gray-500 hover:border-[#444] hover:text-gray-300'}`}
+                  >Aucune</button>
+                  {PHRASE_CATEGORIES.map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setEditModalCategory(editModalCategory === cat ? '' : cat)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${editModalCategory === cat ? 'border-amber-400 bg-amber-400/20 text-amber-300' : 'border-[#323232] text-gray-500 hover:border-[#444] hover:text-gray-300'}`}
+                    >{cat}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Texte (éditable) */}
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Contenu de la phrase</label>
+                <div
+                  ref={editModalTextRef}
+                  contentEditable
+                  suppressContentEditableWarning
+                  className="min-h-[120px] text-sm text-gray-200 bg-[#0f0f0f] rounded-lg p-3 border border-[#2a2a2a] focus:border-[#3a3a3a] outline-none leading-relaxed"
+                />
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-[#323232] flex gap-2 justify-end">
+              <Button variant="secondary" size="sm" onClick={() => setEditingPhraseModal(null)}>Annuler</Button>
+              <Button variant="default" size="sm" onClick={saveEditModal}>Enregistrer</Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

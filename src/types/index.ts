@@ -342,7 +342,11 @@ export interface SubStepTemplate extends BaseEntity {
 export interface PhraseTemplate extends BaseEntity {
   text: string;
   label: string;
+  category?: string;
 }
+
+export const PHRASE_CATEGORIES = ['Ébavurage', 'Consigne', 'Astuce', 'Contrôle'] as const;
+export type PhraseCategory = typeof PHRASE_CATEGORIES[number];
 
 export interface Category extends BaseEntity {
   name: string;

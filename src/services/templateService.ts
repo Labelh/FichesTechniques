@@ -216,8 +216,8 @@ export async function duplicateSubStepTemplate(template: SubStepTemplate): Promi
 // PHRASES TYPE
 // ==========================================
 
-export async function savePhraseTemplate(text: string, label: string): Promise<string> {
-  return createPhraseTemplateFirestore(text, label);
+export async function savePhraseTemplate(text: string, label: string, category?: string): Promise<string> {
+  return createPhraseTemplateFirestore(text, label, category);
 }
 
 export async function getAllPhraseTemplates() {
@@ -229,5 +229,9 @@ export async function deletePhraseTemplate(id: string): Promise<void> {
 }
 
 export async function updatePhraseTemplateLabel(id: string, label: string): Promise<void> {
-  return updatePhraseTemplateFirestore(id, label);
+  return updatePhraseTemplateFirestore(id, { label });
+}
+
+export async function updatePhraseTemplateFull(id: string, updates: { label?: string; text?: string; category?: string }): Promise<void> {
+  return updatePhraseTemplateFirestore(id, updates);
 }

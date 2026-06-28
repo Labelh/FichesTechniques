@@ -676,10 +676,11 @@ export async function initializeFirestore(): Promise<void> {
 // PHRASE TEMPLATES
 // ==========================================
 
-export async function createPhraseTemplate(text: string, label: string): Promise<string> {
+export async function createPhraseTemplate(text: string, label: string, category?: string): Promise<string> {
   const ref = await addDoc(collection(db, collections.phraseTemplates), {
     text,
     label,
+    ...(category ? { category } : {}),
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -695,6 +696,6 @@ export async function deletePhraseTemplate(id: string): Promise<void> {
   await deleteDoc(doc(db, collections.phraseTemplates, id));
 }
 
-export async function updatePhraseTemplate(id: string, label: string): Promise<void> {
-  await updateDoc(doc(db, collections.phraseTemplates, id), { label, updatedAt: serverTimestamp() });
+export async function updatePhraseTemplate(id: string, updates: { label?: string; text?: string; category?: string }): Promise<void> {
+  await updateDoc(doc(db, collections.phraseTemplates, id), { ...updates, updatedAt: serverTimestamp() });
 }
