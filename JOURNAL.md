@@ -2,6 +2,10 @@
 
 Ce document liste, en langage simple, les évolutions apportées à votre application de Fiches Techniques. La modification la plus récente est en haut.
 
+## 10 juillet 2026
+
+- **Tableau de bord simplifié.** Les colonnes « Temps par pièce » et « Difficulté » ont été retirées du tableau de bord pour un affichage plus épuré.
+
 ## 28 juin 2026
 
 - **Ajout de documents et vidéos par glisser-déposer.** Lors de la rédaction d'une fiche, vous pouvez maintenant glisser un fichier depuis l'explorateur Windows directement sur la zone prévue pour l'ajouter — pour les vidéos, les documents et les images.

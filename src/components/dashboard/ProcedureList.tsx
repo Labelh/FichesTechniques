@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/Input';
 import { formatRelativeDate } from '@/lib/utils';
 import { deleteProcedure, duplicateProcedure } from '@/services/procedureService';
 import { toast } from 'sonner';
-import type { Procedure, DifficultyLevel } from '@/types';
+import type { Procedure } from '@/types';
 
 interface ProcedureListProps {
   procedures: Procedure[];
@@ -73,30 +73,6 @@ export default function ProcedureList({ procedures }: ProcedureListProps) {
     }
   };
 
-  // Calculer le temps total par pièce (somme des temps des phases) en centièmes de minutes
-  const getTotalTime = (procedure: Procedure): string => {
-    if (!procedure.phases || procedure.phases.length === 0) {
-      return '-';
-    }
-    const totalMinutes = procedure.phases.reduce((sum, phase) => sum + (phase.estimatedTime || 0), 0);
-    if (totalMinutes === 0) return '-';
-
-    return totalMinutes.toFixed(2);
-  };
-
-  // Obtenir la couleur de difficulté
-  const getDifficultyColor = (difficulty: DifficultyLevel): string => {
-    switch (difficulty) {
-      case 'trainee': return 'bg-blue-500';
-      case 'easy': return 'bg-green-500';
-      case 'medium': return 'bg-yellow-500';
-      case 'hard': return 'bg-red-500';
-      case 'control': return 'bg-orange-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
-
   return (
     <>
       <div className="bg-background-surface rounded-xl border border-[#323232] overflow-hidden">
@@ -106,8 +82,6 @@ export default function ProcedureList({ procedures }: ProcedureListProps) {
               <th>Référence</th>
               <th>Désignation</th>
               <th>Statut</th>
-              <th>Temps par pièce</th>
-              <th>Difficulté</th>
               <th>Modifié</th>
               <th className="text-right">Actions</th>
             </tr>
@@ -147,24 +121,6 @@ export default function ProcedureList({ procedures }: ProcedureListProps) {
                       En cours
                     </span>
                   )}
-                </td>
-                <td className="text-sm text-gray-400">
-                  {getTotalTime(procedure)}
-                </td>
-                <td>
-                  <div className="flex items-center gap-1">
-                    {procedure.phases && procedure.phases.length > 0 ? (
-                      procedure.phases.map((phase, idx) => (
-                        <div
-                          key={idx}
-                          className={`w-3 h-5 rounded-sm ${getDifficultyColor(phase.difficulty)}`}
-                          title={`Phase ${idx + 1}: ${phase.difficulty}`}
-                        />
-                      ))
-                    ) : (
-                      <span className="text-gray-500 text-sm">-</span>
-                    )}
-                  </div>
                 </td>
                 <td className="text-sm text-gray-400">
                   {formatRelativeDate(procedure.updatedAt)}
