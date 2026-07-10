@@ -2,6 +2,10 @@
 
 Ce document liste, en langage simple, les évolutions apportées à votre application de Fiches Techniques. La modification la plus récente est en haut.
 
+## 10 juillet 2026
+
+- **Tableau de bord simplifié.** Les colonnes « Temps par pièce » et « Difficulté » ont été retirées du tableau de bord pour un affichage plus épuré.
+
 ## 28 juin 2026
 
 - **Sommaire latéral des phases.** Un panneau flottant apparaît à droite lors de la rédaction d'une fiche. Il liste toutes les phases et met en évidence celle que vous êtes en train de consulter. Cliquez sur un nom pour y accéder directement.
