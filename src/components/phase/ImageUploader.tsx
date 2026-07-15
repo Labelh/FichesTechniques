@@ -92,41 +92,10 @@ export default function ImageUploader({ images, onImagesChange, onEditImage, ref
   };
 
   return (
-    <div className="space-y-4">
-      {/* Drop Zone */}
-      <div
-        {...getRootProps()}
-        className={`
-          border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
-          ${isDragActive
-            ? 'border-primary bg-primary/10'
-            : 'border-[#323232] hover:border-primary/50'
-          }
-          ${uploading ? 'opacity-50 pointer-events-none' : ''}
-        `}
-      >
-        <input {...getInputProps()} />
-        <Upload className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-        {isDragActive ? (
-          <p className="text-primary font-medium">Déposez les images ici...</p>
-        ) : (
-          <>
-            <p className="text-gray-900 dark:text-white font-medium mb-1">
-              Glissez-déposez des images ici
-            </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              ou cliquez pour sélectionner des fichiers
-            </p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-              PNG, JPG, JPEG, WEBP, GIF (max 15 MB par image)
-            </p>
-          </>
-        )}
-      </div>
-
+    <div className="space-y-3">
       {/* Images Grid */}
       {images.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {images.map((annotatedImage) => (
             <ImageThumbnail
               key={annotatedImage.imageId}
@@ -138,11 +107,37 @@ export default function ImageUploader({ images, onImagesChange, onEditImage, ref
         </div>
       )}
 
-      {uploading && (
-        <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-          Upload en cours...
-        </div>
-      )}
+      {/* Drop Zone */}
+      <div
+        {...getRootProps()}
+        className={`
+          border-2 border-dashed rounded-lg p-5 text-center cursor-pointer transition-all
+          ${isDragActive
+            ? 'border-primary bg-primary/10 scale-[1.01]'
+            : 'border-[#323232] hover:border-primary/50 hover:bg-[#1a1a1a]'
+          }
+          ${uploading ? 'opacity-50 pointer-events-none' : ''}
+        `}
+      >
+        <input {...getInputProps()} />
+        {uploading ? (
+          <div className="flex flex-col items-center gap-2">
+            <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-xs text-gray-400">Upload en cours…</p>
+          </div>
+        ) : isDragActive ? (
+          <div className="flex flex-col items-center gap-1.5">
+            <Upload className="h-7 w-7 mx-auto text-primary" />
+            <p className="text-sm text-primary font-medium">Relâchez pour ajouter</p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-1.5">
+            <Upload className="h-7 w-7 mx-auto text-gray-500" />
+            <p className="text-sm text-gray-300 font-medium">Glissez des images ici</p>
+            <p className="text-xs text-gray-500">ou cliquez pour parcourir · PNG, JPG, WEBP, GIF · max 15 MB</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -206,24 +201,24 @@ function ImageThumbnail({
   }, [annotatedImage, hasAnnotations]);
 
   return (
-    <div className="relative group aspect-video rounded-lg overflow-hidden border border-[#323232] bg-background-elevated">
+    <div className="relative group aspect-video rounded-lg overflow-hidden border border-[#323232] bg-background-elevated hover:border-[#555] transition-colors">
       {/* Image */}
       <img
         src={imageUrl}
         alt={annotatedImage.description || 'Image'}
-        className="w-full h-full object-cover"
+        className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
       />
 
       {/* Overlay avec actions */}
-      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
         {onEdit && (
           <Button
             size="sm"
             variant="default"
             onClick={onEdit}
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 text-xs h-7 px-2"
           >
-            <Pencil className="h-4 w-4" />
+            <Pencil className="h-3 w-3" />
             {hasAnnotations ? 'Éditer' : 'Annoter'}
           </Button>
         )}
@@ -231,14 +226,22 @@ function ImageThumbnail({
           size="sm"
           variant="destructive"
           onClick={onRemove}
+          className="h-7 w-7 p-0"
         >
-          <X className="h-4 w-4" />
+          <X className="h-3 w-3" />
         </Button>
       </div>
 
+      {/* Badge annotations */}
+      {hasAnnotations && (
+        <div className="absolute top-1.5 right-1.5 bg-primary/90 text-white text-[10px] font-medium rounded px-1.5 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          Annoté
+        </div>
+      )}
+
       {/* Nom de l'image */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
-        <p className="text-white text-xs truncate">
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-2 py-2">
+        <p className="text-white text-[11px] truncate leading-tight">
           {annotatedImage.image.name}
         </p>
       </div>

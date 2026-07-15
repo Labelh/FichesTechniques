@@ -2,6 +2,18 @@
 
 Ce document liste, en langage simple, les évolutions apportées à votre application de Fiches Techniques. La modification la plus récente est en haut.
 
+## 10 juillet 2026
+
+- **Tableau de bord simplifié.** Les colonnes « Temps par pièce » et « Difficulté » ont été retirées du tableau de bord pour un affichage plus épuré.
+
+## 28 juin 2026
+
+- **Ajout de documents et vidéos par glisser-déposer.** Lors de la rédaction d'une fiche, vous pouvez maintenant glisser un fichier depuis l'explorateur Windows directement sur la zone prévue pour l'ajouter — pour les vidéos, les documents et les images.
+- **Plus de fenêtre intrusive lors de la sélection de fichiers.** La fenêtre qui s'ouvrait pour demander un chemin d'accès ne s'affiche plus. Si un dossier a déjà été utilisé, il est mémorisé et proposé automatiquement. Sinon, le champ reste modifiable directement.
+- **Correction du mauvais chemin inséré.** Le chemin d'accès d'un fichier sélectionné correspond maintenant toujours au fichier en cours, et non au fichier précédemment ajouté.
+- **Modification du chemin directement en ligne.** Pour corriger le chemin d'un document ou d'une vidéo déjà ajouté, cliquez dessus pour le modifier sur place — sans fenêtre popup.
+- **Design amélioré pour les images, vidéos et documents.** Les zones d'ajout ont été repensées avec des couleurs distinctes (bleu pour les vidéos, rouge pour les documents), des animations au survol, et un affichage en grille plus compact pour les images.
+
 ## 24 juin 2026
 
 - **Indicateurs déplacés sur le tableau de bord.** Les quatre cadres (fiches totales, faites, restantes, couverture charge) sont désormais visibles directement sur le tableau de bord, au-dessus de la liste de vos procédures.
