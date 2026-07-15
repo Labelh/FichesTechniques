@@ -2,6 +2,12 @@
 
 Ce document liste, en langage simple, les évolutions apportées à votre application de Fiches Techniques. La modification la plus récente est en haut.
 
+## 15 juillet 2026
+
+- **Recherche de référence dans l'onglet Prévisionnelles.** Le champ « Référence » propose désormais des suggestions parmi vos fiches techniques existantes lorsque vous tapez. Vous pouvez cliquer sur une suggestion pour pré-remplir le champ.
+- **Indicateurs en haut de l'onglet Prévisionnelles.** Trois cadres récapitulatifs (nombre de références, taux de complétion avec barre de progression, charge totale) s'affichent au-dessus du tableau pour une vue d'ensemble rapide.
+- **Tableau des références amélioré.** Le tableau est plus aéré, avec des couleurs alternées, des en-têtes plus lisibles, et le statut « Faite / À faire » est affiché sous forme de pastille colorée. Le bouton de suppression n'apparaît qu'au survol de la ligne.
+
 ## 10 juillet 2026
 
 - **Tableau de bord simplifié.** Les colonnes « Temps par pièce » et « Difficulté » ont été retirées du tableau de bord pour un affichage plus épuré.

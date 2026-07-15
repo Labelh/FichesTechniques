@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
-import { BarChart3, Plus, Trash2, CheckCircle2, Circle, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { BarChart3, Plus, Trash2, CheckCircle2, Circle, ArrowUpDown, ArrowUp, ArrowDown, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { useForecastArticles } from '@/hooks/useForecastArticles';
+import { useProcedures } from '@/hooks/useProcedures';
 
 type FtFilter = 'all' | 'done' | 'todo';
 type SortKey = 'reference' | 'quantity' | 'timePerPiece' | 'charge' | 'ft';
@@ -10,15 +11,67 @@ type SortDir = 'asc' | 'desc';
 export default function ForecastArticles() {
   const { articles, loading, stats, isFtDone, addArticle, removeArticle, toggleFtDone } =
     useForecastArticles();
+  const procedures = useProcedures();
 
   const [reference, setReference] = useState('');
   const [quantity, setQuantity] = useState('');
   const [timePerPiece, setTimePerPiece] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const [ftFilter, setFtFilter] = useState<FtFilter>('all');
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
+
+  const suggestions = useMemo(() => {
+    if (!reference.trim() || !procedures) return [];
+    const search = reference.trim().toLowerCase();
+    const existingRefs = new Set(articles.map((a) => a.reference.toLowerCase()));
+    return (procedures || [])
+      .filter((p) => {
+        const ref = p.reference?.trim().toLowerCase();
+        if (!ref) return false;
+        if (existingRefs.has(ref)) return false;
+        return ref.includes(search);
+      })
+      .slice(0, 8);
+  }, [reference, procedures, articles]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node) &&
+          inputRef.current && !inputRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSelectSuggestion = (ref: string) => {
+    setReference(ref);
+    setShowSuggestions(false);
+    setHighlightedIndex(-1);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showSuggestions || suggestions.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedIndex((i) => (i < suggestions.length - 1 ? i + 1 : 0));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex((i) => (i > 0 ? i - 1 : suggestions.length - 1));
+    } else if (e.key === 'Enter' && highlightedIndex >= 0) {
+      e.preventDefault();
+      handleSelectSuggestion(suggestions[highlightedIndex].reference || '');
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
+    }
+  };
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -95,17 +148,17 @@ export default function ForecastArticles() {
     const active = sortKey === column;
     return (
       <th
-        className={`px-4 py-3 text-xs font-medium cursor-pointer select-none hover:text-gray-300 transition-colors ${
+        className={`px-5 py-3.5 text-[11px] font-semibold uppercase tracking-wider cursor-pointer select-none hover:text-gray-300 transition-colors ${
           align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : 'text-left'
-        } ${active ? 'text-white' : 'text-gray-500'}`}
+        } ${active ? 'text-primary' : 'text-gray-500'}`}
         onClick={() => handleSort(column)}
       >
-        <span className="inline-flex items-center gap-1">
+        <span className="inline-flex items-center gap-1.5">
           {label}
           {active ? (
-            sortDir === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />
+            sortDir === 'asc' ? <ArrowUp size={11} /> : <ArrowDown size={11} />
           ) : (
-            <ArrowUpDown size={12} className="opacity-40" />
+            <ArrowUpDown size={11} className="opacity-30" />
           )}
         </span>
       </th>
@@ -122,18 +175,86 @@ export default function ForecastArticles() {
         </p>
       </div>
 
+      {/* Stats bar */}
+      {!loading && articles.length > 0 && (
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-[#1c1c1c] rounded-xl border border-[#272727] p-4">
+            <p className="text-[11px] uppercase tracking-wider text-gray-500 mb-1">Références</p>
+            <p className="text-2xl font-bold text-white">{stats.total}</p>
+          </div>
+          <div className="bg-[#1c1c1c] rounded-xl border border-[#272727] p-4">
+            <p className="text-[11px] uppercase tracking-wider text-gray-500 mb-1">Complétion</p>
+            <div className="flex items-end gap-2">
+              <p className="text-2xl font-bold text-white">{stats.coveragePercent}%</p>
+              <p className="text-xs text-gray-500 mb-0.5">{stats.done}/{stats.total}</p>
+            </div>
+            <div className="mt-2 h-1.5 bg-[#252525] rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${stats.coveragePercent}%`,
+                  background: stats.coveragePercent === 100
+                    ? '#10b981'
+                    : 'linear-gradient(90deg, #ff6600, #ff8533)',
+                }}
+              />
+            </div>
+          </div>
+          <div className="bg-[#1c1c1c] rounded-xl border border-[#272727] p-4">
+            <p className="text-[11px] uppercase tracking-wider text-gray-500 mb-1">Charge totale</p>
+            <p className="text-2xl font-bold text-white">{formatCharge(stats.totalCharge)} h</p>
+          </div>
+        </div>
+      )}
+
       {/* Add Form */}
       <div className="bg-[#1c1c1c] rounded-xl border border-[#272727] p-4">
         <div className="flex flex-col sm:flex-row gap-3 items-end">
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 relative">
             <label className="block text-xs text-gray-500 mb-1">Référence</label>
-            <input
-              type="text"
-              value={reference}
-              onChange={(e) => setReference(e.target.value)}
-              placeholder="Ex: 70645-010"
-              className="w-full px-3 py-2 rounded-lg bg-[#161616] border border-[#303030] text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary transition-colors"
-            />
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" />
+              <input
+                ref={inputRef}
+                type="text"
+                value={reference}
+                onChange={(e) => {
+                  setReference(e.target.value);
+                  setShowSuggestions(true);
+                  setHighlightedIndex(-1);
+                }}
+                onFocus={() => setShowSuggestions(true)}
+                onKeyDown={handleKeyDown}
+                placeholder="Rechercher ou saisir une référence…"
+                className="w-full pl-9 pr-3 py-2 rounded-lg bg-[#161616] border border-[#303030] text-sm text-white placeholder-gray-600 focus:outline-none focus:border-primary transition-colors"
+              />
+            </div>
+            {showSuggestions && suggestions.length > 0 && (
+              <div
+                ref={suggestionsRef}
+                className="absolute z-50 left-0 right-0 mt-1 bg-[#1a1a1a] border border-[#303030] rounded-lg shadow-elevated overflow-hidden"
+              >
+                <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-600 border-b border-[#252525]">
+                  Fiches techniques existantes
+                </div>
+                {suggestions.map((p, i) => (
+                  <button
+                    key={p.id}
+                    onClick={() => handleSelectSuggestion(p.reference || '')}
+                    className={`w-full text-left px-3 py-2 flex items-center gap-3 transition-colors ${
+                      i === highlightedIndex
+                        ? 'bg-primary/10 text-white'
+                        : 'text-gray-300 hover:bg-[#252525]'
+                    }`}
+                  >
+                    <span className="font-mono text-sm text-primary font-medium">{p.reference}</span>
+                    {p.designation && (
+                      <span className="text-xs text-gray-500 truncate">{p.designation}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="w-32">
             <label className="block text-xs text-gray-500 mb-1">Quantité</label>
@@ -224,35 +345,50 @@ export default function ForecastArticles() {
         <div className="bg-[#1c1c1c] rounded-xl border border-[#272727] overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#272727]">
+              <tr className="border-b border-[#2a2a2a] bg-[#161616]">
                 <SortHeader label="Référence" column="reference" />
                 <SortHeader label="Quantité" column="quantity" align="right" />
                 <SortHeader label="Temps/pièce" column="timePerPiece" align="right" />
                 <SortHeader label="Charge" column="charge" align="right" />
                 <SortHeader label="FT" column="ft" align="center" />
-                <th className="w-10" />
+                <th className="w-12" />
               </tr>
             </thead>
-            <tbody>
-              {filteredAndSorted.map((a) => {
+            <tbody className="divide-y divide-[#222]">
+              {filteredAndSorted.map((a, index) => {
                 const done = isFtDone(a);
                 const charge = a.quantity * a.timePerPiece;
                 const isConfirming = confirmDeleteId === a.id;
 
                 return (
-                  <tr key={a.id} className="border-b border-[#222] last:border-b-0 hover:bg-[#222] transition-colors">
-                    <td className="px-4 py-3 font-mono text-white">{a.reference}</td>
-                    <td className="px-4 py-3 text-right text-gray-300">
-                      {a.quantity.toLocaleString('fr-FR')}
+                  <tr
+                    key={a.id}
+                    className={`group hover:bg-[#222] transition-colors ${
+                      index % 2 === 0 ? 'bg-[#1c1c1c]' : 'bg-[#1a1a1a]'
+                    }`}
+                  >
+                    <td className="px-5 py-3.5">
+                      <span className="font-mono text-white font-medium tracking-wide">
+                        {a.reference}
+                      </span>
                     </td>
-                    <td className="px-4 py-3 text-right text-gray-300">{a.timePerPiece}</td>
-                    <td className="px-4 py-3 text-right text-gray-300">
-                      {formatCharge(charge)} h
+                    <td className="px-5 py-3.5 text-right">
+                      <span className="text-gray-300 tabular-nums">
+                        {a.quantity.toLocaleString('fr-FR')}
+                      </span>
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-5 py-3.5 text-right">
+                      <span className="text-gray-300 tabular-nums">{a.timePerPiece}</span>
+                    </td>
+                    <td className="px-5 py-3.5 text-right">
+                      <span className="text-gray-300 tabular-nums font-medium">
+                        {formatCharge(charge)} h
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5 text-center">
                       <button
                         onClick={() => toggleFtDone(a)}
-                        className="inline-flex items-center gap-1.5 group"
+                        className="inline-flex items-center gap-1.5 group/ft"
                         title={
                           a.ftDone !== null
                             ? 'Statut forcé manuellement — cliquez pour changer'
@@ -260,18 +396,19 @@ export default function ForecastArticles() {
                         }
                       >
                         {done ? (
-                          <CheckCircle2 size={18} className="text-green-400" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 text-green-400 text-xs font-medium">
+                            <CheckCircle2 size={14} />
+                            Faite
+                          </span>
                         ) : (
-                          <Circle size={18} className="text-gray-600 group-hover:text-gray-400" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#252525] text-gray-500 text-xs font-medium group-hover/ft:text-gray-400 transition-colors">
+                            <Circle size={14} />
+                            À faire
+                          </span>
                         )}
-                        <span
-                          className={`text-xs font-medium ${done ? 'text-green-400' : 'text-gray-600'}`}
-                        >
-                          {done ? 'Faite' : 'À faire'}
-                        </span>
                       </button>
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-3 py-3.5 text-center">
                       {isConfirming ? (
                         <div className="flex items-center gap-1">
                           <button
@@ -290,7 +427,7 @@ export default function ForecastArticles() {
                       ) : (
                         <button
                           onClick={() => setConfirmDeleteId(a.id)}
-                          className="p-1.5 rounded-md text-gray-700 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                          className="p-1.5 rounded-md text-gray-700 opacity-0 group-hover:opacity-100 hover:text-red-400 hover:bg-red-500/10 transition-all"
                         >
                           <Trash2 size={14} />
                         </button>
