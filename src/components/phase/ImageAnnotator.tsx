@@ -163,11 +163,13 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     { name: 'Orange', value: '#f97316' },
     { name: 'Jaune', value: '#eab308' },
     { name: 'Vert', value: '#22c55e' },
+    { name: 'Cyan', value: '#06b6d4' },
     { name: 'Bleu', value: '#3b82f6' },
     { name: 'Violet', value: '#a855f7' },
     { name: 'Rose', value: '#ec4899' },
-    { name: 'Cyan', value: '#06b6d4' },
     { name: 'Blanc', value: '#ffffff' },
+    { name: 'Gris', value: '#9ca3af' },
+    { name: 'Marron', value: '#92400e' },
   ];
 
   // Lissage des points du tracé à main levée

@@ -14,6 +14,15 @@ Ce document liste, en langage simple, les évolutions apportées à votre applic
 
 ## 28 juin 2026
 
+- **Sommaire latéral des phases.** Un panneau flottant apparaît à droite lors de la rédaction d'une fiche. Il liste toutes les phases et met en évidence celle que vous êtes en train de consulter. Cliquez sur un nom pour y accéder directement.
+- **Historique des modifications.** Une nouvelle section "Historique des modifications" est disponible dans l'éditeur de fiche, entre la Défauthèque et le Versioning. En cliquant dessus, vous pouvez voir la liste des dernières actions effectuées (déplacements de sous-étapes, etc.) avec leur date et heure.
+- **Réorganisation par glisser-déposer.** Dans chaque phase, vous pouvez maintenant réordonner les sous-étapes en les faisant glisser (via la poignée à gauche). Vous pouvez aussi déplacer une sous-étape vers une autre phase grâce au bouton fléché, qui affiche la liste des phases disponibles.
+
+- **Catégories pour les phrases type.** Lors de l'enregistrement d'une phrase, vous pouvez choisir une catégorie (Ébavurage, Consigne, Astuce, Contrôle) pour la retrouver plus facilement. Dans la bibliothèque de phrases et dans la page Templates, des boutons de filtre par catégorie sont disponibles.
+- **Modification complète des phrases type depuis la page Templates.** Le bouton "Modifier" sur chaque phrase ouvre une fenêtre permettant de changer le libellé, la catégorie et le contenu de la phrase.
+
+- **Phrases type dans les descriptions.** Dans la barre d'outils de rédaction, deux nouveaux boutons sont disponibles : l'un pour enregistrer un extrait de texte sélectionné comme phrase réutilisable (avec un libellé pour la retrouver facilement), l'autre pour ouvrir votre bibliothèque de phrases type et l'insérer en un clic à l'endroit voulu dans la description.
+
 - **Ajout de documents et vidéos par glisser-déposer.** Lors de la rédaction d'une fiche, vous pouvez maintenant glisser un fichier depuis l'explorateur Windows directement sur la zone prévue pour l'ajouter — pour les vidéos, les documents et les images.
 - **Plus de fenêtre intrusive lors de la sélection de fichiers.** La fenêtre qui s'ouvrait pour demander un chemin d'accès ne s'affiche plus. Si un dossier a déjà été utilisé, il est mémorisé et proposé automatiquement. Sinon, le champ reste modifiable directement.
 - **Correction du mauvais chemin inséré.** Le chemin d'accès d'un fichier sélectionné correspond maintenant toujours au fichier en cours, et non au fichier précédemment ajouté.

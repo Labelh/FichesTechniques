@@ -42,6 +42,7 @@ export const collections = {
   preferences: 'preferences',
   history: 'history',
   forecastArticles: 'forecast_articles',
+  phraseTemplates: 'phraseTemplates',
 } as const;
 
 // ==========================================
@@ -669,4 +670,66 @@ export async function initializeFirestore(): Promise<void> {
     console.error('❌ Erreur lors de l\'initialisation de Firestore:', error);
     throw error;
   }
+}
+
+// ==========================================
+// PHRASE TEMPLATES
+// ==========================================
+
+export async function createPhraseTemplate(text: string, label: string, category?: string): Promise<string> {
+  const ref = await addDoc(collection(db, collections.phraseTemplates), {
+    text,
+    label,
+    ...(category ? { category } : {}),
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  return ref.id;
+}
+
+export async function getAllPhraseTemplates() {
+  const snap = await getDocs(query(collection(db, collections.phraseTemplates), orderBy('createdAt', 'desc')));
+  return snap.docs.map(d => ({ id: d.id, ...convertTimestamps(d.data()) })) as any[];
+}
+
+export async function deletePhraseTemplate(id: string): Promise<void> {
+  await deleteDoc(doc(db, collections.phraseTemplates, id));
+}
+
+export async function updatePhraseTemplate(id: string, updates: { label?: string; text?: string; category?: string }): Promise<void> {
+  await updateDoc(doc(db, collections.phraseTemplates, id), { ...updates, updatedAt: serverTimestamp() });
+}
+
+// ── Historique des modifications ────────────────────────────────────────────
+
+export interface ActivityEntry {
+  id: string;
+  action: string;
+  detail?: string;
+  timestamp: Date;
+}
+
+export async function logActivity(procedureId: string, action: string, detail?: string): Promise<void> {
+  await addDoc(collection(db, 'procedures', procedureId, 'activity'), {
+    action,
+    detail: detail || null,
+    timestamp: serverTimestamp(),
+  });
+}
+
+export async function getActivityLog(procedureId: string, limitCount = 50): Promise<ActivityEntry[]> {
+  const { limit } = await import('firebase/firestore');
+  const snap = await getDocs(
+    query(
+      collection(db, 'procedures', procedureId, 'activity'),
+      orderBy('timestamp', 'desc'),
+      limit(limitCount)
+    )
+  );
+  return snap.docs.map(d => ({
+    id: d.id,
+    action: d.data().action,
+    detail: d.data().detail,
+    timestamp: d.data().timestamp?.toDate?.() ?? new Date(),
+  }));
 }

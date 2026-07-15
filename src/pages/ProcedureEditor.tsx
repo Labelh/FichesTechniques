@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
-import { ArrowLeft, Plus, Image as ImageIcon, X, Download, AlertTriangle, Pencil, CheckCircle, ChevronDown, ChevronUp, Trash2, FileText, Layers, GitBranch, Shield, Tag } from 'lucide-react';
+import { ArrowLeft, Plus, Image as ImageIcon, X, Download, AlertTriangle, Pencil, CheckCircle, ChevronDown, ChevronUp, Trash2, FileText, Layers, GitBranch, Shield, Tag, UserCheck } from 'lucide-react';
 import { useProcedure } from '@/hooks/useProcedures';
 import { useTools } from '@/hooks/useTools';
 import { createProcedure, updateProcedure, addPhase, deletePhase, updatePhase } from '@/services/procedureService';
 import { uploadImageToHost } from '@/services/imageHostingService';
+import PhaseSummary from '@/components/editor/PhaseSummary';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -13,7 +14,7 @@ import PhaseTemplateSelector from '@/components/editor/PhaseTemplateSelector';
 import ImageAnnotator from '@/components/phase/ImageAnnotator';
 import { toast } from 'sonner';
 import { generateHTML } from '@/lib/htmlGenerator';
-import type { DefectItem, AnnotatedImage, Annotation, VersionLog } from '@/types';
+import type { DefectItem, AnnotatedImage, Annotation, VersionLog, SubStep } from '@/types';
 
 export default function ProcedureEditor() {
   const { id } = useParams<{ id: string }>();
@@ -37,6 +38,11 @@ export default function ProcedureEditor() {
   const [showAllVersions, setShowAllVersions] = useState(false);
   const [showDefects, setShowDefects] = useState(true);
   const [showVersionForm, setShowVersionForm] = useState(false);
+  const [signataires, setSignataires] = useState<{
+    redacteur?: { nom: string; date?: string };
+    verificateur?: { nom: string; date?: string };
+    approbateur?: { nom: string; date?: string };
+  }>({});
   const [newVersionType, setNewVersionType] = useState<'major' | 'minor'>('minor');
   const [newVersionDescription, setNewVersionDescription] = useState('');
   const [status, setStatus] = useState<'en_cours' | 'verification' | 'relecture' | 'mise_a_jour_timetonic' | 'completed'>('en_cours');
@@ -48,6 +54,7 @@ export default function ProcedureEditor() {
       setReference(existingProcedure.reference || '');
       setDesignation(existingProcedure.designation || existingProcedure.title || '');
       setDefects(existingProcedure.defects || []);
+      setSignataires(existingProcedure.signataires || {});
       setVersionString(existingProcedure.versionString || '1.0');
       setChangelog(existingProcedure.changelog || []);
       const s = existingProcedure.status as string;
@@ -98,6 +105,7 @@ export default function ProcedureEditor() {
           description: '',
           coverImage: coverImage || undefined,
           defects: defects,
+          signataires: signataires,
           versionString: versionString,
           changelog: changelog,
           status: status as any,
@@ -341,6 +349,24 @@ export default function ProcedureEditor() {
     }
   };
 
+  const handleMoveStepToPhase = async (step: SubStep, fromPhaseId: string, toPhaseId: string) => {
+    if (!id || !existingProcedure) return;
+    const fromPhase = existingProcedure.phases.find(p => p.id === fromPhaseId);
+    const toPhase = existingProcedure.phases.find(p => p.id === toPhaseId);
+    if (!fromPhase || !toPhase) return;
+    const newFromSteps = (fromPhase.steps || []).filter(s => s.id !== step.id).map((s, i) => ({ ...s, order: i }));
+    const newToSteps = [...(toPhase.steps || []), { ...step, order: (toPhase.steps || []).length }];
+    try {
+      await Promise.all([
+        updatePhase(id, fromPhaseId, { steps: newFromSteps }),
+        updatePhase(id, toPhaseId, { steps: newToSteps }),
+      ]);
+      toast.success('Sous-étape déplacée');
+    } catch {
+      toast.error('Erreur lors du déplacement');
+    }
+  };
+
   const handleMoveImageToOtherPhase = async (image: AnnotatedImage, toPhaseId: string, toStepId: string) => {
     if (!id) return;
     const targetPhase = existingProcedure?.phases.find(p => p.id === toPhaseId);
@@ -555,8 +581,8 @@ export default function ProcedureEditor() {
         <Card>
           <CardContent className="pt-0">
             <div className="flex items-center gap-3 px-1 py-4 mb-4 border-b border-[#1e1e1e]">
-              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 border border-primary/20">
-                <FileText className="h-4 w-4 text-primary" />
+              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-[#1e1e1e] border border-[#2e2e2e]">
+                <FileText className="h-4 w-4 text-gray-400" />
               </div>
               <div>
                 <h2 className="text-base font-bold leading-none">Informations générales</h2>
@@ -650,14 +676,72 @@ export default function ProcedureEditor() {
           </CardContent>
         </Card>
 
+        {/* Phases */}
+        {id && (
+          <Card>
+            <CardContent className="pt-0">
+              <div className="flex items-center justify-between px-1 py-4 mb-4 border-b border-[#1e1e1e]">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-[#1e1e1e] border border-[#2e2e2e]">
+                    <Layers className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold leading-none">Phases</h2>
+                    {existingProcedure && existingProcedure.phases.length > 0 && (() => {
+                      const totalMin = existingProcedure.phases.reduce((sum, p) => sum + (p.estimatedTime || 0), 0);
+                      return (
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {existingProcedure.phases.length} phase{existingProcedure.phases.length > 1 ? 's' : ''} · {totalMin} min · {(totalMin / 60).toFixed(2)} h
+                        </p>
+                      );
+                    })()}
+                  </div>
+                </div>
+                <Button onClick={handleAddPhase} size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Ajouter une phase
+                </Button>
+              </div>
+
+              {existingProcedure?.phases.length === 0 ? (
+                <div className="text-center py-10">
+                  <Layers className="h-8 w-8 text-gray-700 mx-auto mb-3" />
+                  <p className="text-gray-500 text-sm">Aucune phase pour l'instant.</p>
+                  <p className="text-gray-600 text-xs mt-1">Cliquez sur "Ajouter une phase" pour commencer.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {existingProcedure?.phases.map((phase, index) => (
+                    <div key={phase.id} id={`phase-${phase.id}`}>
+                      <PhaseItem
+                        phase={phase}
+                        index={index}
+                        procedureId={id!}
+                        reference={reference}
+                        totalPhases={existingProcedure.phases.length}
+                        allPhases={existingProcedure.phases}
+                        onDelete={handleDeletePhase}
+                        onMoveImageToOtherPhase={handleMoveImageToOtherPhase}
+                        onMoveStepToPhase={handleMoveStepToPhase}
+                        initiallyExpanded={expandPhaseIndex !== undefined && index === expandPhaseIndex}
+                        initialExpandStepIndex={expandPhaseIndex !== undefined && index === expandPhaseIndex ? expandStepIndex : undefined}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Défauthèque */}
         {id && (
           <Card>
             <CardContent className="pt-0">
               <div className="flex items-center justify-between px-1 py-4 mb-4 border-b border-[#1e1e1e]">
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-red-500/10 border border-red-500/20">
-                    <Shield className="h-4 w-4 text-red-400" />
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-[#1e1e1e] border border-[#2e2e2e]">
+                    <Shield className="h-4 w-4 text-gray-400" />
                   </div>
                   <button
                     onClick={() => setShowDefects(!showDefects)}
@@ -839,58 +923,58 @@ export default function ProcedureEditor() {
           </Card>
         )}
 
-        {/* Phases */}
+        {/* Rédaction & Validation */}
         {id && (
           <Card>
             <CardContent className="pt-0">
-              <div className="flex items-center justify-between px-1 py-4 mb-4 border-b border-[#1e1e1e]">
+              <div className="px-1 py-4 mb-4 border-b border-[#1e1e1e]">
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                    <Layers className="h-4 w-4 text-blue-400" />
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-[#1e1e1e] border border-[#2e2e2e]">
+                    <UserCheck className="h-4 w-4 text-gray-400" />
                   </div>
                   <div>
-                    <h2 className="text-base font-bold leading-none">Phases</h2>
-                    {existingProcedure && existingProcedure.phases.length > 0 && (() => {
-                      const totalMin = existingProcedure.phases.reduce((sum, p) => sum + (p.estimatedTime || 0), 0);
-                      return (
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          {existingProcedure.phases.length} phase{existingProcedure.phases.length > 1 ? 's' : ''} · {totalMin} min · {(totalMin / 60).toFixed(2)} h
-                        </p>
-                      );
-                    })()}
+                    <h2 className="text-base font-bold leading-none">Rédaction & Validation</h2>
+                    <p className="text-xs text-gray-500 mt-0.5">Personnes impliquées dans la rédaction et la validation</p>
                   </div>
                 </div>
-                <Button onClick={handleAddPhase} size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Ajouter une phase
-                </Button>
               </div>
 
-              {existingProcedure?.phases.length === 0 ? (
-                <div className="text-center py-10">
-                  <Layers className="h-8 w-8 text-gray-700 mx-auto mb-3" />
-                  <p className="text-gray-500 text-sm">Aucune phase pour l'instant.</p>
-                  <p className="text-gray-600 text-xs mt-1">Cliquez sur "Ajouter une phase" pour commencer.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {existingProcedure?.phases.map((phase, index) => (
-                    <PhaseItem
-                      key={phase.id}
-                      phase={phase}
-                      index={index}
-                      procedureId={id!}
-                      reference={reference}
-                      totalPhases={existingProcedure.phases.length}
-                      allPhases={existingProcedure.phases}
-                      onDelete={handleDeletePhase}
-                      onMoveImageToOtherPhase={handleMoveImageToOtherPhase}
-                      initiallyExpanded={expandPhaseIndex !== undefined && index === expandPhaseIndex}
-                      initialExpandStepIndex={expandPhaseIndex !== undefined && index === expandPhaseIndex ? expandStepIndex : undefined}
-                    />
-                  ))}
-                </div>
-              )}
+              <div className="space-y-4">
+                {(
+                  [
+                    { key: 'redacteur', label: 'Rédigé par', color: 'blue' },
+                    { key: 'verificateur', label: 'Vérifié par', color: 'amber' },
+                    { key: 'approbateur', label: 'Approuvé par', color: 'green' },
+                  ] as const
+                ).map(({ key, label, color }) => {
+                  const entry = signataires[key] || { nom: '', date: '' };
+                  const colorMap = {
+                    blue: 'bg-[#1e1e1e] border-[#2e2e2e] text-gray-300',
+                    amber: 'bg-[#1e1e1e] border-[#2e2e2e] text-gray-300',
+                    green: 'bg-[#1e1e1e] border-[#2e2e2e] text-gray-300',
+                  };
+                  return (
+                    <div key={key} className="flex items-center gap-3">
+                      <span className={`flex-shrink-0 text-xs font-medium px-2 py-1 rounded-md border ${colorMap[color]} w-28 text-center`}>
+                        {label}
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="Nom"
+                        value={entry.nom}
+                        onChange={e => setSignataires(prev => ({ ...prev, [key]: { ...prev[key], nom: e.target.value } }))}
+                        className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#444] transition-colors"
+                      />
+                      <input
+                        type="date"
+                        value={entry.date || ''}
+                        onChange={e => setSignataires(prev => ({ ...prev, [key]: { ...prev[key], date: e.target.value } }))}
+                        className="w-36 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-[#444] transition-colors"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </CardContent>
           </Card>
         )}
@@ -901,8 +985,8 @@ export default function ProcedureEditor() {
             <CardContent className="pt-0">
               <div className="flex items-center justify-between px-1 py-4 mb-4 border-b border-[#1e1e1e]">
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-green-500/10 border border-green-500/20">
-                    <GitBranch className="h-4 w-4 text-green-400" />
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-[#1e1e1e] border border-[#2e2e2e]">
+                    <GitBranch className="h-4 w-4 text-gray-400" />
                   </div>
                   <div>
                     <h2 className="text-base font-bold leading-none">Versioning</h2>
@@ -1109,6 +1193,8 @@ export default function ProcedureEditor() {
           onCancel={() => setImageToAnnotate(null)}
         />
       )}
+
+      {existingProcedure && <PhaseSummary phases={existingProcedure.phases} />}
 
     </div>
   );

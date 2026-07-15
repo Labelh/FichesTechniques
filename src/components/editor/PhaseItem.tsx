@@ -1,10 +1,27 @@
 import { useState, useEffect, useRef } from 'react';
-import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, Save, Pencil, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Video as VideoIcon, Bold, Italic, Palette, List, ListOrdered, Smile, FileText, FolderInput } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, Save, Pencil, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Video as VideoIcon, Bold, Italic, Palette, List, ListOrdered, Smile, FileText, FolderInput, BookOpen, BookmarkPlus, GripVertical, MoveRight } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { updatePhase, movePhaseUp, movePhaseDown } from '@/services/procedureService';
-import { createPhaseTemplate, createSubStepTemplateFromStep, getAllSubStepTemplates, deleteSubStepTemplate, incrementSubStepTemplateUsage } from '@/services/templateService';
+import { createPhaseTemplate, createSubStepTemplateFromStep, getAllSubStepTemplates, deleteSubStepTemplate, incrementSubStepTemplateUsage, savePhraseTemplate, getAllPhraseTemplates, deletePhraseTemplate, updatePhraseTemplateLabel } from '@/services/templateService';
+import type { PhraseTemplate } from '@/types';
+import { PHRASE_CATEGORIES } from '@/types';
 import { uploadImageToHost } from '@/services/imageHostingService';
 import { useTools } from '@/hooks/useTools';
 import ImageAnnotator from '@/components/phase/ImageAnnotator';
@@ -24,11 +41,12 @@ interface PhaseItemProps {
   allPhases?: Phase[];
   onDelete: (phaseId: string) => void;
   onMoveImageToOtherPhase?: (image: AnnotatedImage, toPhaseId: string, toStepId: string) => void;
+  onMoveStepToPhase?: (step: SubStep, fromPhaseId: string, toPhaseId: string) => void;
   initiallyExpanded?: boolean;
   initialExpandStepIndex?: number;
 }
 
-export default function PhaseItem({ phase, index, procedureId, reference, totalPhases, allPhases, onDelete, onMoveImageToOtherPhase, initiallyExpanded, initialExpandStepIndex }: PhaseItemProps) {
+export default function PhaseItem({ phase, index, procedureId, reference, totalPhases, allPhases, onDelete, onMoveImageToOtherPhase, onMoveStepToPhase, initiallyExpanded, initialExpandStepIndex }: PhaseItemProps) {
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded ?? false);
   const phaseRef = useRef<HTMLDivElement>(null);
   const [title, setTitle] = useState(phase.title);
@@ -39,6 +57,7 @@ export default function PhaseItem({ phase, index, procedureId, reference, totalP
   const isInitialMount = useRef(true);
 
   const availableTools = useTools();
+  const dndSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
   const [showSubStepTemplateModal, setShowSubStepTemplateModal] = useState(false);
   const [subStepTemplates, setSubStepTemplates] = useState<SubStepTemplate[]>([]);
   const [subStepTemplateCategory, setSubStepTemplateCategory] = useState<string>('Tous');
@@ -370,6 +389,20 @@ export default function PhaseItem({ phase, index, procedureId, reference, totalP
     setSteps(newSteps.map((s, idx) => ({ ...s, order: idx })));
   };
 
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = steps.findIndex(s => s.id === active.id);
+    const newIndex = steps.findIndex(s => s.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    setSteps(arrayMove(steps, oldIndex, newIndex).map((s: SubStep, idx: number) => ({ ...s, order: idx })));
+  };
+
+  const handleMoveStepToPhase = (step: SubStep, targetPhaseId: string) => {
+    setSteps(prev => prev.filter(s => s.id !== step.id).map((s, idx) => ({ ...s, order: idx })));
+    onMoveStepToPhase?.(step, phase.id, targetPhaseId);
+  };
+
   // Nettoie les valeurs undefined d'un objet (Firestore n'accepte pas undefined)
   // Exclut aussi imageUrl des outils (trop gros pour Firestore en base64)
   const cleanUndefined = (obj: any): any => {
@@ -655,6 +688,8 @@ export default function PhaseItem({ phase, index, procedureId, reference, totalP
                   Aucune sous-étape. Cliquez sur "Ajouter une sous-étape" pour commencer.
                 </p>
               ) : (
+                <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                  <SortableContext items={steps.map(s => s.id)} strategy={verticalListSortingStrategy}>
                 <div className="space-y-4">
                   {steps.map((step, idx) => (
                     <SubStepItem
@@ -681,6 +716,7 @@ export default function PhaseItem({ phase, index, procedureId, reference, totalP
                       onRemoveTool={(toolId) => removeStepTool(step.id, toolId)}
                       onMoveUp={() => moveStepUp(step.id)}
                       onMoveDown={() => moveStepDown(step.id)}
+                      onMoveToPhase={(targetPhaseId) => handleMoveStepToPhase(step, targetPhaseId)}
                       onSaveAnnotations={(imageId, annotations, description, rotation) => handleSaveStepAnnotations(step.id, imageId, annotations, description, rotation)}
                       onSaveAsTemplate={async () => {
                         const templateName = prompt('Nom du template de sous-étape:', step.title || 'Mon template');
@@ -697,6 +733,8 @@ export default function PhaseItem({ phase, index, procedureId, reference, totalP
                     />
                   ))}
                 </div>
+                  </SortableContext>
+                </DndContext>
               )}
             </div>
 
@@ -845,6 +883,7 @@ interface SubStepItemProps {
   onRemoveTool: (toolId: string) => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  onMoveToPhase: (targetPhaseId: string) => void;
   onSaveAnnotations: (imageId: string, annotations: Annotation[], description: string, rotation: number) => Promise<void>;
   onSaveAsTemplate: () => void;
   initiallyExpanded?: boolean;
@@ -872,10 +911,20 @@ function SubStepItem({
   onRemoveTool,
   onMoveUp,
   onMoveDown,
+  onMoveToPhase,
   onSaveAnnotations,
   onSaveAsTemplate,
   initiallyExpanded,
 }: SubStepItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: step.id });
+  const dragStyle = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 };
+  const [showMoveToPhaseMenu, setShowMoveToPhaseMenu] = useState(false);
+  useEffect(() => {
+    if (!showMoveToPhaseMenu) return;
+    const close = () => setShowMoveToPhaseMenu(false);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [showMoveToPhaseMenu]);
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded ?? false);
   const [imageToAnnotate, setImageToAnnotate] = useState<AnnotatedImage | null>(null);
   const [moveMenuForImage, setMoveMenuForImage] = useState<string | null>(null);
@@ -893,9 +942,18 @@ function SubStepItem({
   const documentFileInputRef = useRef<HTMLInputElement>(null);
   const [videoUrl, setVideoUrl] = useState('');
   const [videoTitle, setVideoTitle] = useState('');
-  const [videoDragOver, setVideoDragOver] = useState(false);
-  const [documentDragOver, setDocumentDragOver] = useState(false);
   const [editingVideoPathId, setEditingVideoPathId] = useState<string | null>(null);
+  const [editingToolColorId, setEditingToolColorId] = useState<string | null>(null);
+  const imageScrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!editingToolColorId) return;
+    const close = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-tool-color-picker]')) setEditingToolColorId(null);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [editingToolColorId]);
   const [editingVideoPathValue, setEditingVideoPathValue] = useState('');
   const [editingDocPathId, setEditingDocPathId] = useState<string | null>(null);
   const [editingDocPathValue, setEditingDocPathValue] = useState('');
@@ -905,6 +963,15 @@ function SubStepItem({
 
   // État pour le modal d'insertion des outils dans la description
   const [showToolInsertModal, setShowToolInsertModal] = useState(false);
+  const [showPhraseLibrary, setShowPhraseLibrary] = useState(false);
+  const [showSavePhraseModal, setShowSavePhraseModal] = useState(false);
+  const [phraseTemplates, setPhraseTemplates] = useState<PhraseTemplate[]>([]);
+  const [pendingPhraseText, setPendingPhraseText] = useState('');
+  const [pendingPhraseLabel, setPendingPhraseLabel] = useState('');
+  const [pendingPhraseCategory, setPendingPhraseCategory] = useState('');
+  const [libraryCategory, setLibraryCategory] = useState('');
+  const [editingPhraseId, setEditingPhraseId] = useState<string | null>(null);
+  const [editingPhraseLabel, setEditingPhraseLabel] = useState('');
   const videoFileInputRef = useRef<HTMLInputElement>(null);
 
   const textColors = [
@@ -912,10 +979,27 @@ function SubStepItem({
     { name: 'Orange', value: 'rgb(255,102,0)' },
     { name: 'Jaune', value: '#f59e0b' },
     { name: 'Vert', value: '#10b981' },
+    { name: 'Cyan', value: '#06b6d4' },
     { name: 'Bleu', value: '#3b82f6' },
     { name: 'Violet', value: '#8b5cf6' },
     { name: 'Rose', value: '#ec4899' },
     { name: 'Blanc', value: '#ffffff' },
+    { name: 'Gris', value: '#9ca3af' },
+    { name: 'Marron', value: '#92400e' },
+  ];
+
+  const toolColorPresets = [
+    { name: 'Vert', value: '#10b981' },
+    { name: 'Bleu', value: '#3b82f6' },
+    { name: 'Rouge', value: '#ef4444' },
+    { name: 'Jaune', value: '#f59e0b' },
+    { name: 'Violet', value: '#8b5cf6' },
+    { name: 'Rose', value: '#ec4899' },
+    { name: 'Orange', value: 'rgb(255,102,0)' },
+    { name: 'Cyan', value: '#06b6d4' },
+    { name: 'Blanc', value: '#ffffff' },
+    { name: 'Marron', value: '#92400e' },
+    { name: 'Gris', value: '#9ca3af' },
   ];
 
   const emojis = [
@@ -1111,8 +1195,7 @@ function SubStepItem({
 
   const applyVideoFile = (file: File) => {
     const basePath = localStorage.getItem(NAS_VIDEO_BASE_KEY) || '';
-    const fullPath = basePath ? basePath + file.name : file.name;
-    setVideoUrl(fullPath);
+    setVideoUrl(basePath ? basePath + file.name : '');
     if (!videoTitle.trim()) {
       setVideoTitle(file.name.replace(/\.[^/.]+$/, ''));
     }
@@ -1124,12 +1207,14 @@ function SubStepItem({
     if (videoFileInputRef.current) videoFileInputRef.current.value = '';
   };
 
-  const handleVideoDrop = (e: React.DragEvent) => {
+  const handleVideoPathDrop = (e: React.DragEvent<HTMLInputElement>) => {
     e.preventDefault();
-    setVideoDragOver(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith('video/')) {
-      applyVideoFile(file);
+    const path = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('text');
+    if (path.trim()) {
+      setVideoUrl(path.trim());
+      const lastSep = Math.max(path.lastIndexOf('\\'), path.lastIndexOf('/'));
+      if (lastSep > 0) localStorage.setItem(NAS_VIDEO_BASE_KEY, path.substring(0, lastSep + 1));
+      if (!videoTitle.trim()) setVideoTitle(path.substring(lastSep + 1).replace(/\.[^/.]+$/, ''));
     }
   };
 
@@ -1166,8 +1251,7 @@ function SubStepItem({
 
   const applyDocumentFile = (file: File) => {
     const basePath = localStorage.getItem(NAS_DOCUMENT_BASE_KEY) || '';
-    const fullPath = basePath ? basePath + file.name : file.name;
-    setDocumentUrl(fullPath);
+    setDocumentUrl(basePath ? basePath + file.name : '');
     if (!documentTitle.trim()) {
       setDocumentTitle(file.name.replace(/\.[^/.]+$/, ''));
     }
@@ -1179,23 +1263,35 @@ function SubStepItem({
     if (documentFileInputRef.current) documentFileInputRef.current.value = '';
   };
 
-  const handleDocumentDrop = (e: React.DragEvent) => {
+  const handleDocumentPathDrop = (e: React.DragEvent<HTMLInputElement>) => {
     e.preventDefault();
-    setDocumentDragOver(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      applyDocumentFile(file);
+    const path = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('text');
+    if (path.trim()) {
+      setDocumentUrl(path.trim());
+      const lastSep = Math.max(path.lastIndexOf('\\'), path.lastIndexOf('/'));
+      if (lastSep > 0) localStorage.setItem(NAS_DOCUMENT_BASE_KEY, path.substring(0, lastSep + 1));
+      if (!documentTitle.trim()) setDocumentTitle(path.substring(lastSep + 1).replace(/\.[^/.]+$/, ''));
     }
   };
 
   return (
-    <div className="border border-[#323232] rounded-lg bg-background-surface">
+    <div ref={setNodeRef} style={dragStyle} className="border border-[#323232] rounded-lg bg-background-surface">
       {/* Header */}
       <div
         className="p-4 flex items-center justify-between cursor-pointer hover:bg-background-hover"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-3 flex-1">
+          {/* Drag handle */}
+          <div
+            {...attributes}
+            {...listeners}
+            onClick={(e) => e.stopPropagation()}
+            className="cursor-grab active:cursor-grabbing text-gray-600 hover:text-gray-400 p-0.5 -ml-1 flex-shrink-0"
+            title="Glisser pour réordonner"
+          >
+            <GripVertical className="h-4 w-4" />
+          </div>
           <span className="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-white text-sm font-bold">
             {index + 1}
           </span>
@@ -1233,6 +1329,42 @@ function SubStepItem({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Déplacer vers une autre phase */}
+          {allPhases && allPhases.filter(p => p.id !== currentPhaseId).length > 0 && (
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => { e.stopPropagation(); setShowMoveToPhaseMenu(v => !v); }}
+                title="Déplacer vers une autre phase"
+              >
+                <MoveRight className="h-3 w-3 text-gray-400" />
+              </Button>
+              {showMoveToPhaseMenu && (
+                <div
+                  className="absolute right-0 top-8 z-50 bg-[#1a1a1a] border border-[#323232] rounded-lg shadow-xl py-1 min-w-44"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <p className="text-[10px] text-gray-500 px-3 py-1 uppercase tracking-wider">Déplacer vers</p>
+                  {allPhases
+                    .filter(p => p.id !== currentPhaseId)
+                    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                    .map((p, i) => (
+                      <button
+                        key={p.id}
+                        onClick={() => { onMoveToPhase(p.id); setShowMoveToPhaseMenu(false); }}
+                        className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-[#252525] hover:text-white transition-colors flex items-center gap-2"
+                      >
+                        <span className="w-5 h-5 rounded bg-primary/20 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                          {p.phaseNumber ?? i + 1}
+                        </span>
+                        <span className="truncate">{p.title || `Phase ${p.phaseNumber ?? i + 1}`}</span>
+                      </button>
+                    ))}
+                </div>
+              )}
+            </div>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -1459,6 +1591,45 @@ function SubStepItem({
                     <span className="text-xs">{step.tools?.length}</span>
                   )}
                 </button>
+
+                {/* Séparateur */}
+                <div className="w-px h-6 bg-[#323232] mx-1" />
+
+                {/* Sauvegarder la sélection comme phrase type */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const sel = window.getSelection();
+                    if (!sel || sel.rangeCount === 0 || sel.toString().trim() === '') {
+                      toast.error('Sélectionnez du texte à enregistrer'); return;
+                    }
+                    const range = sel.getRangeAt(0);
+                    const div = document.createElement('div');
+                    div.appendChild(range.cloneContents());
+                    const html = div.innerHTML;
+                    setPendingPhraseText(html);
+                    setPendingPhraseLabel(sel.toString().trim().slice(0, 40));
+                    setShowSavePhraseModal(true);
+                  }}
+                  className="p-1.5 hover:bg-[#323232] rounded text-gray-400 hover:text-amber-400 transition"
+                  title="Enregistrer la sélection comme phrase type"
+                >
+                  <BookmarkPlus className="h-4 w-4" />
+                </button>
+
+                {/* Bibliothèque de phrases type */}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const phrases = await getAllPhraseTemplates();
+                    setPhraseTemplates(phrases as PhraseTemplate[]);
+                    setShowPhraseLibrary(true);
+                  }}
+                  className="p-1.5 hover:bg-[#323232] rounded text-gray-400 hover:text-blue-400 transition"
+                  title="Insérer une phrase type"
+                >
+                  <BookOpen className="h-4 w-4" />
+                </button>
               </div>
               {/* Zone de texte éditable */}
               <div
@@ -1482,14 +1653,28 @@ function SubStepItem({
             <label className="block text-xs font-medium text-gray-400 mb-2">
               Images ({step.images?.length || 0})
             </label>
-            <div className="flex flex-wrap gap-3 mb-2">
+            {(step.images || []).length > 0 && (
+              <div className="relative mb-2 px-8">
+                {/* Bouton gauche */}
+                <button
+                  onClick={() => imageScrollRef.current?.scrollBy({ left: -160, behavior: 'smooth' })}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-[#2a2a2a] border border-[#444] flex items-center justify-center hover:bg-[#3a3a3a] transition-colors shadow-lg"
+                >
+                  <ArrowLeft className="h-3 w-3 text-gray-300" />
+                </button>
+                {/* Frise */}
+                <div
+                  ref={imageScrollRef}
+                  className="flex gap-3 overflow-x-auto scroll-smooth pb-1"
+                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                >
               {(step.images || []).map((img, imgIndex) => (
-                <div key={img.imageId} className="flex flex-col gap-1">
+                <div key={img.imageId} className="flex flex-col gap-1 flex-shrink-0">
                   <div className="relative group">
                     <img
                       src={img.image.url || URL.createObjectURL(img.image.blob)}
                       alt={img.description || 'Image'}
-                      className="h-24 w-24 object-cover rounded border border-[#323232]"
+                      className="h-36 w-36 object-cover rounded border border-[#323232]"
                     />
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
                       <button
@@ -1588,7 +1773,16 @@ function SubStepItem({
                   </div>
                 </div>
               ))}
-            </div>
+                </div>{/* fin frise */}
+                {/* Bouton droite */}
+                <button
+                  onClick={() => imageScrollRef.current?.scrollBy({ left: 160, behavior: 'smooth' })}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full bg-[#2a2a2a] border border-[#444] flex items-center justify-center hover:bg-[#3a3a3a] transition-colors shadow-lg"
+                >
+                  <ArrowRight className="h-3 w-3 text-gray-300" />
+                </button>
+              </div>
+            )}
             <div
               onClick={() => {
                 const input = document.createElement('input');
@@ -1610,6 +1804,168 @@ function SubStepItem({
               className="border-2 border-dashed border-[#323232] rounded-lg p-3 text-center cursor-pointer bg-background-elevated"
             >
               <p className="text-xs text-gray-500">Cliquez ou glissez-déposez des images</p>
+            </div>
+          </div>
+
+          {/* Outils */}
+          <div>
+            <label className="block text-xs font-medium text-gray-400 mb-2">
+              <Wrench className="h-3 w-3 inline mr-1" />
+              Outils requis ({(step.tools?.length || 0) + (step.toolId && step.toolName ? 1 : 0)})
+            </label>
+            <div className="space-y-2">
+              {/* Outils nouveau format — grille horizontale */}
+              {(step.tools || []).length > 0 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {(step.tools || []).map((tool) => (
+                    <div
+                      key={tool.id}
+                      className="group relative flex flex-row items-center gap-2 p-2 bg-background-elevated rounded-lg border border-[#2a2a2a] overflow-visible"
+                      style={{ borderLeft: `3px solid ${tool.color || '#10b981'}` }}
+                    >
+                      {/* Bouton supprimer */}
+                      <button
+                        onClick={() => onRemoveTool(tool.id)}
+                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-red-500/80 hover:bg-red-500 text-white rounded p-0.5 z-10"
+                        title="Supprimer"
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </button>
+
+                      {/* Image */}
+                      {tool.imageUrl ? (
+                        <img
+                          src={tool.imageUrl}
+                          alt={tool.name}
+                          className="h-12 w-12 object-cover rounded border border-[#323232] flex-shrink-0"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        />
+                      ) : (
+                        <div className="h-12 w-12 rounded bg-[#2a2a2a] border border-[#323232] flex items-center justify-center flex-shrink-0">
+                          <Wrench className="h-5 w-5 text-gray-500" />
+                        </div>
+                      )}
+
+                      {/* Texte */}
+                      <div className="flex-1 min-w-0 pr-4">
+                        {/* Pastille couleur + nom sur la même ligne */}
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <button
+                            data-tool-color-picker
+                            onClick={() => setEditingToolColorId(editingToolColorId === tool.id ? null : tool.id)}
+                            className="w-3 h-3 rounded-full border border-[#555] hover:border-white transition-colors flex-shrink-0"
+                            style={{ backgroundColor: tool.color || '#10b981' }}
+                            title="Changer la couleur"
+                          />
+                          <div className="text-xs font-medium text-white truncate leading-tight">{tool.name}</div>
+                        </div>
+                        {tool.reference && (
+                          <div className="text-[10px] text-gray-500 truncate mt-0.5">{tool.reference}</div>
+                        )}
+                      </div>
+
+                      {/* Picker de couleur inline */}
+                      {editingToolColorId === tool.id && (
+                        <div data-tool-color-picker className="absolute top-full left-0 mt-1 bg-[#1a1a1a] border border-[#323232] rounded-lg p-2 z-50 shadow-xl"
+                          style={{ width: '144px' }}>
+                          <div className="flex flex-wrap gap-1.5">
+                            {toolColorPresets.map((c) => (
+                              <button
+                                key={c.value}
+                                onClick={() => {
+                                  onUpdate({ tools: (step.tools || []).map(t => t.id === tool.id ? { ...t, color: c.value } : t) });
+                                  setEditingToolColorId(null);
+                                }}
+                                className={`w-5 h-5 rounded-full border-2 transition-all hover:scale-110 ${tool.color === c.value ? 'border-white' : 'border-transparent'}`}
+                                style={{ backgroundColor: c.value }}
+                                title={c.name}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Afficher l'ancien format pour compatibilité */}
+              {step.toolId && step.toolName && (
+                <div
+                  className="p-3 bg-background-elevated rounded border border-[#2a2a2a]"
+                  style={{ borderLeft: `4px solid ${step.toolColor || '#10b981'}` }}
+                >
+                  <div className="flex items-start gap-3">
+                    {/* Image de l'outil (ancien format) */}
+                    {step.toolImageUrl ? (
+                      <img
+                        src={step.toolImageUrl}
+                        alt={step.toolName}
+                        className="h-16 w-16 object-cover rounded border border-[#323232] flex-shrink-0"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div className="h-16 w-16 bg-background-elevated rounded border border-[#323232] flex items-center justify-center flex-shrink-0">
+                        <Wrench className="h-6 w-6 text-text-muted" />
+                      </div>
+                    )}
+
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-white mb-1">{step.toolName}</div>
+                      <div className="text-xs text-orange-400 mb-1">(Ancien format)</div>
+                      {step.toolReference && (
+                        <div className="text-xs text-gray-400 mb-1">
+                          {step.toolReference}
+                        </div>
+                      )}
+                      {step.toolLocation && (
+                        <div className="text-xs text-gray-400">
+                          {step.toolLocation}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          // Migrer vers le nouveau format
+                          if (step.toolId && step.toolName) {
+                            onAddTool(
+                              step.toolId,
+                              step.toolName,
+                              step.toolLocation,
+                              step.toolReference,
+                              step.toolColor,
+                              step.toolImageUrl
+                            );
+                            // On ne peut pas supprimer l'ancien format ici car on n'a pas de fonction pour ça
+                            // L'utilisateur devra le faire manuellement ou on le supprime lors de la sauvegarde
+                          }
+                        }}
+                        className="flex-shrink-0 text-xs"
+                        title="Migrer vers le nouveau format"
+                      >
+                        ✓
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Bouton pour ajouter un outil */}
+              <button
+                onClick={() => setShowToolSelector(true)}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-[#3a3a3a] hover:border-primary/60 hover:bg-primary/5 text-gray-400 hover:text-primary transition-all text-xs group"
+              >
+                <div className="w-6 h-6 rounded-md bg-[#2a2a2a] group-hover:bg-primary/20 flex items-center justify-center transition-colors flex-shrink-0">
+                  <Plus className="h-3.5 w-3.5" />
+                </div>
+                Ajouter un outil ou consommable
+              </button>
             </div>
           </div>
 
@@ -1685,23 +2041,6 @@ function SubStepItem({
             </div>
             {showVideoInput ? (
               <div className="space-y-2 p-3 bg-background-elevated rounded-lg border border-[#323232]">
-                {/* Zone drag & drop */}
-                <div
-                  onDragOver={(e) => { e.preventDefault(); setVideoDragOver(true); }}
-                  onDragLeave={() => setVideoDragOver(false)}
-                  onDrop={handleVideoDrop}
-                  onClick={handleVideoFileSelect}
-                  className={`flex flex-col items-center justify-center gap-1.5 border-2 border-dashed rounded-lg p-4 cursor-pointer transition-all ${
-                    videoDragOver
-                      ? 'border-blue-400 bg-blue-400/10 scale-[1.01]'
-                      : 'border-[#3a3a3a] hover:border-blue-400/50 hover:bg-[#1a1a2e]/30'
-                  }`}
-                >
-                  <VideoIcon className={`h-6 w-6 ${videoDragOver ? 'text-blue-400' : 'text-gray-500'}`} />
-                  <p className="text-xs text-gray-400 text-center">
-                    {videoDragOver ? 'Relâchez pour sélectionner' : 'Glissez une vidéo ici ou cliquez pour parcourir'}
-                  </p>
-                </div>
                 <input
                   ref={videoFileInputRef}
                   type="file"
@@ -1716,32 +2055,46 @@ function SubStepItem({
                   placeholder="Titre de la vidéo"
                   className="text-xs"
                 />
-                <Input
-                  type="text"
-                  value={videoUrl}
-                  onChange={(e) => setVideoUrl(e.target.value)}
-                  placeholder={`Chemin d'accès NAS${localStorage.getItem(NAS_VIDEO_BASE_KEY) ? ` (dossier mémorisé : ${localStorage.getItem(NAS_VIDEO_BASE_KEY)})` : ' (ex: \\\\NAS\\Videos\\procedure.mp4)'}`}
-                  className="text-xs"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleAddVideo();
-                    else if (e.key === 'Escape') { setShowVideoInput(false); setVideoUrl(''); setVideoTitle(''); }
-                  }}
-                />
+                <div className="flex gap-2 items-center">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleVideoFileSelect}
+                    className="flex-shrink-0"
+                    title="Parcourir les fichiers"
+                  >
+                    <VideoIcon className="h-4 w-4" />
+                  </Button>
+                  <Input
+                    type="text"
+                    value={videoUrl}
+                    onChange={(e) => setVideoUrl(e.target.value)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={handleVideoPathDrop}
+                    placeholder="Chemin d'accès — glissez un fichier depuis l'explorateur"
+                    className="text-xs flex-1"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleAddVideo();
+                      else if (e.key === 'Escape') { setShowVideoInput(false); setVideoUrl(''); setVideoTitle(''); }
+                    }}
+                  />
+                </div>
                 <div className="flex gap-2">
                   <Button variant="default" size="sm" onClick={handleAddVideo} className="text-xs">Ajouter</Button>
                   <Button variant="secondary" size="sm" onClick={() => { setShowVideoInput(false); setVideoUrl(''); setVideoTitle(''); }} className="text-xs">Annuler</Button>
                 </div>
               </div>
             ) : (
-              <Button
-                variant="secondary"
-                size="sm"
+              <button
                 onClick={() => setShowVideoInput(true)}
-                className="w-full justify-start text-xs"
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-[#3a3a3a] hover:border-blue-400/60 hover:bg-blue-400/5 text-gray-400 hover:text-blue-400 transition-all text-xs group"
               >
-                <Plus className="h-3 w-3 mr-1" />
+                <div className="w-6 h-6 rounded-md bg-[#1a1a2e] group-hover:bg-blue-400/20 flex items-center justify-center transition-colors flex-shrink-0">
+                  <VideoIcon className="h-3.5 w-3.5" />
+                </div>
                 Ajouter une vidéo
-              </Button>
+              </button>
             )}
           </div>
 
@@ -1817,23 +2170,6 @@ function SubStepItem({
             </div>
             {showDocumentInput ? (
               <div className="space-y-2 p-3 bg-background-elevated rounded-lg border border-[#323232]">
-                {/* Zone drag & drop */}
-                <div
-                  onDragOver={(e) => { e.preventDefault(); setDocumentDragOver(true); }}
-                  onDragLeave={() => setDocumentDragOver(false)}
-                  onDrop={handleDocumentDrop}
-                  onClick={handleDocumentFileSelect}
-                  className={`flex flex-col items-center justify-center gap-1.5 border-2 border-dashed rounded-lg p-4 cursor-pointer transition-all ${
-                    documentDragOver
-                      ? 'border-red-400 bg-red-400/10 scale-[1.01]'
-                      : 'border-[#3a3a3a] hover:border-red-400/50 hover:bg-[#2a0a0a]/30'
-                  }`}
-                >
-                  <FileText className={`h-6 w-6 ${documentDragOver ? 'text-red-400' : 'text-gray-500'}`} />
-                  <p className="text-xs text-gray-400 text-center">
-                    {documentDragOver ? 'Relâchez pour sélectionner' : 'Glissez un document ici ou cliquez pour parcourir'}
-                  </p>
-                </div>
                 <input
                   ref={documentFileInputRef}
                   type="file"
@@ -1848,172 +2184,49 @@ function SubStepItem({
                   placeholder="Titre du document"
                   className="text-xs"
                 />
-                <Input
-                  type="text"
-                  value={documentUrl}
-                  onChange={(e) => setDocumentUrl(e.target.value)}
-                  placeholder={`Chemin d'accès NAS${localStorage.getItem(NAS_DOCUMENT_BASE_KEY) ? ` (dossier mémorisé : ${localStorage.getItem(NAS_DOCUMENT_BASE_KEY)})` : ' (ex: \\\\NAS\\Documents\\fichier.pdf)'}`}
-                  className="text-xs"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleAddDocument();
-                    else if (e.key === 'Escape') { setShowDocumentInput(false); setDocumentUrl(''); setDocumentTitle(''); }
-                  }}
-                />
+                <div className="flex gap-2 items-center">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleDocumentFileSelect}
+                    className="flex-shrink-0"
+                    title="Parcourir les fichiers"
+                  >
+                    <FileText className="h-4 w-4" />
+                  </Button>
+                  <Input
+                    type="text"
+                    value={documentUrl}
+                    onChange={(e) => setDocumentUrl(e.target.value)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={handleDocumentPathDrop}
+                    placeholder="Chemin d'accès — glissez un fichier depuis l'explorateur"
+                    className="text-xs flex-1"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleAddDocument();
+                      else if (e.key === 'Escape') { setShowDocumentInput(false); setDocumentUrl(''); setDocumentTitle(''); }
+                    }}
+                  />
+                </div>
                 <div className="flex gap-2">
                   <Button variant="default" size="sm" onClick={handleAddDocument} className="text-xs">Ajouter</Button>
                   <Button variant="secondary" size="sm" onClick={() => { setShowDocumentInput(false); setDocumentUrl(''); setDocumentTitle(''); }} className="text-xs">Annuler</Button>
                 </div>
               </div>
             ) : (
-              <Button
-                variant="secondary"
-                size="sm"
+              <button
                 onClick={() => setShowDocumentInput(true)}
-                className="w-full justify-start text-xs"
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-[#3a3a3a] hover:border-red-400/60 hover:bg-red-400/5 text-gray-400 hover:text-red-400 transition-all text-xs group"
               >
-                <Plus className="h-3 w-3 mr-1" />
+                <div className="w-6 h-6 rounded-md bg-[#2a0a0a] group-hover:bg-red-400/20 flex items-center justify-center transition-colors flex-shrink-0">
+                  <FileText className="h-3.5 w-3.5" />
+                </div>
                 Ajouter un document
-              </Button>
+              </button>
             )}
           </div>
 
-          {/* Outils */}
-          <div>
-            <label className="block text-xs font-medium text-gray-400 mb-2">
-              <Wrench className="h-3 w-3 inline mr-1" />
-              Outils requis ({(step.tools?.length || 0) + (step.toolId && step.toolName ? 1 : 0)})
-            </label>
-            <div className="space-y-2">
-              {/* Afficher les outils du nouveau format */}
-              {(step.tools || []).map((tool) => (
-                <div
-                  key={tool.id}
-                  className="p-3 bg-background-elevated rounded border border-[#2a2a2a]"
-                  style={{ borderLeft: `4px solid ${tool.color || '#10b981'}` }}
-                >
-                  <div className="flex items-start gap-3">
-                    {/* Image de l'outil */}
-                    {tool.imageUrl ? (
-                      <img
-                        src={tool.imageUrl}
-                        alt={tool.name}
-                        className="h-16 w-16 object-cover rounded border border-[#323232] flex-shrink-0"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <div className="h-16 w-16 bg-background-elevated rounded border border-[#323232] flex items-center justify-center flex-shrink-0">
-                        <Wrench className="h-6 w-6 text-text-muted" />
-                      </div>
-                    )}
-
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-white mb-1">{tool.name}</div>
-                      {tool.reference && (
-                        <div className="text-xs text-gray-400 mb-1">
-                          {tool.reference}
-                        </div>
-                      )}
-                      {tool.location && (
-                        <div className="text-xs text-gray-400">
-                          {tool.location}
-                        </div>
-                      )}
-                    </div>
-
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onRemoveTool(tool.id)}
-                      className="flex-shrink-0"
-                      title="Supprimer cet outil"
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-
-              {/* Afficher l'ancien format pour compatibilité */}
-              {step.toolId && step.toolName && (
-                <div
-                  className="p-3 bg-background-elevated rounded border border-[#2a2a2a]"
-                  style={{ borderLeft: `4px solid ${step.toolColor || '#10b981'}` }}
-                >
-                  <div className="flex items-start gap-3">
-                    {/* Image de l'outil (ancien format) */}
-                    {step.toolImageUrl ? (
-                      <img
-                        src={step.toolImageUrl}
-                        alt={step.toolName}
-                        className="h-16 w-16 object-cover rounded border border-[#323232] flex-shrink-0"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <div className="h-16 w-16 bg-background-elevated rounded border border-[#323232] flex items-center justify-center flex-shrink-0">
-                        <Wrench className="h-6 w-6 text-text-muted" />
-                      </div>
-                    )}
-
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-white mb-1">{step.toolName}</div>
-                      <div className="text-xs text-orange-400 mb-1">(Ancien format)</div>
-                      {step.toolReference && (
-                        <div className="text-xs text-gray-400 mb-1">
-                          {step.toolReference}
-                        </div>
-                      )}
-                      {step.toolLocation && (
-                        <div className="text-xs text-gray-400">
-                          {step.toolLocation}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          // Migrer vers le nouveau format
-                          if (step.toolId && step.toolName) {
-                            onAddTool(
-                              step.toolId,
-                              step.toolName,
-                              step.toolLocation,
-                              step.toolReference,
-                              step.toolColor,
-                              step.toolImageUrl
-                            );
-                            // On ne peut pas supprimer l'ancien format ici car on n'a pas de fonction pour ça
-                            // L'utilisateur devra le faire manuellement ou on le supprime lors de la sauvegarde
-                          }
-                        }}
-                        className="flex-shrink-0 text-xs"
-                        title="Migrer vers le nouveau format"
-                      >
-                        ✓
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Bouton pour ajouter un outil */}
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setShowToolSelector(true)}
-                className="w-full justify-start"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Ajouter un outil ou consommable
-              </Button>
-            </div>
-          </div>
         </div>
       )}
 
@@ -2101,6 +2314,184 @@ function SubStepItem({
               >
                 Fermer
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal — Enregistrer une phrase type */}
+      {showSavePhraseModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a1a1a] rounded-xl border border-[#323232] w-full max-w-md">
+            <div className="p-4 border-b border-[#323232] flex items-center justify-between">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <BookmarkPlus className="h-4 w-4 text-amber-400" />
+                Enregistrer une phrase type
+              </h3>
+              <Button variant="ghost" size="icon" onClick={() => setShowSavePhraseModal(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="p-4 space-y-3">
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Texte sélectionné</label>
+                <div className="text-sm text-gray-300 bg-[#0f0f0f] rounded-lg p-3 border border-[#2a2a2a] max-h-24 overflow-y-auto" dangerouslySetInnerHTML={{ __html: pendingPhraseText }} />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Libellé</label>
+                <Input
+                  autoFocus
+                  value={pendingPhraseLabel}
+                  onChange={(e) => setPendingPhraseLabel(e.target.value)}
+                  placeholder="Ex : Mise en sécurité standard"
+                  className="text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 mb-2 block">Catégorie</label>
+                <div className="flex flex-wrap gap-2">
+                  {PHRASE_CATEGORIES.map(cat => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setPendingPhraseCategory(pendingPhraseCategory === cat ? '' : cat)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${
+                        pendingPhraseCategory === cat
+                          ? 'border-amber-400 bg-amber-400/20 text-amber-300'
+                          : 'border-[#323232] text-gray-500 hover:border-[#444] hover:text-gray-300'
+                      }`}
+                    >{cat}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="p-4 border-t border-[#323232] flex gap-2 justify-end">
+              <Button variant="secondary" size="sm" onClick={() => setShowSavePhraseModal(false)}>Annuler</Button>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => {
+                  savePhraseTemplate(pendingPhraseText, pendingPhraseLabel || pendingPhraseText.slice(0, 40), pendingPhraseCategory || undefined)
+                    .then(() => { toast.success('Phrase enregistrée'); setShowSavePhraseModal(false); setPendingPhraseCategory(''); })
+                    .catch(() => toast.error("Erreur lors de l'enregistrement"));
+                }}
+              >
+                Enregistrer
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal — Bibliothèque de phrases type */}
+      {showPhraseLibrary && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a1a1a] rounded-xl border border-[#323232] w-full max-w-lg flex flex-col max-h-[70vh]">
+            <div className="p-4 border-b border-[#323232] flex items-center justify-between">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-blue-400" />
+                Phrases type
+              </h3>
+              <Button variant="ghost" size="icon" onClick={() => setShowPhraseLibrary(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            {/* Filtres catégorie */}
+            {phraseTemplates.some(p => p.category) && (
+              <div className="px-3 pt-3 pb-0 flex flex-wrap gap-1.5">
+                <button
+                  onClick={() => setLibraryCategory('')}
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-medium border transition-all ${!libraryCategory ? 'border-blue-400 bg-blue-400/20 text-blue-300' : 'border-[#2a2a2a] text-gray-500 hover:border-[#3a3a3a] hover:text-gray-300'}`}
+                >Toutes</button>
+                {PHRASE_CATEGORIES.filter(cat => phraseTemplates.some(p => p.category === cat)).map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setLibraryCategory(libraryCategory === cat ? '' : cat)}
+                    className={`px-2.5 py-0.5 rounded-full text-xs font-medium border transition-all ${libraryCategory === cat ? 'border-amber-400 bg-amber-400/20 text-amber-300' : 'border-[#2a2a2a] text-gray-500 hover:border-[#3a3a3a] hover:text-gray-300'}`}
+                  >{cat}</button>
+                ))}
+              </div>
+            )}
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              {phraseTemplates.filter(p => !libraryCategory || p.category === libraryCategory).length === 0 ? (
+                <p className="text-center text-gray-500 text-sm py-8">
+                  Aucune phrase enregistrée.<br />
+                  Sélectionnez du texte dans la description et cliquez sur l'icône signet.
+                </p>
+              ) : phraseTemplates.filter(p => !libraryCategory || p.category === libraryCategory).map((phrase) => (
+                <div
+                  key={phrase.id}
+                  className="group flex items-start gap-2 p-3 bg-[#0f0f0f] rounded-lg border border-[#2a2a2a] hover:border-blue-400/40 transition-colors cursor-pointer"
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest('[data-phrase-action]')) return;
+                    if (descriptionRef.current) {
+                      descriptionRef.current.focus();
+                      document.execCommand('insertHTML', false, phrase.text);
+                      setTimeout(() => {
+                        if (descriptionRef.current) {
+                          const html = descriptionRef.current.innerHTML;
+                          setLocalDescription(html);
+                          onUpdate({ description: html });
+                        }
+                      }, 10);
+                    }
+                    setShowPhraseLibrary(false);
+                  }}
+                >
+                  <div className="flex-1 min-w-0">
+                    {editingPhraseId === phrase.id ? (
+                      <input
+                        data-phrase-action
+                        autoFocus
+                        value={editingPhraseLabel}
+                        onChange={(e) => setEditingPhraseLabel(e.target.value)}
+                        onBlur={async () => {
+                          if (editingPhraseLabel.trim()) {
+                            await updatePhraseTemplateLabel(phrase.id, editingPhraseLabel.trim());
+                            setPhraseTemplates(prev => prev.map(p => p.id === phrase.id ? { ...p, label: editingPhraseLabel.trim() } : p));
+                          }
+                          setEditingPhraseId(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                          if (e.key === 'Escape') setEditingPhraseId(null);
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full text-xs font-medium text-blue-300 bg-[#1a1a1a] border border-blue-400/50 rounded px-1 py-0.5 mb-1 outline-none"
+                      />
+                    ) : (
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <p
+                          data-phrase-action
+                          className="text-xs font-medium text-blue-300 hover:underline cursor-text"
+                          title="Cliquer pour modifier le libellé"
+                          onClick={(e) => { e.stopPropagation(); setEditingPhraseId(phrase.id); setEditingPhraseLabel(phrase.label); }}
+                        >{phrase.label}</p>
+                        {phrase.category && (
+                          <span className="text-[10px] px-1.5 py-0 rounded-full bg-amber-400/15 text-amber-400 border border-amber-400/30">{phrase.category}</span>
+                        )}
+                      </div>
+                    )}
+                    <div className="text-xs text-gray-400 line-clamp-2" dangerouslySetInnerHTML={{ __html: phrase.text }} />
+                  </div>
+                  <button
+                    data-phrase-action
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      await deletePhraseTemplate(phrase.id);
+                      setPhraseTemplates(prev => prev.filter(p => p.id !== phrase.id));
+                      toast.success('Phrase supprimée');
+                    }}
+                    className="p-1 text-gray-600 hover:text-red-400 rounded transition flex-shrink-0 opacity-0 group-hover:opacity-100"
+                    title="Supprimer"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="p-3 border-t border-[#323232]">
+              <Button variant="secondary" size="sm" className="w-full" onClick={() => setShowPhraseLibrary(false)}>Fermer</Button>
             </div>
           </div>
         </div>
