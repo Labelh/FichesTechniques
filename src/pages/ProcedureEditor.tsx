@@ -958,13 +958,19 @@ export default function ProcedureEditor() {
                       <span className={`flex-shrink-0 text-xs font-medium px-2 py-1 rounded-md border ${colorMap[color]} w-28 text-center`}>
                         {label}
                       </span>
-                      <input
-                        type="text"
-                        placeholder="Nom"
+                      <select
                         value={entry.nom}
                         onChange={e => setSignataires(prev => ({ ...prev, [key]: { ...prev[key], nom: e.target.value } }))}
-                        className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#444] transition-colors"
-                      />
+                        className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-[#444] transition-colors"
+                      >
+                        <option value="">Sélectionner</option>
+                        <option value="BELHAJ Reda">BELHAJ Reda</option>
+                        <option value="CHARRAT Jean-Pierre">CHARRAT Jean-Pierre</option>
+                        <option value="TORREGROSSA Mélissa">TORREGROSSA Mélissa</option>
+                        <option value="KRAEBER Guy">KRAEBER Guy</option>
+                        <option value="SALOBAI Oléna">SALOBAI Oléna</option>
+                        <option value="MIELNIK Antoine">MIELNIK Antoine</option>
+                      </select>
                       <input
                         type="date"
                         value={entry.date || ''}

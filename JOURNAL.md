@@ -2,6 +2,10 @@
 
 Ce document liste, en langage simple, les évolutions apportées à votre application de Fiches Techniques. La modification la plus récente est en haut.
 
+## 17 juillet 2026
+
+- **Choix du nom par liste déroulante.** Dans la section « Rédaction & Validation » d'une fiche technique, les champs « Rédigé par », « Vérifié par » et « Approuvé par » proposent désormais une liste déroulante avec les noms de l'équipe, au lieu d'un champ libre.
+
 ## 15 juillet 2026
 
 - **Recherche de référence dans l'onglet Prévisionnelles.** Le champ « Référence » propose désormais des suggestions parmi vos fiches techniques existantes lorsque vous tapez. Vous pouvez cliquer sur une suggestion pour pré-remplir le champ.
