@@ -4,6 +4,7 @@ Ce document liste, en langage simple, les évolutions apportées à votre applic
 
 ## 17 juillet 2026
 
+- **Changement de couleur d'une forme dans l'annotation.** Lorsque vous sélectionnez une forme existante (avec l'outil de déplacement), vous pouvez désormais changer sa couleur via la palette de couleurs.
 - **Choix du nom par liste déroulante.** Dans la section « Rédaction & Validation » d'une fiche technique, les champs « Rédigé par », « Vérifié par » et « Approuvé par » proposent désormais une liste déroulante avec les noms de l'équipe, au lieu d'un champ libre.
 
 ## 15 juillet 2026

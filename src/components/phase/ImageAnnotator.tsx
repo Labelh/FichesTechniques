@@ -1017,19 +1017,30 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
               onClick={() => setShowColorPicker(!showColorPicker)}
               className="p-3 rounded bg-black hover:bg-[#1a1a1a] border border-[#323232] transition-colors w-full"
             >
-              <Palette className="h-5 w-5" style={{ color: currentColor }} />
+              <Palette className="h-5 w-5" style={{ color: (() => { const sel = selectedAnnotation ? annotations.find(a => a.id === selectedAnnotation) : null; return sel ? sel.color : currentColor; })() }} />
             </button>
             {showColorPicker && (
               <div className="absolute left-full ml-3 top-0 bg-black border border-[#323232] rounded-lg p-4 z-10 flex flex-col gap-2">
-                {toolColors.map((color) => (
+                {selectedAnnotation && <div className="text-xs text-gray-400 mb-1">Couleur de la forme</div>}
+                {toolColors.map((color) => {
+                  const activeColor = selectedAnnotation ? annotations.find(a => a.id === selectedAnnotation)?.color : currentColor;
+                  return (
                   <button
                     key={color.value}
                     onClick={() => {
                       setCurrentColor(color.value);
+                      if (selectedAnnotation) {
+                        const updated = annotations.map(a => a.id === selectedAnnotation ? { ...a, color: color.value } : a);
+                        setAnnotations(updated);
+                        const newHistory = history.slice(0, historyIndex + 1);
+                        newHistory.push(updated);
+                        setHistory(newHistory);
+                        setHistoryIndex(newHistory.length - 1);
+                      }
                       setShowColorPicker(false);
                     }}
                     className={`flex items-center gap-3 px-3 py-1.5 rounded-lg transition-colors ${
-                      currentColor === color.value ? 'bg-[#1a1a1a] ring-2 ring-white' : 'hover:bg-[#1a1a1a]'
+                      activeColor === color.value ? 'bg-[#1a1a1a] ring-2 ring-white' : 'hover:bg-[#1a1a1a]'
                     }`}
                   >
                     <span
@@ -1038,7 +1049,8 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
                     />
                     <span className="text-sm text-gray-300 whitespace-nowrap">{color.name}</span>
                   </button>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -1051,7 +1063,18 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
               {tools.slice(0, 5).map((tool) => (
                 <button
                   key={tool.id}
-                  onClick={() => setCurrentColor(tool.color || '#ff5722')}
+                  onClick={() => {
+                    const c = tool.color || '#ff5722';
+                    setCurrentColor(c);
+                    if (selectedAnnotation) {
+                      const updated = annotations.map(a => a.id === selectedAnnotation ? { ...a, color: c } : a);
+                      setAnnotations(updated);
+                      const newHistory = history.slice(0, historyIndex + 1);
+                      newHistory.push(updated);
+                      setHistory(newHistory);
+                      setHistoryIndex(newHistory.length - 1);
+                    }
+                  }}
                   className="w-full h-8 rounded border-2 border-[#323232] hover:border-primary transition-colors"
                   style={{ backgroundColor: tool.color || '#ff5722' }}
                   title={tool.name}
