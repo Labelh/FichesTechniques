@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { updatePhase, movePhaseUp, movePhaseDown } from '@/services/procedureService';
-import { createPhaseTemplate, createSubStepTemplateFromStep, getAllSubStepTemplates, deleteSubStepTemplate, incrementSubStepTemplateUsage, savePhraseTemplate, getAllPhraseTemplates, deletePhraseTemplate, updatePhraseTemplateLabel } from '@/services/templateService';
+import { createPhaseTemplate, createSubStepTemplateFromStep, getAllSubStepTemplates, deleteSubStepTemplate, incrementSubStepTemplateUsage, updateSubStepTemplate, savePhraseTemplate, getAllPhraseTemplates, deletePhraseTemplate, updatePhraseTemplateLabel } from '@/services/templateService';
 import type { PhraseTemplate } from '@/types';
 import { PHRASE_CATEGORIES } from '@/types';
 import { uploadImageToHost } from '@/services/imageHostingService';
@@ -62,6 +62,13 @@ export default function PhaseItem({ phase, index, procedureId, reference, totalP
   const [subStepTemplates, setSubStepTemplates] = useState<SubStepTemplate[]>([]);
   const [subStepTemplateCategory, setSubStepTemplateCategory] = useState<string>('Tous');
 
+  // Modal de sauvegarde de template de sous-étape
+  const [saveTemplateStep, setSaveTemplateStep] = useState<SubStep | null>(null);
+  const [saveTemplateMode, setSaveTemplateMode] = useState<'choose' | 'create' | 'update'>('choose');
+  const [saveTemplateName, setSaveTemplateName] = useState('');
+  const [saveTemplateCategory, setSaveTemplateCategory] = useState('Général');
+  const [saveTemplateList, setSaveTemplateList] = useState<SubStepTemplate[]>([]);
+
   useEffect(() => {
     if (initiallyExpanded && phaseRef.current) {
       setTimeout(() => phaseRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
@@ -74,6 +81,13 @@ export default function PhaseItem({ phase, index, procedureId, reference, totalP
       getAllSubStepTemplates().then(setSubStepTemplates).catch(console.error);
     }
   }, [showSubStepTemplateModal]);
+
+  // Charger les templates quand le modal de sauvegarde passe en mode "update"
+  useEffect(() => {
+    if (saveTemplateStep && saveTemplateMode === 'update') {
+      getAllSubStepTemplates().then(setSaveTemplateList).catch(console.error);
+    }
+  }, [saveTemplateStep, saveTemplateMode]);
 
   // Synchroniser le state local avec les props quand la phase change dans Firebase
   useEffect(() => {
@@ -718,17 +732,11 @@ export default function PhaseItem({ phase, index, procedureId, reference, totalP
                       onMoveDown={() => moveStepDown(step.id)}
                       onMoveToPhase={(targetPhaseId) => handleMoveStepToPhase(step, targetPhaseId)}
                       onSaveAnnotations={(imageId, annotations, description, rotation) => handleSaveStepAnnotations(step.id, imageId, annotations, description, rotation)}
-                      onSaveAsTemplate={async () => {
-                        const templateName = prompt('Nom du template de sous-étape:', step.title || 'Mon template');
-                        if (!templateName) return;
-                        const category = prompt('Catégorie:', 'Général') || 'Général';
-                        try {
-                          await createSubStepTemplateFromStep(step, templateName, category);
-                          toast.success('Template de sous-étape sauvegardé !');
-                        } catch (error) {
-                          console.error('Error creating substep template:', error);
-                          toast.error('Erreur lors de la sauvegarde du template');
-                        }
+                      onSaveAsTemplate={() => {
+                        setSaveTemplateStep(step);
+                        setSaveTemplateMode('choose');
+                        setSaveTemplateName(step.title || 'Mon template');
+                        setSaveTemplateCategory('Général');
                       }}
                     />
                   ))}
@@ -852,6 +860,170 @@ export default function PhaseItem({ phase, index, procedureId, reference, totalP
               >
                 Fermer
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de sauvegarde de template (créer ou mettre à jour) */}
+      {saveTemplateStep && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a1a1a] rounded-xl border border-[#323232] max-w-md w-full flex flex-col">
+            {/* Header */}
+            <div className="p-4 border-b border-[#323232] flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-white">
+                  {saveTemplateMode === 'choose' && 'Sauvegarder comme template'}
+                  {saveTemplateMode === 'create' && 'Nouveau template'}
+                  {saveTemplateMode === 'update' && 'Mettre à jour un template'}
+                </h3>
+                <p className="text-xs text-gray-400 mt-1">
+                  {saveTemplateMode === 'choose' && `Sous-étape : ${saveTemplateStep.title || 'Sans titre'}`}
+                  {saveTemplateMode === 'create' && 'Le contenu actuel de la sous-étape sera sauvegardé'}
+                  {saveTemplateMode === 'update' && 'Le template sélectionné sera remplacé par le contenu actuel'}
+                </p>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setSaveTemplateStep(null)}>
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            <div className="p-4">
+              {/* Mode choix */}
+              {saveTemplateMode === 'choose' && (
+                <div className="space-y-3">
+                  <button
+                    onClick={() => setSaveTemplateMode('create')}
+                    className="w-full flex items-center gap-3 p-4 rounded-lg border border-[#323232] hover:border-primary hover:bg-primary/5 transition-all text-left"
+                  >
+                    <Plus className="h-5 w-5 text-primary flex-shrink-0" />
+                    <div>
+                      <div className="text-sm font-medium text-white">Créer un nouveau template</div>
+                      <div className="text-xs text-gray-400 mt-0.5">Sauvegarder comme un nouveau template réutilisable</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => setSaveTemplateMode('update')}
+                    className="w-full flex items-center gap-3 p-4 rounded-lg border border-[#323232] hover:border-primary hover:bg-primary/5 transition-all text-left"
+                  >
+                    <Pencil className="h-5 w-5 text-orange-400 flex-shrink-0" />
+                    <div>
+                      <div className="text-sm font-medium text-white">Mettre à jour un template existant</div>
+                      <div className="text-xs text-gray-400 mt-0.5">Remplacer le contenu d'un template déjà enregistré</div>
+                    </div>
+                  </button>
+                </div>
+              )}
+
+              {/* Mode création */}
+              {saveTemplateMode === 'create' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1 block">Nom du template</label>
+                    <Input
+                      value={saveTemplateName}
+                      onChange={(e) => setSaveTemplateName(e.target.value)}
+                      placeholder="Nom du template"
+                      autoFocus
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400 mb-1 block">Catégorie</label>
+                    <Input
+                      value={saveTemplateCategory}
+                      onChange={(e) => setSaveTemplateCategory(e.target.value)}
+                      placeholder="Catégorie"
+                    />
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      variant="secondary"
+                      onClick={() => setSaveTemplateMode('choose')}
+                      className="flex-1"
+                    >
+                      Retour
+                    </Button>
+                    <Button
+                      variant="default"
+                      disabled={!saveTemplateName.trim()}
+                      onClick={async () => {
+                        try {
+                          await createSubStepTemplateFromStep(saveTemplateStep, saveTemplateName.trim(), saveTemplateCategory.trim() || 'Général');
+                          toast.success('Template créé !');
+                          setSaveTemplateStep(null);
+                        } catch {
+                          toast.error('Erreur lors de la création');
+                        }
+                      }}
+                      className="flex-1"
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      Créer
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Mode mise à jour */}
+              {saveTemplateMode === 'update' && (
+                <div className="space-y-3">
+                  {saveTemplateList.length === 0 ? (
+                    <div className="text-center py-6">
+                      <FileText className="h-10 w-10 mx-auto text-gray-600 mb-2" />
+                      <p className="text-gray-400 text-sm">Aucun template existant</p>
+                      <p className="text-xs text-gray-500 mt-1">Créez d'abord un template pour pouvoir le mettre à jour</p>
+                    </div>
+                  ) : (
+                    <div className="max-h-[40vh] overflow-y-auto space-y-2">
+                      {saveTemplateList.map(template => (
+                        <div
+                          key={template.id}
+                          className="flex items-center gap-3 p-3 rounded-lg border border-[#323232] hover:border-orange-500 hover:bg-orange-500/5 transition-all cursor-pointer group"
+                          onClick={async () => {
+                            try {
+                              const subStepData: Partial<SubStep> = {
+                                title: saveTemplateStep.title,
+                                description: saveTemplateStep.description,
+                                tips: saveTemplateStep.tips || [],
+                                safetyNotes: saveTemplateStep.safetyNotes || [],
+                                tools: saveTemplateStep.tools || [],
+                                estimatedTime: saveTemplateStep.estimatedTime || 0,
+                              };
+                              await updateSubStepTemplate(template.id, { subStep: subStepData });
+                              toast.success(`Template "${template.name}" mis à jour !`);
+                              setSaveTemplateStep(null);
+                            } catch {
+                              toast.error('Erreur lors de la mise à jour');
+                            }
+                          }}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium text-white truncate">{template.name}</div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-[#2a2a2a] text-gray-400">
+                                {template.category}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {template.usageCount} utilisation{template.usageCount !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                          </div>
+                          <Pencil className="h-4 w-4 text-orange-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="pt-2">
+                    <Button
+                      variant="secondary"
+                      onClick={() => setSaveTemplateMode('choose')}
+                      className="w-full"
+                    >
+                      Retour
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

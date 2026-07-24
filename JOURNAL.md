@@ -4,7 +4,8 @@ Ce document liste, en langage simple, les évolutions apportées à votre applic
 
 ## 24 juillet 2026
 
-- **Sélection multiple dans l'annotation d'images.** En mode déplacement, vous pouvez désormais cliquer-glisser sur le fond de l'image pour tracer un rectangle de sélection : toutes les formes à l'intérieur sont sélectionnées (surbrillance verte). Vous pouvez aussi maintenir la touche Maj enfoncée pour ajouter ou retirer des formes de la sélection une par une. Une fois plusieurs formes sélectionnées, vous pouvez changer leur couleur en une seule fois via la palette, les supprimer ensemble, ou les déplacer en groupe.
+- **Mise à jour de templates de sous-étapes.** Lorsque vous sauvegardez une sous-étape comme template, un dialogue vous propose désormais deux options : créer un nouveau template, ou mettre à jour un template existant en le remplaçant par le contenu actuel de la sous-étape.
+- **Sélection multiple dans l'annotation d'images.** En mode déplacement, vous pouvez désormais cliquer-glisser sur le fond de l'image pour tracer un rectangle de sélection : toutes les formes à l'intérieur sont sélectionnées (surbrillance verte). Vous pouvez aussi maintenir la touche Maj ou Ctrl enfoncée pour ajouter ou retirer des formes de la sélection une par une. Une fois plusieurs formes sélectionnées, vous pouvez changer leur couleur en une seule fois via la palette, les supprimer ensemble, ou les déplacer en groupe.
 
 ## 17 juillet 2026
 
