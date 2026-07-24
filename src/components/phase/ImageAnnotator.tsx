@@ -1161,7 +1161,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
               <Palette className="h-5 w-5" style={{ color: (() => { const sel = selectedAnnotations.length > 0 ? annotations.find(a => a.id === selectedAnnotations[0]) : null; return sel ? sel.color : currentColor; })() }} />
             </button>
             {showColorPicker && (
-              <div className="absolute left-full ml-3 top-0 bg-black border border-[#323232] rounded-lg p-2 z-10 grid grid-cols-2 gap-1.5">
+              <div className="absolute left-full ml-3 top-0 bg-black border border-[#323232] rounded-lg p-3 z-10 grid grid-cols-2 gap-2" style={{ width: '90px' }}>
                 {toolColors.map((color) => {
                   const selAnns = selectedAnnotations.length > 0 ? annotations.filter(a => selectedAnnotations.includes(a.id)) : [];
                   const activeColor = selAnns.length > 0
