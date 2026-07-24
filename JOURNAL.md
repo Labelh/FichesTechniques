@@ -2,6 +2,10 @@
 
 Ce document liste, en langage simple, les évolutions apportées à votre application de Fiches Techniques. La modification la plus récente est en haut.
 
+## 24 juillet 2026
+
+- **Sélection multiple dans l'annotation d'images.** En mode déplacement, vous pouvez désormais cliquer-glisser sur le fond de l'image pour tracer un rectangle de sélection : toutes les formes à l'intérieur sont sélectionnées (surbrillance verte). Vous pouvez aussi maintenir la touche Maj enfoncée pour ajouter ou retirer des formes de la sélection une par une. Une fois plusieurs formes sélectionnées, vous pouvez changer leur couleur en une seule fois via la palette, les supprimer ensemble, ou les déplacer en groupe.
+
 ## 17 juillet 2026
 
 - **Changement de couleur d'une forme dans l'annotation.** Lorsque vous sélectionnez une forme existante (avec l'outil de déplacement), vous pouvez désormais changer sa couleur via la palette de couleurs.

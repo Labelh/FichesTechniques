@@ -39,7 +39,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
   const [strokeOpacity, setStrokeOpacity] = useState(1);
   const [fontSize, setFontSize] = useState(20);
   const [moveMode, setMoveMode] = useState(false);
-  const [selectedAnnotation, setSelectedAnnotation] = useState<string | null>(null);
+  const [selectedAnnotations, setSelectedAnnotations] = useState<string[]>([]);
   const [hoveredAnnotation, setHoveredAnnotation] = useState<string | null>(null);
   const [rotation, setRotation] = useState(annotatedImage.rotation || 0);
 
@@ -54,7 +54,14 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
   const dragState = useRef({
     isDragging: false,
     start: null as Point | null,
-    initialPoints: [] as Point[],
+    initialAnnotations: [] as { id: string; points: Point[] }[],
+  });
+
+  // Rectangle de sélection multiple (rubber band)
+  const selectionRect = useRef({
+    active: false,
+    start: null as Point | null,
+    current: null as Point | null,
   });
 
   // Distance d'un point à un segment de droite
@@ -153,6 +160,54 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     lastClickPos.current = point;
     return nearby[cycleIndex.current];
   };
+
+  // Boîte englobante d'une annotation (pour la sélection par rectangle)
+  const getAnnotationBoundingBox = (ann: Annotation): { minX: number; minY: number; maxX: number; maxY: number } | null => {
+    const pts = ann.points;
+    if (!pts || pts.length === 0) return null;
+
+    switch (ann.type) {
+      case AnnotationType.TRAJECTORY:
+      case AnnotationType.LINE:
+      case AnnotationType.ARROW: {
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        for (const p of pts) {
+          minX = Math.min(minX, p.x);
+          minY = Math.min(minY, p.y);
+          maxX = Math.max(maxX, p.x);
+          maxY = Math.max(maxY, p.y);
+        }
+        const pad = (ann.strokeWidth || 3) / 2;
+        return { minX: minX - pad, minY: minY - pad, maxX: maxX + pad, maxY: maxY + pad };
+      }
+      case AnnotationType.CIRCLE: {
+        if (pts.length < 2) return null;
+        const radius = Math.sqrt((pts[1].x - pts[0].x) ** 2 + (pts[1].y - pts[0].y) ** 2);
+        return { minX: pts[0].x - radius, minY: pts[0].y - radius, maxX: pts[0].x + radius, maxY: pts[0].y + radius };
+      }
+      case AnnotationType.RECTANGLE: {
+        if (pts.length < 2) return null;
+        return {
+          minX: Math.min(pts[0].x, pts[1].x),
+          minY: Math.min(pts[0].y, pts[1].y),
+          maxX: Math.max(pts[0].x, pts[1].x),
+          maxY: Math.max(pts[0].y, pts[1].y),
+        };
+      }
+      case AnnotationType.TEXT: {
+        const size = (ann as any).fontSize || 20;
+        const textWidth = (ann.text?.length || 1) * size * 0.6;
+        return { minX: pts[0].x, minY: pts[0].y - size, maxX: pts[0].x + textWidth, maxY: pts[0].y + size * 0.2 };
+      }
+      default:
+        return null;
+    }
+  };
+
+  const rectsIntersect = (
+    a: { minX: number; minY: number; maxX: number; maxY: number },
+    b: { minX: number; minY: number; maxX: number; maxY: number }
+  ) => a.minX <= b.maxX && a.maxX >= b.minX && a.minY <= b.maxY && a.maxY >= b.minY;
 
   // État pour le suivi d'arêtes (pour assurer la continuité)
   const lastEdgePoint = useRef<Point | null>(null);
@@ -365,7 +420,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
 
     // Dessiner les annotations
     annotations.forEach(ann => {
-      const isSelected = moveMode && ann.id === selectedAnnotation;
+      const isSelected = moveMode && selectedAnnotations.includes(ann.id);
       drawAnnotation(ctx, ann, isSelected);
     });
 
@@ -381,6 +436,22 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
       } as any;
       (tempAnn as any).opacity = strokeOpacity;
       drawAnnotation(ctx, tempAnn, false);
+    }
+
+    // Dessiner le rectangle de sélection
+    if (selectionRect.current.active && selectionRect.current.start && selectionRect.current.current) {
+      const s = selectionRect.current.start;
+      const c = selectionRect.current.current;
+      ctx.save();
+      ctx.strokeStyle = '#3b82f6';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 4]);
+      ctx.globalAlpha = 0.9;
+      ctx.strokeRect(s.x, s.y, c.x - s.x, c.y - s.y);
+      ctx.fillStyle = 'rgba(59, 130, 246, 0.08)';
+      ctx.globalAlpha = 1;
+      ctx.fillRect(s.x, s.y, c.x - s.x, c.y - s.y);
+      ctx.restore();
     }
   };
 
@@ -513,7 +584,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
   // Redessiner quand les annotations changent ou les effets
   useEffect(() => {
     if (loaded) redrawCanvas();
-  }, [annotations, loaded, selectedAnnotation, strokeWidth, strokeOpacity, rotation]);
+  }, [annotations, loaded, selectedAnnotations, strokeWidth, strokeOpacity, rotation]);
 
   // Convertir coordonnées écran → canvas
   const getCanvasPoint = (e: MouseEvent): Point => {
@@ -540,20 +611,42 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
 
       const point = getCanvasPoint(e);
 
-      // Chercher une annotation proche du tracé réel (uniquement en mode déplacer)
       if (moveMode) {
         const clickedAnn = findAnnotationAt(point, annotations, true);
         if (clickedAnn) {
-          setSelectedAnnotation(clickedAnn.id);
-          dragState.current.isDragging = true;
-          dragState.current.start = point;
-          dragState.current.initialPoints = clickedAnn.points ? [...clickedAnn.points] : [];
-          return;
+          if (e.shiftKey) {
+            // Shift+clic : ajouter/retirer de la sélection
+            setSelectedAnnotations(prev =>
+              prev.includes(clickedAnn.id)
+                ? prev.filter(id => id !== clickedAnn.id)
+                : [...prev, clickedAnn.id]
+            );
+          } else if (selectedAnnotations.includes(clickedAnn.id)) {
+            // Clic sur une annotation déjà sélectionnée → glisser toute la sélection
+            dragState.current.isDragging = true;
+            dragState.current.start = point;
+            dragState.current.initialAnnotations = annotations
+              .filter(a => selectedAnnotations.includes(a.id))
+              .map(a => ({ id: a.id, points: a.points ? [...a.points] : [] }));
+          } else {
+            // Clic sur une annotation non sélectionnée → sélectionner uniquement celle-ci
+            setSelectedAnnotations([clickedAnn.id]);
+            dragState.current.isDragging = true;
+            dragState.current.start = point;
+            dragState.current.initialAnnotations = [{ id: clickedAnn.id, points: clickedAnn.points ? [...clickedAnn.points] : [] }];
+          }
+        } else {
+          // Clic sur le vide → démarrer le rectangle de sélection
+          if (!e.shiftKey) {
+            setSelectedAnnotations([]);
+          }
+          selectionRect.current = { active: true, start: point, current: point };
         }
+        return;
       }
 
-      // Aucune annotation sous le curseur → dessin normal
-      setSelectedAnnotation(null);
+      // Mode dessin
+      setSelectedAnnotations([]);
       lastEdgePoint.current = null;
 
       drawing.current = {
@@ -567,15 +660,26 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     const onMouseMove = (e: MouseEvent) => {
       const point = getCanvasPoint(e);
 
-      // Drag en cours (auto ou mode move)
-      if (dragState.current.isDragging && selectedAnnotation && dragState.current.start && dragState.current.initialPoints.length > 0) {
+      // Rectangle de sélection en cours
+      if (selectionRect.current.active) {
+        selectionRect.current.current = point;
+        redrawCanvas();
+        return;
+      }
+
+      // Drag en cours (glissement de la sélection)
+      if (dragState.current.isDragging && dragState.current.start && dragState.current.initialAnnotations.length > 0) {
         const dx = point.x - dragState.current.start.x;
         const dy = point.y - dragState.current.start.y;
 
-        const movedPoints = dragState.current.initialPoints.map(p => ({ x: p.x + dx, y: p.y + dy }));
-        const updatedAnnotations = annotations.map(a =>
-          a.id === selectedAnnotation ? { ...a, points: movedPoints } : a
-        );
+        const initMap = new Map(dragState.current.initialAnnotations.map(a => [a.id, a.points]));
+        const updatedAnnotations = annotations.map(a => {
+          const initPts = initMap.get(a.id);
+          if (initPts) {
+            return { ...a, points: initPts.map(p => ({ x: p.x + dx, y: p.y + dy })) };
+          }
+          return a;
+        });
         setAnnotations(updatedAnnotations);
         return;
       }
@@ -610,9 +714,40 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     };
 
     const onMouseUp = (e: MouseEvent) => {
-      // Fin de drag (auto ou mode move)
+      // Fin du rectangle de sélection
+      if (selectionRect.current.active) {
+        const s = selectionRect.current.start;
+        const c = selectionRect.current.current;
+        selectionRect.current = { active: false, start: null, current: null };
+
+        if (s && c) {
+          const selRect = {
+            minX: Math.min(s.x, c.x),
+            minY: Math.min(s.y, c.y),
+            maxX: Math.max(s.x, c.x),
+            maxY: Math.max(s.y, c.y),
+          };
+          const w = selRect.maxX - selRect.minX;
+          const h = selRect.maxY - selRect.minY;
+
+          if (w > 5 || h > 5) {
+            const newIds = annotations
+              .filter(ann => {
+                const bbox = getAnnotationBoundingBox(ann);
+                if (!bbox) return false;
+                return rectsIntersect(selRect, bbox);
+              })
+              .map(a => a.id);
+            setSelectedAnnotations(prev => [...new Set([...prev, ...newIds])]);
+          }
+        }
+        redrawCanvas();
+        return;
+      }
+
+      // Fin de drag (glissement de la sélection)
       if (dragState.current.isDragging) {
-        if (selectedAnnotation && dragState.current.start) {
+        if (dragState.current.start && dragState.current.initialAnnotations.length > 0) {
           const newHistory = history.slice(0, historyIndex + 1);
           newHistory.push([...annotations]);
           setHistory(newHistory);
@@ -620,7 +755,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
         }
         dragState.current.isDragging = false;
         dragState.current.start = null;
-        dragState.current.initialPoints = [];
+        dragState.current.initialAnnotations = [];
         return;
       }
 
@@ -685,7 +820,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
       canvas.removeEventListener('mousemove', onMouseMove);
       canvas.removeEventListener('mouseup', onMouseUp);
     };
-  }, [loaded, currentTool, currentColor, annotations, historyIndex, history, moveMode, selectedAnnotation, hoveredAnnotation, edgeDetectionEnabled, strokeWidth, fontSize]);
+  }, [loaded, currentTool, currentColor, annotations, historyIndex, history, moveMode, selectedAnnotations, hoveredAnnotation, edgeDetectionEnabled, strokeWidth, fontSize]);
 
   // Bloquer le scroll de la page
   useEffect(() => {
@@ -766,11 +901,12 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
       } else if (e.key === 'r' || e.key === 'R') {
         e.preventDefault();
         handleRotate();
-      } else if ((e.key === 'Delete' || e.key === 'Backspace') && selectedAnnotation) {
+      } else if ((e.key === 'Delete' || e.key === 'Backspace') && selectedAnnotations.length > 0) {
         e.preventDefault();
-        const newAnnotations = annotations.filter(a => a.id !== selectedAnnotation);
+        const selSet = new Set(selectedAnnotations);
+        const newAnnotations = annotations.filter(a => !selSet.has(a.id));
         setAnnotations(newAnnotations);
-        setSelectedAnnotation(null);
+        setSelectedAnnotations([]);
         const newHistory = history.slice(0, historyIndex + 1);
         newHistory.push(newAnnotations);
         setHistory(newHistory);
@@ -780,7 +916,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [historyIndex, history, onCancel, selectedAnnotation, annotations, rotation]);
+  }, [historyIndex, history, onCancel, selectedAnnotations, annotations, rotation]);
 
   const handleSave = () => {
     onSave(annotations, description, rotation);
@@ -976,11 +1112,15 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
             <Scan className="h-5 w-5" />
           </button>
           <button
-            onClick={() => setMoveMode(!moveMode)}
+            onClick={() => {
+              const next = !moveMode;
+              setMoveMode(next);
+              if (!next) setSelectedAnnotations([]);
+            }}
             className={`p-3 rounded transition-colors ${
               moveMode ? 'bg-primary text-white' : 'bg-black text-gray-400 hover:bg-[#1a1a1a] border border-[#323232]'
             }`}
-            title="Déplacer forme"
+            title="Déplacer / sélectionner formes"
           >
             <Move className="h-5 w-5" />
           </button>
@@ -991,19 +1131,20 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
           >
             <RotateCw className="h-5 w-5" />
           </button>
-          {selectedAnnotation && (
+          {selectedAnnotations.length > 0 && (
             <button
               onClick={() => {
-                const newAnnotations = annotations.filter(a => a.id !== selectedAnnotation);
+                const selSet = new Set(selectedAnnotations);
+                const newAnnotations = annotations.filter(a => !selSet.has(a.id));
                 setAnnotations(newAnnotations);
-                setSelectedAnnotation(null);
+                setSelectedAnnotations([]);
                 const newHistory = history.slice(0, historyIndex + 1);
                 newHistory.push(newAnnotations);
                 setHistory(newHistory);
                 setHistoryIndex(newHistory.length - 1);
               }}
               className="p-3 rounded transition-colors bg-red-900/50 text-red-400 hover:bg-red-900 border border-red-800"
-              title="Supprimer la forme sélectionnée (Suppr)"
+              title={`Supprimer ${selectedAnnotations.length > 1 ? `les ${selectedAnnotations.length} formes` : 'la forme'} (Suppr)`}
             >
               <Trash2 className="h-5 w-5" />
             </button>
@@ -1017,20 +1158,28 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
               onClick={() => setShowColorPicker(!showColorPicker)}
               className="p-3 rounded bg-black hover:bg-[#1a1a1a] border border-[#323232] transition-colors w-full"
             >
-              <Palette className="h-5 w-5" style={{ color: (() => { const sel = selectedAnnotation ? annotations.find(a => a.id === selectedAnnotation) : null; return sel ? sel.color : currentColor; })() }} />
+              <Palette className="h-5 w-5" style={{ color: (() => { const sel = selectedAnnotations.length > 0 ? annotations.find(a => a.id === selectedAnnotations[0]) : null; return sel ? sel.color : currentColor; })() }} />
             </button>
             {showColorPicker && (
               <div className="absolute left-full ml-3 top-0 bg-black border border-[#323232] rounded-lg p-4 z-10 flex flex-col gap-2">
-                {selectedAnnotation && <div className="text-xs text-gray-400 mb-1">Couleur de la forme</div>}
+                {selectedAnnotations.length > 0 && (
+                  <div className="text-xs text-gray-400 mb-1">
+                    {selectedAnnotations.length > 1 ? `Couleur des ${selectedAnnotations.length} formes` : 'Couleur de la forme'}
+                  </div>
+                )}
                 {toolColors.map((color) => {
-                  const activeColor = selectedAnnotation ? annotations.find(a => a.id === selectedAnnotation)?.color : currentColor;
+                  const selAnns = selectedAnnotations.length > 0 ? annotations.filter(a => selectedAnnotations.includes(a.id)) : [];
+                  const activeColor = selAnns.length > 0
+                    ? (selAnns.every(a => a.color === selAnns[0].color) ? selAnns[0].color : null)
+                    : currentColor;
                   return (
                   <button
                     key={color.value}
                     onClick={() => {
                       setCurrentColor(color.value);
-                      if (selectedAnnotation) {
-                        const updated = annotations.map(a => a.id === selectedAnnotation ? { ...a, color: color.value } : a);
+                      if (selectedAnnotations.length > 0) {
+                        const selSet = new Set(selectedAnnotations);
+                        const updated = annotations.map(a => selSet.has(a.id) ? { ...a, color: color.value } : a);
                         setAnnotations(updated);
                         const newHistory = history.slice(0, historyIndex + 1);
                         newHistory.push(updated);
@@ -1066,8 +1215,9 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
                   onClick={() => {
                     const c = tool.color || '#ff5722';
                     setCurrentColor(c);
-                    if (selectedAnnotation) {
-                      const updated = annotations.map(a => a.id === selectedAnnotation ? { ...a, color: c } : a);
+                    if (selectedAnnotations.length > 0) {
+                      const selSet = new Set(selectedAnnotations);
+                      const updated = annotations.map(a => selSet.has(a.id) ? { ...a, color: c } : a);
                       setAnnotations(updated);
                       const newHistory = history.slice(0, historyIndex + 1);
                       newHistory.push(updated);
