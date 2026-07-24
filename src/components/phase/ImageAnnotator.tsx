@@ -614,8 +614,8 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
       if (moveMode) {
         const clickedAnn = findAnnotationAt(point, annotations, true);
         if (clickedAnn) {
-          if (e.shiftKey) {
-            // Shift+clic : ajouter/retirer de la sélection
+          if (e.shiftKey || e.ctrlKey || e.metaKey) {
+            // Shift/Ctrl+clic : ajouter/retirer de la sélection
             setSelectedAnnotations(prev =>
               prev.includes(clickedAnn.id)
                 ? prev.filter(id => id !== clickedAnn.id)
@@ -637,7 +637,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
           }
         } else {
           // Clic sur le vide → démarrer le rectangle de sélection
-          if (!e.shiftKey) {
+          if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
             setSelectedAnnotations([]);
           }
           selectionRect.current = { active: true, start: point, current: point };
@@ -1161,12 +1161,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
               <Palette className="h-5 w-5" style={{ color: (() => { const sel = selectedAnnotations.length > 0 ? annotations.find(a => a.id === selectedAnnotations[0]) : null; return sel ? sel.color : currentColor; })() }} />
             </button>
             {showColorPicker && (
-              <div className="absolute left-full ml-3 top-0 bg-black border border-[#323232] rounded-lg p-4 z-10 flex flex-col gap-2">
-                {selectedAnnotations.length > 0 && (
-                  <div className="text-xs text-gray-400 mb-1">
-                    {selectedAnnotations.length > 1 ? `Couleur des ${selectedAnnotations.length} formes` : 'Couleur de la forme'}
-                  </div>
-                )}
+              <div className="absolute left-full ml-3 top-0 bg-black border border-[#323232] rounded-lg p-2 z-10 grid grid-cols-2 gap-1.5">
                 {toolColors.map((color) => {
                   const selAnns = selectedAnnotations.length > 0 ? annotations.filter(a => selectedAnnotations.includes(a.id)) : [];
                   const activeColor = selAnns.length > 0
@@ -1188,15 +1183,15 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
                       }
                       setShowColorPicker(false);
                     }}
-                    className={`flex items-center gap-3 px-3 py-1.5 rounded-lg transition-colors ${
-                      activeColor === color.value ? 'bg-[#1a1a1a] ring-2 ring-white' : 'hover:bg-[#1a1a1a]'
+                    className={`p-0.5 rounded transition-colors ${
+                      activeColor === color.value ? 'ring-2 ring-white' : 'hover:ring-2 hover:ring-gray-500'
                     }`}
+                    title={color.name}
                   >
                     <span
-                      className="w-6 h-6 rounded-md border border-[#444] flex-shrink-0"
+                      className="block w-7 h-7 rounded border border-[#444]"
                       style={{ backgroundColor: color.value }}
                     />
-                    <span className="text-sm text-gray-300 whitespace-nowrap">{color.name}</span>
                   </button>
                   );
                 })}
