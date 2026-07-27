@@ -2,6 +2,10 @@
 
 Ce document liste, en langage simple, les évolutions apportées à votre application de Fiches Techniques. La modification la plus récente est en haut.
 
+## 27 juillet 2026
+
+- **Correction du bouton « Déplacer vers une autre sous-étape ».** Le menu qui apparaît au clic sur le bouton de déplacement d'image (icône bleue) était masqué depuis l'ajout de la frise d'images scrollable. Il s'affiche désormais correctement au-dessus du bouton, même quand la frise contient beaucoup d'images.
+
 ## 24 juillet 2026
 
 - **Mise à jour de templates de sous-étapes.** Lorsque vous sauvegardez une sous-étape comme template, un dialogue vous propose désormais deux options : créer un nouveau template, ou mettre à jour un template existant en le remplaçant par le contenu actuel de la sous-étape.

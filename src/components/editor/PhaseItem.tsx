@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Trash2, ChevronDown, ChevronUp, Plus, X, Wrench, Save, Pencil, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Video as VideoIcon, Bold, Italic, Palette, List, ListOrdered, Smile, FileText, FolderInput, BookOpen, BookmarkPlus, GripVertical, MoveRight } from 'lucide-react';
 import {
   DndContext,
@@ -1100,9 +1101,20 @@ function SubStepItem({
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded ?? false);
   const [imageToAnnotate, setImageToAnnotate] = useState<AnnotatedImage | null>(null);
   const [moveMenuForImage, setMoveMenuForImage] = useState<string | null>(null);
+  const [moveMenuPos, setMoveMenuPos] = useState<{ top: number; left: number } | null>(null);
+  const openMoveMenu = useCallback((imageId: string, buttonEl: HTMLButtonElement) => {
+    if (moveMenuForImage === imageId) {
+      setMoveMenuForImage(null);
+      setMoveMenuPos(null);
+      return;
+    }
+    const rect = buttonEl.getBoundingClientRect();
+    setMoveMenuPos({ top: rect.top, left: rect.left + rect.width / 2 });
+    setMoveMenuForImage(imageId);
+  }, [moveMenuForImage]);
   useEffect(() => {
     if (!moveMenuForImage) return;
-    const close = () => setMoveMenuForImage(null);
+    const close = () => { setMoveMenuForImage(null); setMoveMenuPos(null); };
     document.addEventListener('click', close);
     return () => document.removeEventListener('click', close);
   }, [moveMenuForImage]);
@@ -1869,7 +1881,7 @@ function SubStepItem({
                         <Pencil className="h-3 w-3" />
                       </button>
                       <button
-                        onClick={(e) => { e.stopPropagation(); setMoveMenuForImage(moveMenuForImage === img.imageId ? null : img.imageId); }}
+                        onClick={(e) => { e.stopPropagation(); openMoveMenu(img.imageId, e.currentTarget); }}
                         className="bg-blue-600 text-white rounded p-1 hover:bg-blue-500"
                         title="Déplacer vers une autre sous-étape"
                       >
@@ -1895,53 +1907,6 @@ function SubStepItem({
                         <ArrowRight className="h-3 w-3" />
                       </button>
                     </div>
-                    {/* Menu de sélection de la sous-étape cible */}
-                    {moveMenuForImage === img.imageId && (
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 z-20 bg-[#1a1a1a] border border-[#333] rounded-lg shadow-xl p-2 min-w-[180px] max-h-64 overflow-y-auto" onClick={e => e.stopPropagation()}>
-                        <p className="text-gray-400 text-xs font-semibold mb-1.5 px-1">Déplacer vers :</p>
-
-                        {/* Sous-étapes de la même phase */}
-                        {allSteps.filter(s => s.id !== step.id).length > 0 && (
-                          <>
-                            <p className="text-gray-600 text-[10px] uppercase tracking-wider px-1 mb-1">Cette phase</p>
-                            {allSteps.filter(s => s.id !== step.id).map((targetStep) => {
-                              const realIndex = allSteps.findIndex(s => s.id === targetStep.id);
-                              return (
-                                <button
-                                  key={targetStep.id}
-                                  onClick={() => { onMoveImageToStep(img.imageId, targetStep.id); setMoveMenuForImage(null); }}
-                                  className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-[#2a2a2a] text-gray-300 truncate"
-                                >
-                                  {realIndex + 1}. {targetStep.title || `Sous-étape ${realIndex + 1}`}
-                                </button>
-                              );
-                            })}
-                          </>
-                        )}
-
-                        {/* Sous-étapes des autres phases */}
-                        {(allPhases || []).filter(p => p.id !== currentPhaseId && (p.steps || []).length > 0).map((otherPhase) => (
-                          <div key={otherPhase.id}>
-                            <p className="text-gray-600 text-[10px] uppercase tracking-wider px-1 mt-2 mb-1 truncate">
-                              Phase {otherPhase.phaseNumber || ''} — {otherPhase.title || `Phase ${otherPhase.phaseNumber}`}
-                            </p>
-                            {(otherPhase.steps || []).map((targetStep, tIdx) => (
-                              <button
-                                key={targetStep.id}
-                                onClick={() => { onMoveImageToStep(img.imageId, targetStep.id, otherPhase.id); setMoveMenuForImage(null); }}
-                                className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-[#2a2a2a] text-gray-300 truncate"
-                              >
-                                {tIdx + 1}. {targetStep.title || `Sous-étape ${tIdx + 1}`}
-                              </button>
-                            ))}
-                          </div>
-                        ))}
-
-                        {allSteps.filter(s => s.id !== step.id).length === 0 && (allPhases || []).filter(p => p.id !== currentPhaseId && (p.steps || []).length > 0).length === 0 && (
-                          <p className="text-gray-600 text-xs px-1">Aucune autre sous-étape</p>
-                        )}
-                      </div>
-                    )}
                   </div>
                 </div>
               ))}
@@ -2667,6 +2632,57 @@ function SubStepItem({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Menu de déplacement d'image (portal pour éviter le clipping par overflow) */}
+      {moveMenuForImage && moveMenuPos && createPortal(
+        <div
+          className="fixed z-[9999] bg-[#1a1a1a] border border-[#333] rounded-lg shadow-xl p-2 min-w-[180px] max-h-64 overflow-y-auto"
+          style={{ top: moveMenuPos.top - 8, left: moveMenuPos.left, transform: 'translate(-50%, -100%)' }}
+          onClick={e => e.stopPropagation()}
+        >
+          <p className="text-gray-400 text-xs font-semibold mb-1.5 px-1">Déplacer vers :</p>
+
+          {allSteps.filter(s => s.id !== step.id).length > 0 && (
+            <>
+              <p className="text-gray-600 text-[10px] uppercase tracking-wider px-1 mb-1">Cette phase</p>
+              {allSteps.filter(s => s.id !== step.id).map((targetStep) => {
+                const realIndex = allSteps.findIndex(s => s.id === targetStep.id);
+                return (
+                  <button
+                    key={targetStep.id}
+                    onClick={() => { onMoveImageToStep(moveMenuForImage, targetStep.id); setMoveMenuForImage(null); setMoveMenuPos(null); }}
+                    className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-[#2a2a2a] text-gray-300 truncate"
+                  >
+                    {realIndex + 1}. {targetStep.title || `Sous-étape ${realIndex + 1}`}
+                  </button>
+                );
+              })}
+            </>
+          )}
+
+          {(allPhases || []).filter(p => p.id !== currentPhaseId && (p.steps || []).length > 0).map((otherPhase) => (
+            <div key={otherPhase.id}>
+              <p className="text-gray-600 text-[10px] uppercase tracking-wider px-1 mt-2 mb-1 truncate">
+                Phase {otherPhase.phaseNumber || ''} — {otherPhase.title || `Phase ${otherPhase.phaseNumber}`}
+              </p>
+              {(otherPhase.steps || []).map((targetStep, tIdx) => (
+                <button
+                  key={targetStep.id}
+                  onClick={() => { onMoveImageToStep(moveMenuForImage, targetStep.id, otherPhase.id); setMoveMenuForImage(null); setMoveMenuPos(null); }}
+                  className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-[#2a2a2a] text-gray-300 truncate"
+                >
+                  {tIdx + 1}. {targetStep.title || `Sous-étape ${tIdx + 1}`}
+                </button>
+              ))}
+            </div>
+          ))}
+
+          {allSteps.filter(s => s.id !== step.id).length === 0 && (allPhases || []).filter(p => p.id !== currentPhaseId && (p.steps || []).length > 0).length === 0 && (
+            <p className="text-gray-600 text-xs px-1">Aucune autre sous-étape</p>
+          )}
+        </div>,
+        document.body
       )}
     </div>
   );
