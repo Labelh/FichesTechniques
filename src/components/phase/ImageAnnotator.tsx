@@ -64,6 +64,15 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     current: null as Point | null,
   });
 
+  // État du pan (déplacement de la vue avec Ctrl+clic glissé)
+  const panState = useRef({
+    isPanning: false,
+    startX: 0,
+    startY: 0,
+    scrollLeft: 0,
+    scrollTop: 0,
+  });
+
   // Distance d'un point à un segment de droite
   const distToSegment = (p: Point, a: Point, b: Point): number => {
     const dx = b.x - a.x;
@@ -609,13 +618,41 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
     const onMouseDown = (e: MouseEvent) => {
       if (e.button !== 0) return;
 
+      // Ctrl+clic glissé → déplacer la vue (pan)
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        const container = containerRef.current;
+        if (!container) return;
+        panState.current = {
+          isPanning: true,
+          startX: e.clientX,
+          startY: e.clientY,
+          scrollLeft: container.scrollLeft,
+          scrollTop: container.scrollTop,
+        };
+        canvas.style.cursor = 'grabbing';
+        const onPanMove = (ev: MouseEvent) => {
+          container.scrollLeft = panState.current.scrollLeft - (ev.clientX - panState.current.startX);
+          container.scrollTop = panState.current.scrollTop - (ev.clientY - panState.current.startY);
+        };
+        const onPanUp = () => {
+          panState.current.isPanning = false;
+          canvas.style.cursor = '';
+          document.removeEventListener('mousemove', onPanMove);
+          document.removeEventListener('mouseup', onPanUp);
+        };
+        document.addEventListener('mousemove', onPanMove);
+        document.addEventListener('mouseup', onPanUp);
+        return;
+      }
+
       const point = getCanvasPoint(e);
 
       if (moveMode) {
         const clickedAnn = findAnnotationAt(point, annotations, true);
         if (clickedAnn) {
-          if (e.shiftKey || e.ctrlKey || e.metaKey) {
-            // Shift/Ctrl+clic : ajouter/retirer de la sélection
+          if (e.shiftKey) {
+            // Shift+clic : ajouter/retirer de la sélection
             setSelectedAnnotations(prev =>
               prev.includes(clickedAnn.id)
                 ? prev.filter(id => id !== clickedAnn.id)
@@ -637,7 +674,7 @@ export default function ImageAnnotator({ annotatedImage, tools = [], onSave, onC
           }
         } else {
           // Clic sur le vide → démarrer le rectangle de sélection
-          if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
+          if (!e.shiftKey) {
             setSelectedAnnotations([]);
           }
           selectionRect.current = { active: true, start: point, current: point };

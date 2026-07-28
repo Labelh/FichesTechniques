@@ -4,6 +4,7 @@ Ce document liste, en langage simple, les évolutions apportées à votre applic
 
 ## 28 juillet 2026
 
+- **Déplacement de la vue dans l'annotation d'images.** Lorsque vous êtes zoomé sur une image, vous pouvez maintenant maintenir la touche Ctrl enfoncée et cliquer-glisser pour déplacer la vue et voir les parties de l'image qui ne sont pas visibles à l'écran. La sélection multiple de formes se fait désormais avec Maj+clic (au lieu de Ctrl+clic).
 - **Correction du compteur « Fiches faites ».** Le nombre affiché dans la carte « Fiches faites » du tableau de bord correspond désormais au nombre réel de fiches créées (le même que le badge orange à côté de « Tableau de bord » dans le menu).
 
 ## 27 juillet 2026
