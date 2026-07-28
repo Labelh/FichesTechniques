@@ -2,6 +2,10 @@
 
 Ce document liste, en langage simple, les évolutions apportées à votre application de Fiches Techniques. La modification la plus récente est en haut.
 
+## 28 juillet 2026
+
+- **Correction du compteur « Fiches faites ».** Le nombre affiché dans la carte « Fiches faites » du tableau de bord correspond désormais au nombre réel de fiches créées (le même que le badge orange à côté de « Tableau de bord » dans le menu).
+
 ## 27 juillet 2026
 
 - **Correction du bouton « Déplacer vers une autre sous-étape ».** Le menu qui apparaît au clic sur le bouton de déplacement d'image (icône bleue) était masqué depuis l'ajout de la frise d'images scrollable. Il s'affiche désormais correctement au-dessus du bouton, même quand la frise contient beaucoup d'images.

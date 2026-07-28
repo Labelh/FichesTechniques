@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Filter, SortAsc, FileText, Plus, Download } from 'lucide-react';
-import { useProcedures } from '@/hooks/useProcedures';
+import { useProcedures, useProcedureStats } from '@/hooks/useProcedures';
 import { useForecastArticles } from '@/hooks/useForecastArticles';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useAppStore } from '@/store/useAppStore';
@@ -25,6 +25,7 @@ export default function Dashboard() {
   } = useAppStore();
 
   const { stats: forecastStats } = useForecastArticles();
+  const procedureStats = useProcedureStats();
 
   const [showFilters, setShowFilters] = useState(false);
 
@@ -92,11 +93,11 @@ export default function Dashboard() {
         </div>
         <div className="bg-[#1c1c1c] rounded-xl border border-[#272727] p-4">
           <p className="text-xs text-gray-500 mb-1">Fiches faites</p>
-          <p className="text-2xl font-bold text-green-400">{forecastStats.done}</p>
+          <p className="text-2xl font-bold text-green-400">{procedureStats.total}</p>
         </div>
         <div className="bg-[#1c1c1c] rounded-xl border border-[#272727] p-4">
           <p className="text-xs text-gray-500 mb-1">Fiches restantes</p>
-          <p className="text-2xl font-bold text-orange-400">{forecastStats.remaining}</p>
+          <p className="text-2xl font-bold text-orange-400">{forecastStats.total - procedureStats.total}</p>
         </div>
         <div className="bg-[#1c1c1c] rounded-xl border border-[#272727] p-4">
           <p className="text-xs text-gray-500 mb-1">Couverture charge</p>
